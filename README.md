@@ -1,16 +1,18 @@
 # FuckIAB
 
-A Xposed module that basically fucks in app billing.
+An Xposed module that basically fucks in app billing.
 
 ## Showcase
+
+https://github.com/user-attachments/assets/063ad61e-091e-4068-8cd2-7a96b367044a
 
 https://github.com/user-attachments/assets/1406863e-b15d-4a89-a3f3-0cdb7a68f70f
 
 https://github.com/user-attachments/assets/5cc92d38-00e4-4614-b9f3-c0e9f3e292c3
 
 ## Compatibility
-- [x] Cafe Bazaar (Iranian App Market)
-- [ ] Google Play Store
+- [x] Google Play Store
+- [x] Bazaar (Iranian App Market)
 - [ ] Samsung
 - [ ] Amazon
 - [ ] Huawei
