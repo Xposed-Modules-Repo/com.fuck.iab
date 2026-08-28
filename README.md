@@ -4,11 +4,11 @@ An Xposed module that basically fucks in app billing.
 
 ## Showcase
 
-https://github.com/user-attachments/assets/063ad61e-091e-4068-8cd2-7a96b367044a
+https://github.com/user-attachments/assets/baa25c2c-baaf-4e84-86e8-51e9f4545a4a
 
-https://github.com/user-attachments/assets/1406863e-b15d-4a89-a3f3-0cdb7a68f70f
+https://github.com/user-attachments/assets/3a6a2acc-4305-4006-9600-d5b8c7599663
 
-https://github.com/user-attachments/assets/5cc92d38-00e4-4614-b9f3-c0e9f3e292c3
+https://github.com/user-attachments/assets/df3f6d44-da88-4576-8128-d944d7041942
 
 ## Compatibility
 - [x] Google Play Store
