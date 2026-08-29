@@ -13,6 +13,7 @@ https://github.com/user-attachments/assets/df3f6d44-da88-4576-8128-d944d7041942
 ## Compatibility
 - [x] Google Play Store
 - [x] Bazaar (Iranian App Market)
+- [x] Myket (Iranian App Market)
 - [ ] Samsung
 - [ ] Amazon
 - [ ] Huawei
