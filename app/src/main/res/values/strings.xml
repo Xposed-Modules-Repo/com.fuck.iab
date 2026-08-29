@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">FuckIAB</string>
+    <string name="description">An Xposed module that basically fucks in app billing.</string>
+</resources>
