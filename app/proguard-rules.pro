@@ -3,4 +3,4 @@
 -keep,allowoptimization,allowobfuscation public class * extends io.github.libxposed.api.XposedModule {
     public <init>();
 }
--repackageclasses 'fg'
+-repackageclasses 'fh'
