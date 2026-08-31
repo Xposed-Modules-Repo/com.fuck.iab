@@ -12,7 +12,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true">
         <activity
-            android:name="fh.a"
+            android:name="fh.d"
             android:exported="true"
             android:theme="@style/theme" />
     </application>

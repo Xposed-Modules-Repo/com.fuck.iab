@@ -31,7 +31,6 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.aar'])
     implementation libs.androidx.annotation
     compileOnly(libs.libxposed)
     implementation libs.dexkit
