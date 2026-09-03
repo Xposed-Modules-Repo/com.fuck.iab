@@ -84,15 +84,50 @@ fun createDetailsList(bundle: Bundle, type: String): ArrayList<String> {
             put(price_currency_code(), USD())
             put(skuDetailsToken(), randomToken())
 
-            put(
-                oneTimePurchaseOfferDetails(),
-                JSONObject().apply {
-                    put(offerIdToken(), randomToken())
-                    put(priceAmountMicros(), 0)
-                    put(priceCurrencyCode(), USD())
-                    put(formattedPrice(), zero_dollars())
-                }
-            )
+            if (type == subs()) {
+                put(
+                    subscriptionOfferDetails(),
+                    JSONArray().apply {
+                        put(
+                            JSONObject().apply {
+                                put(offerIdToken(), randomToken())
+                                put(basePlanId(), id)
+                                put(offerId(), id)
+
+                                put(
+                                    pricingPhases(),
+                                    JSONArray().apply {
+                                        put(
+                                            JSONObject().apply {
+                                                put(priceAmountMicros(), 0)
+                                                put(priceCurrencyCode(), USD())
+                                                put(formattedPrice(), zero_dollars())
+                                                put(billingPeriod(), P1M())
+                                                put(recurrenceMode(), 1)
+                                            }
+                                        )
+                                    }
+                                )
+
+                                put(
+                                    offerTags(),
+                                    JSONArray()
+                                )
+                            }
+                        )
+                    }
+                )
+            } else {
+                put(
+                    oneTimePurchaseOfferDetails(),
+                    JSONObject().apply {
+                        put(offerIdToken(), randomToken())
+                        put(priceAmountMicros(), 0)
+                        put(priceCurrencyCode(), USD())
+                        put(formattedPrice(), zero_dollars())
+                    }
+                )
+            }
         }
 
         result.add(json.toString())

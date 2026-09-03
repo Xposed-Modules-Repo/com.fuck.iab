@@ -124,8 +124,8 @@ open class MainModule : XposedModule() {
 
 
                         val isGoogle = componentName.packageName == com_android_vending() && componentName.className == com_google_android_finsky_billing_iab_InAppBillingService()
-                        val isBazaar = componentName.packageName == com_farsitel_bazaar() && componentName.className == com_farsitel_bazaar_inappbilling_service_InAppBillingService()
-                        val isMyket = componentName.packageName == ir_mservices_market() && componentName.className == ir_mservices_market_service_InAppBillingService()
+                        val isBazaar = !isGoogle && componentName.packageName == com_farsitel_bazaar() && componentName.className == com_farsitel_bazaar_inappbilling_service_InAppBillingService()
+                        val isMyket = !isGoogle && !isBazaar && componentName.packageName == ir_mservices_market() && componentName.className == ir_mservices_market_service_InAppBillingService()
 
                         if (isGoogle || isBazaar || isMyket) {
                             val fakeBinder = object : Binder(), IInterface {
@@ -171,15 +171,33 @@ open class MainModule : XposedModule() {
                                                 val type = data.readString() // type
                                                 data.readInt() // bundle
                                                 val bundle1 = Bundle.CREATOR.createFromParcel(data)
-
+//
+//                                                log("type is $type")
+//                                                log("bundle:")
+//                                                dumpBundle(bundle1)
+//
                                                 val b = Bundle().apply {
                                                     putStringArrayList(DETAILS_LIST(), createDetailsList(bundle1, type!!))
                                                     putInt(RESPONSE_CODE(), 0)
                                                 }
+//                                                log("response bundle:")
+//                                                dumpBundle(b)
                                                 reply!!.writeNoException()
                                                 reply.writeInt(1)
                                                 b.writeToParcel(reply, 1)
                                                 return true
+
+//                                                val result = realBinder.transact(code, data, reply, flags)
+//                                                try {
+//                                                    reply!!.readException()
+//                                                    reply.readInt() // bundle
+//                                                    val bundleResult = Bundle.CREATOR.createFromParcel(reply)
+//                                                    log("bundle_result:")
+//                                                    dumpBundle(bundleResult)
+//                                                } finally {
+//                                                    reply!!.setDataPosition(0)
+//                                                }
+//                                                return result
                                             }
 
                                             3, 8 -> {
@@ -245,6 +263,7 @@ open class MainModule : XposedModule() {
                                                 // getPurchases
                                                 data.readString() // package name
                                                 val type = data.readString()
+//                                                log("11: type is $type")
                                                 val b = Bundle().apply {
                                                     val inAppPurchaseItemList = arrayListOf<String>()
                                                     val inAppPurchaseDataList = arrayListOf<String>()
@@ -273,6 +292,9 @@ open class MainModule : XposedModule() {
                                                         inAppPurchaseDataList.add(json.toString())
                                                         inAppDataSignatureList.add(signature)
                                                     }
+
+//                                                    log("11: INAPP_PURCHASE_ITEM_LIST: ${inAppPurchaseItemList.joinToString()}")
+//                                                    log("11: INAPP_PURCHASE_DATA_LIST: ${inAppPurchaseDataList.joinToString()}")
 
                                                     putStringArrayList(INAPP_PURCHASE_ITEM_LIST(), inAppPurchaseItemList)
                                                     putInt(RESPONSE_CODE(), 0)

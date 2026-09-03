@@ -702,3 +702,84 @@ fun ir_mservices_market_service_InAppBillingService(): String {
     }
     return sb.toString()
 }
+
+fun subscriptionOfferDetails(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(222, 216, 207, 222, 206, 223, 196, 221, 217, 196, 194, 195, 226, 203, 203, 200, 223, 233, 200, 217, 204, 196, 193, 222)
+    for (num in arr) {
+        sb.append((num.xor(173)).toChar())
+    }
+    return sb.toString()
+}
+
+fun basePlanId(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(142, 141, 159, 137, 188, 128, 141, 130, 165, 136)
+    for (num in arr) {
+        sb.append((num.xor(236)).toChar())
+    }
+    return sb.toString()
+}
+
+fun offerId(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(110, 103, 103, 100, 115, 72, 101)
+    for (num in arr) {
+        sb.append((num.xor(1)).toChar())
+    }
+    return sb.toString()
+}
+
+fun pricingPhases(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(87, 85, 78, 68, 78, 73, 64, 119, 79, 70, 84, 66, 84)
+    for (num in arr) {
+        sb.append((num.xor(39)).toChar())
+    }
+    return sb.toString()
+}
+
+fun billingPeriod(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(197, 206, 203, 203, 206, 201, 192, 247, 194, 213, 206, 200, 195)
+    for (num in arr) {
+        sb.append((num.xor(167)).toChar())
+    }
+    return sb.toString()
+}
+
+fun recurrenceMode(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(249, 238, 232, 254, 249, 249, 238, 229, 232, 238, 198, 228, 239, 238)
+    for (num in arr) {
+        sb.append((num.xor(139)).toChar())
+    }
+    return sb.toString()
+}
+
+fun offerTags(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(43, 34, 34, 33, 54, 16, 37, 35, 55)
+    for (num in arr) {
+        sb.append((num.xor(68)).toChar())
+    }
+    return sb.toString()
+}
+
+fun P1M(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(5, 100, 24)
+    for (num in arr) {
+        sb.append((num.xor(85)).toChar())
+    }
+    return sb.toString()
+}
+
+fun subs(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(161, 167, 176, 161)
+    for (num in arr) {
+        sb.append((num.xor(210)).toChar())
+    }
+    return sb.toString()
+}

@@ -20,7 +20,7 @@ https://github.com/user-attachments/assets/df3f6d44-da88-4576-8128-d944d7041942
 
 ## Disclaimer
 
-This project is for educational and research purposes only. It is not intended for misuse or unauthorized access. Please use it responsibly and only with proper authorization. The author is not responsible for any misuse or damage caused by the use of this project.
+This project is for educational and research purposes only. Please use it responsibly and only with proper authorization. The author is not responsible for any misuse or damage caused by the use of this project.
 
 ---
 
