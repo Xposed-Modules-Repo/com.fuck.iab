@@ -783,3 +783,12 @@ fun subs(): String {
     }
     return sb.toString()
 }
+
+fun Base64_decoding_failed(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(27, 56, 42, 60, 111, 109, 121, 61, 60, 58, 54, 61, 48, 55, 62, 121, 63, 56, 48, 53, 60, 61)
+    for (num in arr) {
+        sb.append((num.xor(89)).toChar())
+    }
+    return sb.toString()
+}

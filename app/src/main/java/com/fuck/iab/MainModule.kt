@@ -67,7 +67,7 @@ open class MainModule : XposedModule() {
 
                 DexKitBridge.create(param.applicationInfo.sourceDir).use { bridge ->
                     hookOnServiceConnected(param, bridge)
-                    hookBazaarSignatureVerifyMethods(param, bridge)
+                    hookSignatureVerificationMethods(param, bridge)
 
                     onInitialized(app, param, bridge)
                 }
@@ -147,6 +147,7 @@ open class MainModule : XposedModule() {
                                         data.enforceInterface(com_android_vending_billing_IInAppBillingService())
 
                                         val apiVersion = data.readInt()
+//                                        log("api version is $apiVersion")
 
                                         when (code) {
                                             1 -> {
@@ -163,6 +164,16 @@ open class MainModule : XposedModule() {
                                                     reply.writeInt(0)
                                                 }
                                                 return true
+
+//                                                val result = realBinder.transact(code, data, reply, flags)
+//                                                try {
+//                                                    reply!!.readException()
+//                                                    val i = reply.readInt()
+//                                                    log("1: real result = $i")
+//                                                } finally {
+//                                                    reply!!.setDataPosition(0)
+//                                                }
+//                                                return result
                                             }
 
                                             2, 901 -> {
@@ -172,8 +183,8 @@ open class MainModule : XposedModule() {
                                                 data.readInt() // bundle
                                                 val bundle1 = Bundle.CREATOR.createFromParcel(data)
 //
-//                                                log("type is $type")
-//                                                log("bundle:")
+//                                                log("901: type is $type")
+//                                                log("901: bundle:")
 //                                                dumpBundle(bundle1)
 //
                                                 val b = Bundle().apply {
@@ -192,7 +203,7 @@ open class MainModule : XposedModule() {
 //                                                    reply!!.readException()
 //                                                    reply.readInt() // bundle
 //                                                    val bundleResult = Bundle.CREATOR.createFromParcel(reply)
-//                                                    log("bundle_result:")
+//                                                    log("901: bundle_result:")
 //                                                    dumpBundle(bundleResult)
 //                                                } finally {
 //                                                    reply!!.setDataPosition(0)
@@ -368,12 +379,15 @@ open class MainModule : XposedModule() {
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    private fun hookBazaarSignatureVerifyMethods(param: PackageLoadedParam, bridge: DexKitBridge) {
+    private fun hookSignatureVerificationMethods(param: PackageLoadedParam, bridge: DexKitBridge) {
         var m = bridge.findMethod {
             matcher {
                 returnType = boolean()
-                paramTypes(String::class.java, String::class.java, String::class.java)
-                usingStrings(Purchase_verification_failed())
+                // paramTypes(String::class.java, String::class.java, String::class.java)
+                usingStrings(
+                    Purchase_verification_failed(),
+                    Base64_decoding_failed()
+                )
             }
         }.singleOrNull()
         if (m != null) {
@@ -383,7 +397,6 @@ open class MainModule : XposedModule() {
                 true
             }
         }
-
 
         m = bridge.findMethod {
             matcher {
@@ -419,6 +432,5 @@ open class MainModule : XposedModule() {
         } catch (e: Exception) {
 
         }
-
     }
 }
