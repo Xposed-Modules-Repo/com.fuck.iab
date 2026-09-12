@@ -41,7 +41,8 @@ scripts/
 ### Custom Script Examples
 
 - Subway Surfers (`com.kiloo.subwaysurf`) - Infinite coins (just for fun, added as an example)
-- ...
+
+<img width="270" height="362" alt="ss0" src="https://github.com/user-attachments/assets/8b527efd-b4d9-47e8-a213-e09ef9f937c1" />
 
 ## Disclaimer
 
