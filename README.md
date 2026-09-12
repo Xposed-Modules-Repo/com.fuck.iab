@@ -44,6 +44,15 @@ scripts/
 
 <img width="270" height="362" alt="ss0" src="https://github.com/user-attachments/assets/8b527efd-b4d9-47e8-a213-e09ef9f937c1" />
 
+### Contributing Custom Scripts
+
+Want to add support for another game or app? Feel free to open a pull request with a custom script.
+
+Please include:
+- The package name of the app/game
+- The custom script
+- A brief description of what it does
+
 ## Disclaimer
 
 This project is for educational and research purposes only. Please use it responsibly and only with proper authorization. The author is not responsible for any misuse or damage caused by the use of this project.
