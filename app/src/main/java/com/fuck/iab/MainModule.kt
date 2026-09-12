@@ -6,12 +6,11 @@ import android.content.ComponentName
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.os.Binder
-import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.os.IInterface
 import android.os.Parcel
-import androidx.annotation.RequiresApi
+import com.fuck.iab.NativeBridge.startScript
 import fh.d
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface
@@ -20,6 +19,16 @@ import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
 import org.json.JSONObject
 import org.luckypray.dexkit.DexKitBridge
 import java.security.PublicKey
+import java.util.zip.ZipFile
+
+object NativeBridge {
+    init {
+        System.loadLibrary(nativehook())
+    }
+
+    @JvmStatic
+    external fun startScript(packageName: String, scriptSource: String)
+}
 
 open class MainModule : XposedModule() {
 
@@ -32,6 +41,8 @@ open class MainModule : XposedModule() {
             System.loadLibrary(dexkit())
         }
     }
+
+//    private fun log(text: String) = log(Log.INFO, TAG, text)
 
     override fun onModuleLoaded(param: ModuleLoadedParam) {
 //        log(Log.INFO, TAG, "onModuleLoaded: " + param.processName)
@@ -47,10 +58,23 @@ open class MainModule : XposedModule() {
 
     }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onPackageLoaded(param: PackageLoadedParam) {
 //        log(Log.INFO, TAG, "onPackageLoaded: " + param.packageName)
 //        log(Log.INFO, TAG, "default classloader is " + param.defaultClassLoader)
+
+        if (!param.isFirstPackage) return
+
+        val packageName = param.packageName
+        val global = readScriptForPackage(global())
+        val scriptSource = readScriptForPackage(packageName)
+
+        if (global != null) {
+            if (scriptSource == null) {
+                startScript(packageName, global)
+            } else {
+                startScript(packageName, "$global\n$scriptSource")
+            }
+        }
 
         try {
             val applicationClassName = param.applicationInfo.className ?: android_app_Application()
@@ -93,9 +117,6 @@ open class MainModule : XposedModule() {
 //        log(Log.INFO, TAG, "onSystemServerStarting, system classloader: " + param.classLoader)
     }
 
-//    private fun log(text: String) = log(Log.INFO, TAG, text)
-
-    @RequiresApi(Build.VERSION_CODES.Q)
     private fun hookOnServiceConnected(param: PackageLoadedParam, bridge: DexKitBridge) {
         try {
             val classes = bridge.findClass {
@@ -218,6 +239,8 @@ open class MainModule : XposedModule() {
                                                 val type = data.readString()
                                                 val developerPayload = data.readString()
 
+//                                                log("sku = $sku")
+
                                                 val purchaseToken = randomPurchaseToken()
                                                 val signature = randomSignature()
 
@@ -294,7 +317,7 @@ open class MainModule : XposedModule() {
 
                                                         json.put(purchaseToken(), key)
                                                         json.put(autoRenewing(), true)
-                                                        json.put(acknowledged(), false)
+                                                        json.put(acknowledged(), true)
                                                         json.put(quantity(), 1)
 
                                                         val signature = json.remove(signature()) as String
@@ -378,7 +401,6 @@ open class MainModule : XposedModule() {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
     private fun hookSignatureVerificationMethods(param: PackageLoadedParam, bridge: DexKitBridge) {
         var m = bridge.findMethod {
             matcher {
@@ -431,6 +453,20 @@ open class MainModule : XposedModule() {
             }
         } catch (e: Exception) {
 
+        }
+    }
+
+    private fun readScriptForPackage(packageName: String): String? {
+        val apkPath = this.moduleApplicationInfo.sourceDir
+        return try {
+            ZipFile(apkPath).use { zip ->
+                val entry = zip.getEntry("${assets_scripts_()}$packageName${_js()}")
+                    ?: return null
+                zip.getInputStream(entry).bufferedReader(Charsets.UTF_8).use { it.readText() }
+            }
+        } catch (e: Exception) {
+//            log("Failed to read script for $packageName: ${e.message}")
+            null
         }
     }
 }

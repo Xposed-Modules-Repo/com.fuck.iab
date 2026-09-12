@@ -8,12 +8,16 @@ android {
 
     defaultConfig {
         applicationId "com.fuck.iab"
-        minSdk 26
+        minSdk 29
         targetSdk 37
-        versionCode 13
-        versionName "1.2.8"
+        versionCode 14
+        versionName "1.3.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        ndk {
+            debugSymbolLevel 'none'
+        }
     }
 
     buildTypes {
@@ -24,14 +28,95 @@ android {
             proguardFiles 'proguard-rules.pro'
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
+
+    splits {
+        abi {
+            enable true
+            reset()
+            include "arm64-v8a", "armeabi-v7a", "x86", "x86_64"
+            universalApk true
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+        }
+    }
+
+    ndkVersion = "30.0.16248370"
 }
 
 dependencies {
-    implementation libs.androidx.annotation
     compileOnly(libs.libxposed)
     implementation libs.dexkit
+}
+
+import javax.inject.Inject
+
+abstract class CompileFridaScriptsTask extends DefaultTask {
+
+    @Inject
+    abstract ExecOperations getExecOperations()
+
+    @Internal
+    abstract DirectoryProperty getScriptsSrcDir()
+
+    @Internal
+    abstract DirectoryProperty getScriptsWorkingDir()
+
+    @Internal
+    abstract DirectoryProperty getOutputDir()
+
+    @TaskAction
+    void run() {
+        def srcDir = scriptsSrcDir.get().asFile
+        def workDir = scriptsWorkingDir.get().asFile
+        def outDir = outputDir.get().asFile
+
+        outDir.mkdirs()
+
+        def isWindows = org.gradle.internal.os.OperatingSystem.current().isWindows()
+        def npxCommand = isWindows ? 'npx.cmd' : 'npx'
+
+        def scriptFiles = srcDir.listFiles { f ->
+            f.isFile() && f.name.endsWith('.ts')
+        } ?: []
+
+        if (scriptFiles.size() == 0) {
+            logger.warn("No .ts files found under ${srcDir.path}")
+        }
+
+        scriptFiles.each { entry ->
+            def packageName = entry.name - '.ts'
+            def outputFile = new File(outDir, "${packageName}.js")
+
+            logger.lifecycle("Compiling: ${entry.name} -> assets/scripts/${packageName}.js")
+
+            execOperations.exec {
+                workingDir = workDir
+                commandLine npxCommand, 'frida-compile',
+                        entry.absolutePath,
+                        '-o', outputFile.absolutePath,
+                        '-c', '-S', '-B', 'iife'
+            }
+        }
+    }
+}
+
+tasks.register('compileFridaScripts', CompileFridaScriptsTask) {
+    group = 'frida'
+    description = 'Compile each TypeScript script into assets/scripts/<package>.js'
+
+    scriptsSrcDir.set(layout.projectDirectory.dir('../scripts/src'))
+    scriptsWorkingDir.set(layout.projectDirectory.dir('../scripts'))
+    outputDir.set(layout.projectDirectory.dir('src/main/assets/scripts'))
+
+    inputs.dir(scriptsSrcDir)
+    outputs.dir(outputDir)
 }

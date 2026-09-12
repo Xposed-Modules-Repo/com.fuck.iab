@@ -18,6 +18,31 @@ https://github.com/user-attachments/assets/df3f6d44-da88-4576-8128-d944d7041942
 - [ ] Amazon
 - [ ] Huawei
 
+## Features
+
+- Support for restoring previously purchased items.
+- Custom Frida Scripts.
+
+## Custom Frida Scripts
+
+FuckIAB supports custom Frida scripts.
+
+A global script is loaded for all applications, followed by an app-specific script when available.
+
+```
+scripts/
+├── global.js
+├── com.kiloo.subwaysurf.js
+└── com.example.game.js
+```
+
+`global.js` runs for all apps. If an app has its own script, it runs after the global script.
+
+### Custom Script Examples
+
+- Subway Surfers (`com.kiloo.subwaysurf`) - Infinite coins (just for fun, added as an example)
+- ...
+
 ## Disclaimer
 
 This project is for educational and research purposes only. Please use it responsibly and only with proper authorization. The author is not responsible for any misuse or damage caused by the use of this project.

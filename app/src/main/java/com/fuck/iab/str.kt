@@ -792,3 +792,39 @@ fun Base64_decoding_failed(): String {
     }
     return sb.toString()
 }
+
+fun nativehook(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(51, 60, 41, 52, 43, 56, 53, 50, 50, 54)
+    for (num in arr) {
+        sb.append((num.xor(93)).toChar())
+    }
+    return sb.toString()
+}
+
+fun assets_scripts_(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(52, 38, 38, 48, 33, 38, 122, 38, 54, 39, 60, 37, 33, 38, 122)
+    for (num in arr) {
+        sb.append((num.xor(85)).toChar())
+    }
+    return sb.toString()
+}
+
+fun _js(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(75, 15, 22)
+    for (num in arr) {
+        sb.append((num.xor(101)).toChar())
+    }
+    return sb.toString()
+}
+
+fun global(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(186, 177, 178, 191, 188, 177)
+    for (num in arr) {
+        sb.append((num.xor(221)).toChar())
+    }
+    return sb.toString()
+}
