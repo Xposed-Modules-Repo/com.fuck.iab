@@ -11,5 +11,5 @@ npm run build -- com.kiloo.subwaysurf
 
 ## Run
 ```
-frida -f com.kiloo.subwaysurf -l ../app/src/main/assets/scripts/com.kiloo.subwaysurf.js
+frida -U -f com.kiloo.subwaysurf -l ../app/src/main/assets/scripts/com.kiloo.subwaysurf.js
 ```
