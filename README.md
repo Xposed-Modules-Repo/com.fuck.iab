@@ -25,8 +25,6 @@ https://github.com/user-attachments/assets/df3f6d44-da88-4576-8128-d944d7041942
 
 ## Custom Frida Scripts
 
-FuckIAB supports custom Frida scripts.
-
 A global script is loaded for all applications, followed by an app-specific script when available.
 
 ```
@@ -47,6 +45,8 @@ scripts/
 ### Contributing Custom Scripts
 
 Want to add support for another game or app? Feel free to open a pull request with a custom script.
+
+Scripts should preferably be related to in-app purchase functionality.
 
 Please include:
 - The package name of the app/game
