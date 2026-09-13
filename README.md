@@ -46,7 +46,7 @@ scripts/
 
 Want to add support for another game or app? Feel free to open a pull request with a custom script.
 
-Scripts should focus on in-app purchase functionality (unlocking premium content, bypassing purchase checks, etc.) rather than unrelated modifications.
+Scripts should focus on in-app purchase functionality (unlocking premium content, bypassing purchase checks, etc.)
 
 Please include:
 - The package name of the app/game
