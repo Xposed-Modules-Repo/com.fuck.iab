@@ -1,11 +1,21 @@
 import { execSync } from "node:child_process";
-import { readdirSync, existsSync } from "node:fs";
+import { readdirSync, existsSync, unlinkSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SRC_DIR = path.join(__dirname, "src");
 const OUT_DIR = path.join(__dirname, "..", "app", "src", "main", "assets", "scripts");
+
+function cleanOutputDir() {
+    if (!existsSync(OUT_DIR)) return;
+
+    const staleFiles = readdirSync(OUT_DIR).filter(f => f.endsWith(".js"));
+    staleFiles.forEach(f => {
+        unlinkSync(path.join(OUT_DIR, f));
+        console.log(`Removed stale: ${f}`);
+    });
+}
 
 function compile(packageName) {
     const input = path.join(SRC_DIR, `${packageName}.ts`);
@@ -25,6 +35,8 @@ function compile(packageName) {
 const args = process.argv.slice(2);
 
 if (args.includes("--all") || args.length === 0) {
+    cleanOutputDir();
+
     const files = readdirSync(SRC_DIR).filter(f => f.endsWith(".ts"));
     if (files.length === 0) {
         console.warn("No .ts files found.");

@@ -81,6 +81,12 @@ abstract class CompileFridaScriptsTask extends DefaultTask {
 
         outDir.mkdirs()
 
+        def staleFiles = outDir.listFiles { f -> f.isFile() && f.name.endsWith('.js') } ?: []
+        staleFiles.each { f ->
+            logger.lifecycle("Removed stale: ${f.name}")
+            f.delete()
+        }
+
         def isWindows = org.gradle.internal.os.OperatingSystem.current().isWindows()
         def npxCommand = isWindows ? 'npx.cmd' : 'npx'
 
