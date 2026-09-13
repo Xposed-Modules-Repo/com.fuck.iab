@@ -15,7 +15,6 @@ static std::once_flag gum_init_flag;
 static std::atomic<bool> script_started{false};
 
 
-
 static void on_message(const gchar *message, GBytes *data, gpointer user_data) {
     const char *key = R"("payload":")";
 
