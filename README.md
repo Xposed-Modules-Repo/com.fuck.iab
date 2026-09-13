@@ -25,7 +25,7 @@ https://github.com/user-attachments/assets/df3f6d44-da88-4576-8128-d944d7041942
 
 ## Custom Frida Scripts
 
-A global script is loaded for all applications, followed by an app-specific script when available.
+Scripts live under `scripts/src/` and are named after the target app's package name:
 
 ```
 scripts/
@@ -34,7 +34,7 @@ scripts/
 └── com.example.game.js
 ```
 
-`global.js` runs for all apps. If an app has its own script, it runs after the global script.
+`global.ts` is loaded for every app, before anything else. If a matching `<package_name>.ts` file also exists, it runs right after the global script. Apps without a dedicated script still get the global one.
 
 ### Custom Script Examples
 
