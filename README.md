@@ -34,7 +34,7 @@ scripts/
 └── com.example.game.js
 ```
 
-`global.ts` is loaded for every app, before anything else. If a matching `<package_name>.ts` file also exists, it runs right after the global script. Apps without a dedicated script still get the global one.
+`global.ts` is loaded for every app, before anything else. If a matching `<package_name>.ts` file also exists, it runs right after the global script.
 
 ### Custom Script Examples
 
