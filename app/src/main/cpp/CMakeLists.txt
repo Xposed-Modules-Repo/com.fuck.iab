@@ -11,6 +11,12 @@ add_library(
         native_hook.cpp
 )
 
+target_include_directories(
+        nativehook
+        PRIVATE
+        ${CMAKE_SOURCE_DIR}/../libs/include
+)
+
 add_library(frida-gumjs STATIC IMPORTED)
 
 set_target_properties(
