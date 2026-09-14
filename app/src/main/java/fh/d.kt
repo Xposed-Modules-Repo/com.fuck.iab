@@ -11,6 +11,7 @@ import com.fuck.iab.RESPONSE_CODE
 import com.fuck.iab.data
 import com.fuck.iab.signature
 
+// fake billing activity
 class d : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {

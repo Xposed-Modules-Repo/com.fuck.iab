@@ -1,6 +1,6 @@
-# FuckIAB
+# FKIAB
 
-An Xposed module that basically fucks in app billing.
+An Xposed module for hooking and customizing in-app billing functionality.
 
 ## Showcase
 

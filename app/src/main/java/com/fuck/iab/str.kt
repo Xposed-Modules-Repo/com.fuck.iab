@@ -828,3 +828,147 @@ fun global(): String {
     }
     return sb.toString()
 }
+
+fun Not_connected_to_framework_yet(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(121, 88, 67, 23, 84, 88, 89, 89, 82, 84, 67, 82, 83, 23, 67, 88, 23, 81, 69, 86, 90, 82, 64, 88, 69, 92, 23, 78, 82, 67)
+    for (num in arr) {
+        sb.append((num.xor(55)).toChar())
+    }
+    return sb.toString()
+}
+
+fun user_script_js(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(235, 237, 251, 236, 193, 237, 253, 236, 247, 238, 234, 176, 244, 237)
+    for (num in arr) {
+        sb.append((num.xor(158)).toChar())
+    }
+    return sb.toString()
+}
+
+fun Script_saved(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(216, 232, 249, 226, 251, 255, 171, 248, 234, 253, 238, 239)
+    for (num in arr) {
+        sb.append((num.xor(139)).toChar())
+    }
+    return sb.toString()
+}
+
+fun Error__(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(38, 17, 17, 12, 17, 89, 67)
+    for (num in arr) {
+        sb.append((num.xor(99)).toChar())
+    }
+    return sb.toString()
+}
+
+fun su(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(37, 35)
+    for (num in arr) {
+        sb.append((num.xor(86)).toChar())
+    }
+    return sb.toString()
+}
+
+fun _c(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(67, 13)
+    for (num in arr) {
+        sb.append((num.xor(110)).toChar())
+    }
+    return sb.toString()
+}
+
+fun logcat(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(131, 128, 136, 140, 142, 155)
+    for (num in arr) {
+        sb.append((num.xor(239)).toChar())
+    }
+    return sb.toString()
+}
+
+fun _v(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(98, 57)
+    for (num in arr) {
+        sb.append((num.xor(79)).toChar())
+    }
+    return sb.toString()
+}
+
+fun tag(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(176, 165, 163)
+    for (num in arr) {
+        sb.append((num.xor(196)).toChar())
+    }
+    return sb.toString()
+}
+
+fun _s(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(156, 194)
+    for (num in arr) {
+        sb.append((num.xor(177)).toChar())
+    }
+    return sb.toString()
+}
+
+fun FKIAB_V(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(29, 16, 18, 26, 25, 97, 13)
+    for (num in arr) {
+        sb.append((num.xor(91)).toChar())
+    }
+    return sb.toString()
+}
+
+fun FRIDA_V(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(107, 127, 100, 105, 108, 23, 123)
+    for (num in arr) {
+        sb.append((num.xor(45)).toChar())
+    }
+    return sb.toString()
+}
+
+fun __A_Z__(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(217, 220, 198, 170, 221, 218, 168)
+    for (num in arr) {
+        sb.append((num.xor(135)).toChar())
+    }
+    return sb.toString()
+}
+
+fun _s_(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(19, 9, 19)
+    for (num in arr) {
+        sb.append((num.xor(51)).toChar())
+    }
+    return sb.toString()
+}
+
+fun Script(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(137, 185, 168, 179, 170, 174)
+    for (num in arr) {
+        sb.append((num.xor(218)).toChar())
+    }
+    return sb.toString()
+}
+
+fun Log(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(111, 76, 68)
+    for (num in arr) {
+        sb.append((num.xor(35)).toChar())
+    }
+    return sb.toString()
+}

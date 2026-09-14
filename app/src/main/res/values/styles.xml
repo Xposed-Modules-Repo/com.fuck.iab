@@ -6,4 +6,11 @@
         <item name="android:backgroundDimEnabled">false</item>
         <item name="android:windowBackground">@android:color/transparent</item>
     </style>
+
+
+    <style name="Base.Theme.F" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="myBackground">?android:windowBackground</item>
+    </style>
+
+    <style name="Theme.F" parent="Base.Theme.F" />
 </resources>

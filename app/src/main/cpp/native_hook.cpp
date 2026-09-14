@@ -8,7 +8,8 @@
 #include <thread>
 #include <jni.h>
 
-#define LOG(...) __android_log_print(ANDROID_LOG_ERROR, "FRIDA", __VA_ARGS__)
+#define LOG(...) __android_log_print(ANDROID_LOG_ERROR, "FKIAB", __VA_ARGS__)
+#define LOG_FRIDA(...) __android_log_print(ANDROID_LOG_ERROR, "FRIDA", __VA_ARGS__)
 
 static GumScript *script = nullptr;
 static std::once_flag gum_init_flag;
@@ -27,12 +28,12 @@ static void on_message(const gchar *message, GBytes *data, gpointer user_data) {
 
         if (end) {
             std::string payload(start, end - start);
-            LOG("%s", payload.c_str());
+            LOG_FRIDA("%s", payload.c_str());
             return;
         }
     }
 
-    LOG("%s", message);
+    LOG_FRIDA("%s", message);
 }
 
 static void startFridaScript(const std::string &packageName, const std::string &jsSource) {
