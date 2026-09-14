@@ -17,6 +17,7 @@
             android:layout_height="wrap_content"
             android:fontFamily="monospace"
             android:padding="8dp"
+            android:textIsSelectable="true"
             android:textSize="14sp" />
 
     </ScrollView>
