@@ -10,11 +10,13 @@ import androidx.fragment.app.Fragment
 import com.fuck.iab.R
 
 // script fragment
-class e(var onInitialized: (() -> Unit)? = null) : Fragment() {
+class e(
+    var onInitialized: (() -> Unit)? = null,
+    var onSaveButtonClicked: () -> Unit
+) : Fragment() {
 
     lateinit var scriptInput: EditText
     lateinit var saveButton: Button
-    lateinit var onSaveButtonClicked: () -> Unit
 
     override fun onCreateView(
         inflater: LayoutInflater,

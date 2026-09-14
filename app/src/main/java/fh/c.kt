@@ -50,8 +50,8 @@ class c : AppCompatActivity(), g.ServiceStateListener {
 
     private lateinit var dummyStBg: View
 
-    private val scriptFragment = e({ loadUserScript() })
-    private val logFragment = f({ startLogcatStreaming() })
+    private var scriptFragment = e({ loadUserScript() }, { saveUserScript() })
+    private var logFragment = f({ startLogcatStreaming() })
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,10 +72,6 @@ class c : AppCompatActivity(), g.ServiceStateListener {
             dummyStBg.setLayoutParams(lp)
         }
 
-        scriptFragment.onSaveButtonClicked = {
-            saveUserScript()
-        }
-
         viewPager = findViewById(R.id.viewPager)
         viewPager.adapter = object : FragmentStateAdapter(this) {
 
@@ -83,8 +79,15 @@ class c : AppCompatActivity(), g.ServiceStateListener {
 
             override fun createFragment(position: Int): Fragment {
                 return when (position) {
-                    0 -> scriptFragment
-                    else -> logFragment
+                    0 -> {
+                        scriptFragment = e({ loadUserScript() }, { saveUserScript() })
+                        scriptFragment
+                    }
+
+                    else -> {
+                        logFragment = f({ startLogcatStreaming() })
+                        logFragment
+                    }
                 }
             }
         }
@@ -117,7 +120,7 @@ class c : AppCompatActivity(), g.ServiceStateListener {
     private fun loadUserScript() {
         val service = xposedService ?: return
         try {
-            val pfd = service.openRemoteFile("user_script.js")
+            val pfd = service.openRemoteFile(user_script_js())
             val content = FileInputStream(pfd.fileDescriptor).use {
                 it.readBytes().toString(Charsets.UTF_8)
             }
@@ -146,10 +149,9 @@ class c : AppCompatActivity(), g.ServiceStateListener {
     }
 
     private fun startLogcatStreaming() {
-        if (logcatJob != null) {
-            return
-        }
-        logFragment.logcatView.text = ""
+        logcatJob?.cancel()
+
+        logFragment.logcatView?.text = ""
 
         logcatJob = lifecycleScope.launch(Dispatchers.IO) {
             try {
