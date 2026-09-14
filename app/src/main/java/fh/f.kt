@@ -9,7 +9,6 @@ import android.widget.CheckBox
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
-import com.fuck.iab.Error__
 import com.fuck.iab.R
 
 // log fragment
