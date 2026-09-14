@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.os.IBinder
 import android.os.IInterface
 import android.os.Parcel
+import android.util.Log
 import com.fuck.iab.NativeBridge.startScript
 import fh.d
 import io.github.libxposed.api.XposedModule
@@ -18,8 +19,11 @@ import io.github.libxposed.api.XposedModuleInterface.ModuleLoadedParam
 import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
 import org.json.JSONObject
 import org.luckypray.dexkit.DexKitBridge
+import java.io.FileInputStream
+import java.io.FileNotFoundException
 import java.security.PublicKey
 import java.util.zip.ZipFile
+import androidx.core.content.edit
 
 object NativeBridge {
     init {
@@ -30,12 +34,12 @@ object NativeBridge {
     external fun startScript(packageName: String, scriptSource: String)
 }
 
-open class MainModule : XposedModule() {
+class MainModule : XposedModule() {
 
     lateinit var app: Application
 
     companion object {
-//        const val TAG = "FuckIAB"
+//        const val TAG = "FKIAB"
 
         init {
             System.loadLibrary(dexkit())
@@ -54,10 +58,6 @@ open class MainModule : XposedModule() {
 //        log(Log.INFO, TAG, "api protection: " + hasProp(PROP_RT_API_PROTECTION))
     }
 
-    protected open fun onInitialized(app: Application, param: PackageLoadedParam, bridge: DexKitBridge) {
-
-    }
-
     override fun onPackageLoaded(param: PackageLoadedParam) {
 //        log(Log.INFO, TAG, "onPackageLoaded: " + param.packageName)
 //        log(Log.INFO, TAG, "default classloader is " + param.defaultClassLoader)
@@ -66,42 +66,39 @@ open class MainModule : XposedModule() {
 
         val packageName = param.packageName
         val global = readScriptForPackage(global())
-        val scriptSource = readScriptForPackage(packageName)
+        val userScript = readUserScript()
+        val appScript = readScriptForPackage(packageName)
 
-        if (global != null) {
-            if (scriptSource == null) {
-                startScript(packageName, global)
-            } else {
-                startScript(packageName, "$global\n$scriptSource")
-            }
-        }
+        val combined = buildString {
+            global?.let { append(it); append("\n") }
+            userScript?.let { append(it); append("\n") }
+            appScript?.let { append(it) }
+        }.trim()
+
+
 
         try {
             val applicationClassName = param.applicationInfo.className ?: android_app_Application()
-
             val applicationClass = param.defaultClassLoader.loadClass(applicationClassName)
-
             val onCreate = applicationClass.getMethod(onCreate())
 
-//            log("hooking ${getMethodAsString(onCreate)}")
             hook(onCreate).intercept { chain ->
                 app = chain.thisObject as Application
 
-//                log("app apk: ${param.applicationInfo.sourceDir}")
+                if (combined.isNotEmpty()) {
+                    startScript(packageName, combined)
+                }
 
                 DexKitBridge.create(param.applicationInfo.sourceDir).use { bridge ->
                     hookOnServiceConnected(param, bridge)
                     hookSignatureVerificationMethods(param, bridge)
-
-                    onInitialized(app, param, bridge)
                 }
-
                 chain.proceed()
             }
         } catch (e: Exception) {
-//            log(Log.ERROR, TAG, e.message!!)
-//            log(Log.ERROR, TAG, e.stackTrace.joinToString("\n"))
+
         }
+
     }
 
     override fun onPackageReady(param: XposedModuleInterface.PackageReadyParam) {
@@ -263,7 +260,7 @@ open class MainModule : XposedModule() {
                                                 }
 
                                                 val prefs = app.getSharedPreferences(fuck_iab(), MODE_PRIVATE)
-                                                prefs.edit().putString(purchaseToken, prefsData.toString()).commit()
+                                                prefs.edit(commit = true) { putString(purchaseToken, prefsData.toString()) }
 
                                                 val intent = Intent().apply {
                                                     component = ComponentName(
@@ -466,6 +463,17 @@ open class MainModule : XposedModule() {
             }
         } catch (e: Exception) {
 //            log("Failed to read script for $packageName: ${e.message}")
+            null
+        }
+    }
+
+    private fun readUserScript(): String? {
+        return try {
+            val pfd = openRemoteFile(user_script_js())
+            FileInputStream(pfd.fileDescriptor).use { it.readBytes().toString(Charsets.UTF_8) }
+        } catch (e: FileNotFoundException) {
+            null
+        } catch (e: Exception) {
             null
         }
     }

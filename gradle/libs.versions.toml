@@ -2,10 +2,12 @@
 agp = "9.4.0"
 libxposed = "102.0.0"
 dexkit = "2.2.0"
+appcompat = "1.8.0"
 
 [libraries]
 libxposed = { module = "io.github.libxposed:api", version.ref = "libxposed" }
 dexkit = { module = "org.luckypray:dexkit", version.ref = "dexkit" }
+appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

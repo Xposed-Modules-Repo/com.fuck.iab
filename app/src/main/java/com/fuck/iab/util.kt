@@ -273,3 +273,11 @@ fun removeFromPrefs(app: Context, purchaseToken: String?) {
 //
 //        Log.d(TAG, "================================")
 //    }
+
+fun android.view.View.show() {
+    visibility = android.view.View.VISIBLE
+}
+
+fun android.view.View.hide() {
+    visibility = android.view.View.GONE
+}
