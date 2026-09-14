@@ -55,13 +55,7 @@ Please include:
 
 ## Disclaimer
 
-This project is provided for educational and research purposes only.
-
-Use it responsibly and only on applications and environments you own or have permission to test.
-
-The authors and contributors are not responsible for any misuse, damage, or violations caused by using this project.
-
-Please respect developers, software licenses, and platform rules.
+This project is provided for educational and research purposes only. Use it responsibly and only on applications and environments you own or have permission to test. The authors and contributors are not responsible for any misuse, damage, or violations caused by using this project. Please respect developers, software licenses, and platform rules.
 
 ---
 
