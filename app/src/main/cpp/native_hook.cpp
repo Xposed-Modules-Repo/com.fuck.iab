@@ -15,25 +15,91 @@ static GumScript *script = nullptr;
 static std::once_flag gum_init_flag;
 static std::atomic<bool> script_started{false};
 
+static std::string json_unescape(const std::string &input) {
+    std::string out;
+    out.reserve(input.size());
 
-static void on_message(const gchar *message, GBytes *data, gpointer user_data) {
-    const char *key = R"("payload":")";
-
-    const char *start = strstr(message, key);
-
-    if (start) {
-        start += strlen(key);
-
-        const char *end = strchr(start, '"');
-
-        if (end) {
-            std::string payload(start, end - start);
-            LOG_FRIDA("%s", payload.c_str());
-            return;
+    for (size_t i = 0; i < input.size(); ++i) {
+        char c = input[i];
+        if (c == '\\' && i + 1 < input.size()) {
+            char next = input[i + 1];
+            switch (next) {
+                case '"':  out += '"';  i++; break;
+                case '\\': out += '\\'; i++; break;
+                case 'n':  out += '\n'; i++; break;
+                case 't':  out += '\t'; i++; break;
+                case 'r':  out += '\r'; i++; break;
+                default:   out += c;         break;
+            }
+        } else {
+            out += c;
         }
     }
 
-    LOG_FRIDA("%s", message);
+    return out;
+}
+
+static bool extract_json_string_field(const char *json, const char *key, std::string &out) {
+    std::string pattern = std::string("\"") + key + "\":\"";
+    const char *start = strstr(json, pattern.c_str());
+    if (!start) return false;
+
+    start += pattern.size();
+
+    const char *p = start;
+    while (*p) {
+        if (*p == '\\' && *(p + 1) != '\0') {
+            p += 2; // skip escaped char
+            continue;
+        }
+        if (*p == '"') {
+            out = json_unescape(std::string(start, p - start));
+            return true;
+        }
+        p++;
+    }
+
+    return false;
+}
+
+static void on_message(const gchar *message, GBytes *data, gpointer user_data) {
+    std::string type;
+    std::string payload;
+
+    if (!extract_json_string_field(message, "type", type)) {
+        LOG_FRIDA("[raw] %s", message);
+        return;
+    }
+
+    if (type == "error") {
+        std::string description;
+        if (extract_json_string_field(message, "description", description)) {
+            LOG_FRIDA("[error] %s", description.c_str());
+        } else {
+            LOG_FRIDA("[error] %s", message);
+        }
+        return;
+    }
+
+    if (type == "log") {
+        if (extract_json_string_field(message, "payload", payload)) {
+            LOG_FRIDA("[log] %s", payload.c_str());
+        } else {
+            LOG_FRIDA("[log] %s", message);
+        }
+        return;
+    }
+
+    if (type == "send") {
+        if (extract_json_string_field(message, "payload", payload)) {
+            LOG_FRIDA("[send] %s", payload.c_str());
+        } else {
+            LOG_FRIDA("[send-raw] %s", message);
+        }
+        return;
+    }
+
+    LOG_FRIDA("[%s] %s", type.c_str(), message);
 }
 
 static void startFridaScript(const std::string &packageName, const std::string &jsSource) {
