@@ -12,46 +12,32 @@ import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.fuck.iab.Error__
-import com.fuck.iab.FKIAB_V
-import com.fuck.iab.FRIDA_V
 import com.fuck.iab.Log
-import com.fuck.iab.Not_connected_to_framework_yet
+import com.fuck.iab.Not_connected_to_framework
 import com.fuck.iab.R
 import com.fuck.iab.Script
 import com.fuck.iab.Script_saved
-import com.fuck.iab.__A_Z__
-import com.fuck.iab._c
-import com.fuck.iab._s
-import com.fuck.iab._s_
-import com.fuck.iab._v
-import com.fuck.iab.logcat
-import com.fuck.iab.su
-import com.fuck.iab.tag
 import com.fuck.iab.user_script_js
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import fh.g.removeServiceStateListener
 import io.github.libxposed.service.XposedService
-import io.github.libxposed.service.XposedServiceHelper
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import androidx.activity.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
 
 // main activity
 class c : AppCompatActivity(), g.ServiceStateListener {
 
     private var xposedService: XposedService? = null
-    private var logcatJob: Job? = null
     private lateinit var viewPager: ViewPager2
 
     private lateinit var dummyStBg: View
 
-    private var scriptFragment = e({ loadUserScript() }, { saveUserScript() })
-    private var logFragment = f({ startLogcatStreaming() })
+    private val viewModel: h by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,15 +65,8 @@ class c : AppCompatActivity(), g.ServiceStateListener {
 
             override fun createFragment(position: Int): Fragment {
                 return when (position) {
-                    0 -> {
-                        scriptFragment = e({ loadUserScript() }, { saveUserScript() })
-                        scriptFragment
-                    }
-
-                    else -> {
-                        logFragment = f({ startLogcatStreaming() })
-                        logFragment
-                    }
+                    0 -> e()
+                    else -> f()
                 }
             }
         }
@@ -110,33 +89,46 @@ class c : AppCompatActivity(), g.ServiceStateListener {
         ) { tab, position ->
             tab.text = if (position == 0) Script() else Log()
         }.attach()
-    }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        logcatJob?.cancel()
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.logInit.collect {
+                    viewModel.startLogcatStreaming()
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.saveRequest.collect { text ->
+                    saveUserScript(text)
+                }
+            }
+        }
     }
 
     private fun loadUserScript() {
+        if (viewModel.scriptLoaded) return
         val service = xposedService ?: return
         try {
             val pfd = service.openRemoteFile(user_script_js())
             val content = FileInputStream(pfd.fileDescriptor).use {
                 it.readBytes().toString(Charsets.UTF_8)
             }
-            scriptFragment.scriptInput.setText(content)
+            viewModel.scriptLoaded = true
+            viewModel.setScriptText(content)
         } catch (e: Exception) {
         }
     }
 
-    private fun saveUserScript() {
+    private fun saveUserScript(text: String) {
         val service = xposedService
         if (service == null) {
-            Toast.makeText(this, Not_connected_to_framework_yet(), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, Not_connected_to_framework(), Toast.LENGTH_SHORT).show()
             return
         }
         try {
-            val bytes = scriptFragment.scriptInput.getText().toString().toByteArray(Charsets.UTF_8)
+            val bytes = text.toByteArray(Charsets.UTF_8)
             val pfd = service.openRemoteFile(user_script_js())
             FileOutputStream(pfd.fileDescriptor).use { fos ->
                 fos.channel.truncate(0)
@@ -145,53 +137,6 @@ class c : AppCompatActivity(), g.ServiceStateListener {
             Toast.makeText(this, Script_saved(), Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "${Error__()}${e.message}", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun startLogcatStreaming() {
-        logcatJob?.cancel()
-
-        logFragment.logcatView?.text = ""
-
-        logcatJob = lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val process = Runtime.getRuntime().exec(
-                    arrayOf(
-                        su(),
-                        _c(),
-                        logcat(),
-                        _v(),
-                        tag(),
-                        _s(),
-                        FKIAB_V(),
-                        FRIDA_V()
-                    )
-                )
-                val reader = process.inputStream.bufferedReader()
-                while (isActive) {
-                    val line = reader.readLine() ?: break
-
-                    val index = line.indexOf(": ")
-
-                    val clean = if (index != -1) {
-                        line.substring(0, index)
-                            .replace(Regex(__A_Z__()), "")
-                            .trim() +
-                                _s_() +
-                                line.substring(index + 2)
-                    } else {
-                        line
-                    }
-
-                    withContext(Dispatchers.Main) {
-                        logFragment.appendText(clean + "\n")
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    logFragment.appendText("${Error__()}${e.message}\n")
-                }
-            }
         }
     }
 

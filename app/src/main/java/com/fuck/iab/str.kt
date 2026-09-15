@@ -829,9 +829,9 @@ fun global(): String {
     return sb.toString()
 }
 
-fun Not_connected_to_framework_yet(): String {
+fun Not_connected_to_framework(): String {
     val sb = StringBuilder()
-    val arr = intArrayOf(121, 88, 67, 23, 84, 88, 89, 89, 82, 84, 67, 82, 83, 23, 67, 88, 23, 81, 69, 86, 90, 82, 64, 88, 69, 92, 23, 78, 82, 67)
+    val arr = intArrayOf(121, 88, 67, 23, 84, 88, 89, 89, 82, 84, 67, 82, 83, 23, 67, 88, 23, 81, 69, 86, 90, 82, 64, 88, 69, 92)
     for (num in arr) {
         sb.append((num.xor(55)).toChar())
     }
@@ -969,6 +969,15 @@ fun Log(): String {
     val arr = intArrayOf(111, 76, 68)
     for (num in arr) {
         sb.append((num.xor(35)).toChar())
+    }
+    return sb.toString()
+}
+
+fun Error(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(186, 141, 141, 144, 141)
+    for (num in arr) {
+        sb.append((num.xor(255)).toChar())
     }
     return sb.toString()
 }
