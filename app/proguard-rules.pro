@@ -3,4 +3,7 @@
 -keep,allowoptimization,allowobfuscation public class * extends io.github.libxposed.api.XposedModule {
     public <init>();
 }
+-keep public class * extends androidx.fragment.app.Fragment {
+    public <init>();
+}
 -repackageclasses 'fh'
