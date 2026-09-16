@@ -11,27 +11,47 @@ import android.os.IBinder
 import android.os.IInterface
 import android.os.Parcel
 import android.util.Log
+import androidx.core.content.edit
 import com.fuck.iab.NativeBridge.startScript
 import fh.d
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface
 import io.github.libxposed.api.XposedModuleInterface.ModuleLoadedParam
 import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.luckypray.dexkit.DexKitBridge
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.security.PublicKey
 import java.util.zip.ZipFile
-import androidx.core.content.edit
 
 object NativeBridge {
+
     init {
         System.loadLibrary(nativehook())
     }
 
     @JvmStatic
     external fun startScript(packageName: String, scriptSource: String)
+
+    private val payloadChannel = Channel<String>(capacity = Channel.UNLIMITED)
+
+    val payloads = payloadChannel.receiveAsFlow()
+
+    @JvmStatic
+    fun onPayloadReceived(payload: String) {
+        payloadChannel.trySend(payload)
+    }
+}
+
+object AppScope : CoroutineScope {
+    override val coroutineContext = SupervisorJob() + Dispatchers.Default
 }
 
 class MainModule : XposedModule() {
@@ -64,41 +84,40 @@ class MainModule : XposedModule() {
 
         if (!param.isFirstPackage) return
 
-        val packageName = param.packageName
-        val global = readScriptForPackage(global())
-        val userScript = readUserScript()
-        val appScript = readScriptForPackage(packageName)
+        AppScope.launch {
+            NativeBridge.payloads.collect { payload ->
+                if (payload == java_ready()) {
+                    try {
+                        val activityThread = Class.forName(android_app_ActivityThread())
 
-        val combined = buildString {
-            global?.let { append(it); append("\n") }
-            userScript?.let { append(it); append("\n") }
-            appScript?.let { append(it) }
-        }.trim()
+                        val currentApplication = activityThread.getMethod(currentApplication()).invoke(null) as? Application
 
+                        app = currentApplication!!
 
+                        DexKitBridge.create(param.applicationInfo.sourceDir).use { bridge ->
+                            hookOnServiceConnected(param, bridge)
+                            hookSignatureVerificationMethods(param, bridge)
+                        }
 
-        try {
-            val applicationClassName = param.applicationInfo.className ?: android_app_Application()
-            val applicationClass = param.defaultClassLoader.loadClass(applicationClassName)
-            val onCreate = applicationClass.getMethod(onCreate())
+                    } catch (e: Exception) {
 
-            hook(onCreate).intercept { chain ->
-                app = chain.thisObject as Application
-
-                if (combined.isNotEmpty()) {
-                    startScript(packageName, combined)
+                    }
                 }
-
-                DexKitBridge.create(param.applicationInfo.sourceDir).use { bridge ->
-                    hookOnServiceConnected(param, bridge)
-                    hookSignatureVerificationMethods(param, bridge)
-                }
-                chain.proceed()
             }
-        } catch (e: Exception) {
-
         }
 
+        val packageName = param.packageName
+        val global = readScriptForPackage(global())
+
+        if (global != null) {
+            val appScript = readScriptForPackage(packageName)
+            val userScript = readUserScript()
+            var combined = global.replace(APP_SCRIPT_GOES_HERE(), userScript ?: "")
+            combined = combined.replace(USER_SCRIPT_GOES_HERE(), appScript ?: "")
+            if (combined.isNotEmpty()) {
+                startScript(packageName, combined)
+            }
+        }
     }
 
     override fun onPackageReady(param: XposedModuleInterface.PackageReadyParam) {
@@ -359,6 +378,25 @@ class MainModule : XposedModule() {
                                                 return true
                                             }
 
+                                            9 -> {
+                                                // Acknowledge Purchase
+                                                data.readString() // package name
+                                                val purchaseToken = data.readString()
+                                                data.readInt() // bundle
+                                                Bundle.CREATOR.createFromParcel(data)
+
+                                                val purchaseExists = app.getSharedPreferences(fuck_iab(), MODE_PRIVATE).contains(purchaseToken)
+
+                                                val b = Bundle().apply {
+                                                    putInt(RESPONSE_CODE(), if (purchaseExists) 0 else 1)
+                                                    putString(DEBUG_MESSAGE(), "")
+                                                }
+                                                reply!!.writeNoException()
+                                                reply.writeInt(1)
+                                                b.writeToParcel(reply, 1)
+                                                return true
+                                            }
+
                                             12 -> {
                                                 // consume purchase
                                                 data.readString() // package name
@@ -434,6 +472,26 @@ class MainModule : XposedModule() {
 //            log("** hooking ${getMethodAsString(method)}")
             hook(method).intercept {
                 true
+            }
+        }
+
+        m = bridge.findMethod {
+            matcher {
+                returnType = java_lang_Boolean()
+                paramTypes(PublicKey::class.java, String::class.java, String::class.java)
+                invokeMethods {
+                    add {
+                        name = getInstance()
+                        paramTypes(String::class.java)
+                    }
+                }
+            }
+        }.singleOrNull()
+        if (m != null) {
+            val method = m.getMethodInstance(param.defaultClassLoader)
+//            log("** hooking ${getMethodAsString(method)}")
+            hook(method).intercept {
+                java.lang.Boolean.TRUE
             }
         }
 
