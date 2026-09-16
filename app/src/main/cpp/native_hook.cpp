@@ -8,12 +8,16 @@
 #include <thread>
 #include <jni.h>
 
-#define LOG(...) __android_log_print(ANDROID_LOG_ERROR, "FKIAB", __VA_ARGS__)
+#define LOG(...) __android_log_print(ANDROID_LOG_ERROR, "HELLO", __VA_ARGS__)
 #define LOG_FRIDA(...) __android_log_print(ANDROID_LOG_ERROR, "FRIDA", __VA_ARGS__)
 
 static GumScript *script = nullptr;
 static std::once_flag gum_init_flag;
 static std::atomic<bool> script_started{false};
+
+static JavaVM *g_jvm = nullptr;
+static jclass g_bridgeClass = nullptr;
+static jmethodID g_onPayloadMethod = nullptr;
 
 static std::string json_unescape(const std::string &input) {
     std::string out;
@@ -62,6 +66,36 @@ static bool extract_json_string_field(const char *json, const char *key, std::st
     return false;
 }
 
+static void sendPayloadToKotlin(const std::string &payload) {
+    if (g_jvm == nullptr || g_bridgeClass == nullptr || g_onPayloadMethod == nullptr) {
+        LOG("[warn] JNI refs not initialized, dropping payload");
+        return;
+    }
+
+    JNIEnv *env = nullptr;
+    bool didAttach = false;
+
+    int getEnvResult = g_jvm->GetEnv((void **) &env, JNI_VERSION_1_6);
+    if (getEnvResult == JNI_EDETACHED) {
+        if (g_jvm->AttachCurrentThread(&env, nullptr) != JNI_OK) {
+            LOG("[error] Failed to attach thread to JVM");
+            return;
+        }
+        didAttach = true;
+    } else if (getEnvResult != JNI_OK) {
+        LOG("[error] GetEnv failed");
+        return;
+    }
+
+    jstring jPayload = env->NewStringUTF(payload.c_str());
+    env->CallStaticVoidMethod(g_bridgeClass, g_onPayloadMethod, jPayload);
+    env->DeleteLocalRef(jPayload);
+
+    if (didAttach) {
+        g_jvm->DetachCurrentThread();
+    }
+}
+
 static void on_message(const gchar *message, GBytes *data, gpointer user_data) {
     std::string type;
     std::string payload;
@@ -83,9 +117,9 @@ static void on_message(const gchar *message, GBytes *data, gpointer user_data) {
 
     if (type == "log") {
         if (extract_json_string_field(message, "payload", payload)) {
-            LOG_FRIDA("[log] %s", payload.c_str());
+            LOG_FRIDA("%s", payload.c_str());
         } else {
-            LOG_FRIDA("[log] %s", message);
+            LOG_FRIDA("%s", message);
         }
         return;
     }
@@ -93,8 +127,10 @@ static void on_message(const gchar *message, GBytes *data, gpointer user_data) {
     if (type == "send") {
         if (extract_json_string_field(message, "payload", payload)) {
             LOG_FRIDA("[send] %s", payload.c_str());
+            sendPayloadToKotlin(payload);
         } else {
-            LOG_FRIDA("[send-raw] %s", message);
+            LOG_FRIDA("[send] %s", payload.c_str());
+            sendPayloadToKotlin(message);
         }
         return;
     }
@@ -160,7 +196,17 @@ NativeOnModuleLoaded native_init(const NativeAPIEntries *entries) {
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_fuck_iab_NativeBridge_startScript(
-        JNIEnv *env, jclass /*clazz*/, jstring jPackageName, jstring jScriptSource) {
+        JNIEnv *env, jclass clazz, jstring jPackageName, jstring jScriptSource) {
+
+    // ذخیره‌ی JavaVM برای دسترسی بعدی از تردهای دیگه
+    env->GetJavaVM(&g_jvm);
+
+    // ذخیره‌ی global ref به کلاس (چون local ref بعد از برگشت این تابع نامعتبر می‌شه)
+    if (g_bridgeClass == nullptr) {
+        g_bridgeClass = (jclass) env->NewGlobalRef(clazz);
+        g_onPayloadMethod = env->GetStaticMethodID(
+                g_bridgeClass, "onPayloadReceived", "(Ljava/lang/String;)V");
+    }
 
     const char *pkgChars = env->GetStringUTFChars(jPackageName, nullptr);
     const char *srcChars = env->GetStringUTFChars(jScriptSource, nullptr);
