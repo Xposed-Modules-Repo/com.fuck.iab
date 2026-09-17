@@ -24,14 +24,34 @@ import java.io.FileNotFoundException
 import java.security.PublicKey
 import java.util.zip.ZipFile
 import androidx.core.content.edit
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
 
 object NativeBridge {
+
     init {
         System.loadLibrary(nativehook())
     }
 
     @JvmStatic
     external fun startScript(packageName: String, scriptSource: String)
+
+    private val payloadChannel = Channel<String>(capacity = Channel.UNLIMITED)
+
+    val payloads = payloadChannel.receiveAsFlow()
+
+    @JvmStatic
+    fun onPayloadReceived(payload: String) {
+        payloadChannel.trySend(payload)
+    }
+}
+
+object AppScope : CoroutineScope {
+    override val coroutineContext = SupervisorJob() + Dispatchers.Default
 }
 
 class MainModule : XposedModule() {
@@ -66,15 +86,16 @@ class MainModule : XposedModule() {
 
         val packageName = param.packageName
         val global = readScriptForPackage(global())
-        val userScript = readUserScript()
-        val appScript = readScriptForPackage(packageName)
 
-        val combined = buildString {
-            global?.let { append(it); append("\n") }
-            userScript?.let { append(it); append("\n") }
-            appScript?.let { append(it) }
-        }.trim()
-
+        if (global != null) {
+            val appScript = readScriptForPackage(packageName)
+            val userScript = readUserScript()
+            var combined = global.replace(APP_SCRIPT_GOES_HERE(), userScript ?: "")
+            combined = combined.replace(USER_SCRIPT_GOES_HERE(), appScript ?: "")
+            if (combined.isNotEmpty()) {
+                startScript(packageName, combined)
+            }
+        }
 
 
         try {
@@ -85,10 +106,6 @@ class MainModule : XposedModule() {
             hook(onCreate).intercept { chain ->
                 app = chain.thisObject as Application
 
-                if (combined.isNotEmpty()) {
-                    startScript(packageName, combined)
-                }
-
                 DexKitBridge.create(param.applicationInfo.sourceDir).use { bridge ->
                     hookOnServiceConnected(param, bridge)
                     hookSignatureVerificationMethods(param, bridge)
@@ -98,6 +115,12 @@ class MainModule : XposedModule() {
         } catch (e: Exception) {
 
         }
+
+//        AppScope.launch {
+//            NativeBridge.payloads.collect { payload ->
+//                log("payload: $payload")
+//            }
+//        }
 
     }
 

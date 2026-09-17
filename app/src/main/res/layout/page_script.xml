@@ -18,7 +18,6 @@
         android:background="?attr/myBackground"
         android:fontFamily="monospace"
         android:gravity="top|start"
-        android:hint="@string/script_et_hint"
         android:inputType="textMultiLine|textNoSuggestions|textVisiblePassword"
         android:overScrollMode="always"
         android:scrollHorizontally="true" />

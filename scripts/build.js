@@ -18,7 +18,7 @@ function cleanOutputDir() {
 }
 
 function compile(packageName) {
-    const input = path.join(SRC_DIR, `${packageName}.ts`);
+    const input = path.join(SRC_DIR, `${packageName}.js`);
     const output = path.join(OUT_DIR, `${packageName}.js`);
 
     if (!existsSync(input)) {
@@ -28,7 +28,11 @@ function compile(packageName) {
     }
 
     console.log(`Compiling: ${packageName}`);
-    execSync(`npx frida-compile "${input}" -o "${output}" -c -S -B iife`, { stdio: "inherit" });
+    if(packageName == "global") {
+        execSync(`npx frida-compile "${input}" -o "${output}" -S -B iife -T none`, { stdio: "inherit" });
+    } else {
+        execSync(`npx frida-compile "${input}" -o "${output}" -c -S -B iife -T none`, { stdio: "inherit" });
+    }
     console.log(`Built: assets/scripts/${packageName}.js`);
 }
 
@@ -37,11 +41,11 @@ const args = process.argv.slice(2);
 if (args.includes("--all") || args.length === 0) {
     cleanOutputDir();
 
-    const files = readdirSync(SRC_DIR).filter(f => f.endsWith(".ts"));
+    const files = readdirSync(SRC_DIR).filter(f => f.endsWith(".js"));
     if (files.length === 0) {
-        console.warn("No .ts files found.");
+        console.warn("No .js files found.");
     }
-    files.forEach(f => compile(f.replace(/\.ts$/, "")));
+    files.forEach(f => compile(f.replace(/\.js$/, "")));
 } else {
     args.forEach(compile);
 }

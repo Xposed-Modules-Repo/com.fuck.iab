@@ -1,7 +1,6 @@
 <resources>
     <string name="app_name">FKIAB</string>
     <string name="description">An Xposed module for hooking and customizing in-app billing functionality.</string>
-    <string name="script_et_hint">console.log(\"hello world!\")</string>
     <string name="save">Save</string>
     <string name="clear_log">Clear Log</string>
     <string name="auto_scroll">Auto scroll</string>

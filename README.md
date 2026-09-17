@@ -29,12 +29,12 @@ Scripts live under `scripts/src/` and are named after the target app's package n
 
 ```
 scripts/
-├── global.ts
-├── com.kiloo.subwaysurf.ts
-└── com.example.game.ts
+├── global.js
+├── com.kiloo.subwaysurf.js
+└── com.example.game.js
 ```
 
-`global.ts` is loaded for every app, before anything else. If a matching `<package_name>.ts` file also exists, it runs right after the global script.
+`global.js` is loaded for every app, before anything else. If a matching `<package_name>.js` file also exists, it runs right after the global script.
 
 ### Custom Script Examples
 

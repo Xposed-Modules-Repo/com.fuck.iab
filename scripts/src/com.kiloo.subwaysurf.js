@@ -1,7 +1,3 @@
-// @ts-nocheck
-
-import "frida-il2cpp-bridge";
-
 const observer = Process.attachModuleObserver({
     onAdded(module) {
         if (module.name === "libil2cpp.so") {
