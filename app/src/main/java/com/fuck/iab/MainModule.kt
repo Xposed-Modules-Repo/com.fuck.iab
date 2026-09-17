@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.os.IBinder
 import android.os.IInterface
 import android.os.Parcel
-import android.util.Log
 import androidx.core.content.edit
 import com.fuck.iab.NativeBridge.startScript
 import fh.d
@@ -90,6 +89,7 @@ class MainModule : XposedModule() {
                     hookOnServiceConnected(param, bridge)
                     hookSignatureVerificationMethods(param, bridge)
                 }
+
                 chain.proceed()
             }
         } catch (e: Exception) {
@@ -232,6 +232,7 @@ class MainModule : XposedModule() {
                                                 val developerPayload = data.readString()
 
 //                                                log("sku = $sku")
+//                                                log("dp = $developerPayload")
 
                                                 val purchaseToken = randomPurchaseToken()
                                                 val signature = randomSignature()
@@ -520,13 +521,84 @@ class MainModule : XposedModule() {
                 val method = m.getMethodInstance(param.defaultClassLoader)
 //            log("** hooking ${getMethodAsString(method)}")
                 hook(method).intercept { chain ->
-                    if(chain.args[0] == com_ea_nimble_mtx_enableVerification()) {
+                    if (chain.args[0] == com_ea_nimble_mtx_enableVerification()) {
                         return@intercept _false()
-                    } else if(chain.args[0] == com_ea_nimble_mtx_reportingEnabled()) {
+                    } else if (chain.args[0] == com_ea_nimble_mtx_reportingEnabled()) {
                         return@intercept _false()
                     } else {
                         chain.proceed()
                     }
+                }
+            }
+        } catch (e: Exception) {
+
+        }
+
+        try {
+            m = bridge.findMethod {
+                matcher {
+                    name = UnitySendMessage()
+                    returnType = void()
+                    paramTypes(java_lang_String(), java_lang_String(), java_lang_String())
+                    declaredClass = com_unity3d_player_UnityPlayer()
+                }
+            }.singleOrNull()
+            if (m != null) {
+                val method = m.getMethodInstance(param.defaultClassLoader)
+//                log("** hooking ${getMethodAsString(method)}")
+                hook(method).intercept { chain ->
+                    val arg1 = chain.args[0] as String
+                    val arg2 = chain.args[1] as String
+                    val arg3 = chain.args[2] as String
+
+                    if (arg1 == Appsflyer() && arg2 == didReceivePurchaseRevenueValidationInfo()) {
+                        val json = JSONObject(arg3)
+
+                        val success = json.getString(success())
+                        val token = json.getString(token())
+
+                        if (success == _false()) {
+                            val prefs = app.getSharedPreferences(fuck_iab(), MODE_PRIVATE)
+
+                            val value = prefs.getString(token, "")
+
+                            if (value == "") return@intercept chain.proceed()
+
+                            val json = try {
+                                JSONObject(value!!)
+                            } catch (_: Exception) {
+                                return@intercept chain.proceed()
+                            }
+
+                            val map = HashMap<String, Any>()
+                            val map2 = HashMap<String, Any>()
+                            map[token()] = token
+                            map[success()] = _true()
+
+                            map2[productId()] = json.getString(productId())
+                            map2[purchaseState()] = json.getInt(purchaseState())
+                            map2[kind()] = inapp()
+                            map2[purchaseTimeMillis()] = try {
+                                json.getLong(purchaseTime()).toString()
+                            } catch (e: Exception) {
+                                System.currentTimeMillis().toString()
+                            }
+                            map2[consumptionState()] = 0
+                            map2[developerPayload()] = try { json.getString(developerPayload()) } catch (e: Exception) { developerPayload() }
+                            map2[orderId()] = json.getString(orderId())
+                            map2[purchaseType()] = 0
+                            map2[acknowledgementState()] = 1
+                            map2[purchaseToken()] = token
+                            map2[quantity()] = 1
+                            map2[obfuscatedExternalAccountId()] = obfuscatedExternalAccountId()
+                            map2[obfuscatedExternalProfileId()] = obfuscatedExternalProfileId()
+                            map2[regionCode()] = regionCode()
+                            map[productPurchase()] = map2
+
+                            return@intercept chain.proceed(arrayOf(arg1, arg2, JSONObject(map).toString()))
+                        }
+                    }
+                    chain.proceed()
                 }
             }
         } catch (e: Exception) {
