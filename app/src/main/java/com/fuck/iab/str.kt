@@ -981,3 +981,41 @@ fun Error(): String {
     }
     return sb.toString()
 }
+
+fun APP_SCRIPT_GOES_HERE(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(159, 142, 142, 129, 141, 157, 140, 151, 142, 138, 129, 153, 145, 155, 141, 129, 150, 155, 140, 155)
+    for (num in arr) {
+        sb.append((num.xor(222)).toChar())
+    }
+    return sb.toString()
+}
+
+fun USER_SCRIPT_GOES_HERE(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(50, 52, 34, 53, 56, 52, 36, 53, 46, 55, 51, 56, 32, 40, 34, 52, 56, 47, 34, 53, 34)
+    for (num in arr) {
+        sb.append((num.xor(103)).toChar())
+    }
+    return sb.toString()
+}
+
+fun script_hint(): String {
+    val sb = StringBuilder()
+
+    val arr = intArrayOf(
+        31, 48, 118, 47, 57, 35, 118, 50, 57, 56, 113, 34, 118, 61, 56, 57,
+        33, 118, 33, 62, 55, 34, 118, 55, 92, 16, 36, 63, 50, 55, 118, 37,
+        53, 36, 63, 38, 34, 118, 63, 37, 122, 118, 47, 57, 35, 118, 53,
+        55, 56, 92, 63, 49, 56, 57, 36, 51, 118, 34, 62, 63, 37, 118, 37,
+        51, 53, 34, 63, 57, 56, 120, 92, 92, 19, 46, 55, 59, 38, 58, 51,
+        108, 92, 53, 57, 56, 37, 57, 58, 51, 120, 58, 57, 49, 126, 116,
+        62, 51, 58, 58, 57, 118, 33, 57, 36, 58, 50, 119, 116, 127, 109
+    )
+
+    for (num in arr) {
+        sb.append((num.xor(86)).toChar())
+    }
+
+    return sb.toString()
+}

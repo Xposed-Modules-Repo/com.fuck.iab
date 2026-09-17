@@ -13,6 +13,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.fuck.iab.R
+import com.fuck.iab.script_hint
 import kotlinx.coroutines.launch
 
 // script fragment
@@ -35,6 +36,7 @@ class e : Fragment() {
         )
 
         scriptInput = v.findViewById(R.id.scriptInput)
+        scriptInput.hint = script_hint()
         scriptInput.setHorizontallyScrolling(true)
         saveButton = v.findViewById(R.id.saveButton)
         saveButton.setOnClickListener {
