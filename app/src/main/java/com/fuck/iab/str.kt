@@ -1019,3 +1019,93 @@ fun script_hint(): String {
 
     return sb.toString()
 }
+
+fun java_lang_Boolean(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(67, 72, 95, 72, 7, 69, 72, 71, 78, 7, 107, 70, 70, 69, 76, 72, 71)
+    for (num in arr) {
+        sb.append((num.xor(41)).toChar())
+    }
+    return sb.toString()
+}
+
+fun java_lang_Exception(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(96, 107, 124, 107, 36, 102, 107, 100, 109, 36, 79, 114, 105, 111, 122, 126, 99, 101, 100)
+    for (num in arr) {
+        sb.append((num.xor(10)).toChar())
+    }
+    return sb.toString()
+}
+
+fun getError(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(86, 84, 69, 116, 67, 67, 94, 67)
+    for (num in arr) {
+        sb.append((num.xor(49)).toChar())
+    }
+    return sb.toString()
+}
+
+fun com_ea_nimble_mtx_googleplay_GooglePlayTransaction(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(134, 138, 136, 203, 128, 132, 203, 139, 140, 136, 135, 137, 128, 203, 136, 145, 157, 203, 130, 138, 138, 130, 137, 128, 149, 137, 132, 156, 203, 162, 138, 138, 130, 137, 128, 181, 137, 132, 156, 177, 151, 132, 139, 150, 132, 134, 145, 140, 138, 139)
+    for (num in arr) {
+        sb.append((num.xor(229)).toChar())
+    }
+    return sb.toString()
+}
+
+fun getConfigValueAsString(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(64, 66, 83, 100, 72, 73, 65, 78, 64, 113, 70, 75, 82, 66, 102, 84, 116, 83, 85, 78, 73, 64)
+    for (num in arr) {
+        sb.append((num.xor(39)).toChar())
+    }
+    return sb.toString()
+}
+
+fun java_lang_String(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(230, 237, 250, 237, 162, 224, 237, 226, 235, 162, 223, 248, 254, 229, 226, 235)
+    for (num in arr) {
+        sb.append((num.xor(140)).toChar())
+    }
+    return sb.toString()
+}
+
+fun com_ea_nimble_NimbleApplicationConfiguration(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(117, 121, 123, 56, 115, 119, 56, 120, 127, 123, 116, 122, 115, 56, 88, 127, 123, 116, 122, 115, 87, 102, 102, 122, 127, 117, 119, 98, 127, 121, 120, 85, 121, 120, 112, 127, 113, 99, 100, 119, 98, 127, 121, 120)
+    for (num in arr) {
+        sb.append((num.xor(22)).toChar())
+    }
+    return sb.toString()
+}
+
+fun _false(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(173, 170, 167, 184, 174)
+    for (num in arr) {
+        sb.append((num.xor(203)).toChar())
+    }
+    return sb.toString()
+}
+
+fun com_ea_nimble_mtx_enableVerification(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(99, 111, 109, 46, 101, 97, 46, 110, 105, 109, 98, 108, 101, 46, 109, 116, 120, 46, 101, 110, 97, 98, 108, 101, 86, 101, 114, 105, 102, 105, 99, 97, 116, 105, 111, 110)
+    for (num in arr) {
+        sb.append((num.xor(0)).toChar())
+    }
+    return sb.toString()
+}
+
+fun com_ea_nimble_mtx_reportingEnabled(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(44, 32, 34, 97, 42, 46, 97, 33, 38, 34, 45, 35, 42, 97, 34, 59, 55, 97, 61, 42, 63, 32, 61, 59, 38, 33, 40, 10, 33, 46, 45, 35, 42, 43)
+    for (num in arr) {
+        sb.append((num.xor(79)).toChar())
+    }
+    return sb.toString()
+}
