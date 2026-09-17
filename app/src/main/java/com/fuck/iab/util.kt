@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Base64
 import org.json.JSONArray
 import org.json.JSONObject
+import java.lang.reflect.Method
 import java.security.SecureRandom
 import kotlin.random.Random
 
@@ -160,17 +161,17 @@ fun removeFromPrefs(app: Context, purchaseToken: String?) {
 //    }
 //}
 
-//fun getMethodAsString(method: Method): String {
-//    val returnType = method.returnType.name
-//    val className = method.declaringClass.name
-//    val methodName = method.name
-//
-//    val params = method.parameterTypes.joinToString(", ") {
-//        it.name
-//    }
-//
-//    return "$returnType $className.$methodName($params)"
-//}
+fun getMethodAsString(method: Method): String {
+    val returnType = method.returnType.name
+    val className = method.declaringClass.name
+    val methodName = method.name
+
+    val params = method.parameterTypes.joinToString(", ") {
+        it.name
+    }
+
+    return "$returnType $className.$methodName($params)"
+}
 
 //    fun findInterfaces(clazz: Class<*>): List<Class<*>> {
 //        val result = mutableListOf<Class<*>>()

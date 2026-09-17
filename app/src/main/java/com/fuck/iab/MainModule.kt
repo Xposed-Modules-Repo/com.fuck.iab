@@ -354,6 +354,26 @@ class MainModule : XposedModule() {
                                                 return true
                                             }
 
+                                            9 -> {
+                                                // Acknowledge Purchase
+                                                data.readString() // package name
+                                                val purchaseToken = data.readString()
+                                                data.readInt() // bundle
+                                                Bundle.CREATOR.createFromParcel(data)
+
+                                                val purchaseExists = app.getSharedPreferences(fuck_iab(), MODE_PRIVATE).contains(purchaseToken)
+
+                                                val b = Bundle().apply {
+                                                    putInt(RESPONSE_CODE(), if (purchaseExists) 0 else 1)
+                                                    putString(DEBUG_MESSAGE(), "")
+                                                }
+                                                reply!!.writeNoException()
+                                                reply.writeInt(1)
+                                                b.writeToParcel(reply, 1)
+                                                return true
+                                            }
+
+
                                             12 -> {
                                                 // consume purchase
                                                 data.readString() // package name
@@ -432,6 +452,26 @@ class MainModule : XposedModule() {
             }
         }
 
+        m = bridge.findMethod {
+            matcher {
+                returnType = java_lang_Boolean()
+                paramTypes(PublicKey::class.java, String::class.java, String::class.java)
+                invokeMethods {
+                    add {
+                        name = getInstance()
+                        paramTypes(String::class.java)
+                    }
+                }
+            }
+        }.singleOrNull()
+        if (m != null) {
+            val method = m.getMethodInstance(param.defaultClassLoader)
+//            log("** hooking ${getMethodAsString(method)}")
+            hook(method).intercept {
+                java.lang.Boolean.TRUE
+            }
+        }
+
         try {
             hook(
                 Class.forName(ir_cafebazaar_poolakey_security_PurchaseVerifier()).getDeclaredMethod(
@@ -442,6 +482,52 @@ class MainModule : XposedModule() {
                 )
             ).intercept { chain ->
                 true
+            }
+        } catch (e: Exception) {
+
+        }
+
+        try {
+            m = bridge.findMethod {
+                matcher {
+                    name = getError()
+                    returnType = java_lang_Exception()
+                    paramCount = 0
+                    declaredClass = com_ea_nimble_mtx_googleplay_GooglePlayTransaction()
+                }
+            }.singleOrNull()
+            if (m != null) {
+                val method = m.getMethodInstance(param.defaultClassLoader)
+//            log("** hooking ${getMethodAsString(method)}")
+                hook(method).intercept { chain ->
+                    null
+                }
+            }
+        } catch (e: Exception) {
+
+        }
+
+        try {
+            m = bridge.findMethod {
+                matcher {
+                    name = getConfigValueAsString()
+                    returnType = java_lang_String()
+                    paramTypes(java_lang_String())
+                    declaredClass = com_ea_nimble_NimbleApplicationConfiguration()
+                }
+            }.singleOrNull()
+            if (m != null) {
+                val method = m.getMethodInstance(param.defaultClassLoader)
+//            log("** hooking ${getMethodAsString(method)}")
+                hook(method).intercept { chain ->
+                    if(chain.args[0] == com_ea_nimble_mtx_enableVerification()) {
+                        return@intercept _false()
+                    } else if(chain.args[0] == com_ea_nimble_mtx_reportingEnabled()) {
+                        return@intercept _false()
+                    } else {
+                        chain.proceed()
+                    }
+                }
             }
         } catch (e: Exception) {
 
