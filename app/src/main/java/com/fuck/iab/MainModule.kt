@@ -11,6 +11,7 @@ import android.os.IBinder
 import android.os.IInterface
 import android.os.Parcel
 import android.util.Log
+import androidx.core.content.edit
 import com.fuck.iab.NativeBridge.startScript
 import fh.d
 import io.github.libxposed.api.XposedModule
@@ -23,13 +24,6 @@ import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.security.PublicKey
 import java.util.zip.ZipFile
-import androidx.core.content.edit
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.launch
 
 object NativeBridge {
 
@@ -39,19 +33,6 @@ object NativeBridge {
 
     @JvmStatic
     external fun startScript(packageName: String, scriptSource: String)
-
-    private val payloadChannel = Channel<String>(capacity = Channel.UNLIMITED)
-
-    val payloads = payloadChannel.receiveAsFlow()
-
-    @JvmStatic
-    fun onPayloadReceived(payload: String) {
-        payloadChannel.trySend(payload)
-    }
-}
-
-object AppScope : CoroutineScope {
-    override val coroutineContext = SupervisorJob() + Dispatchers.Default
 }
 
 class MainModule : XposedModule() {
@@ -71,7 +52,7 @@ class MainModule : XposedModule() {
     override fun onModuleLoaded(param: ModuleLoadedParam) {
 //        log(Log.INFO, TAG, "onModuleLoaded: " + param.processName)
 //        log(Log.INFO, TAG, "framework: $frameworkName($frameworkVersionCode) API $apiVersion")
-//
+
 //        val hasProp: (Long) -> Boolean = { prop -> frameworkProperties.and(prop) != 0L }
 //        log(Log.INFO, TAG, "system supported: " + hasProp(PROP_CAP_SYSTEM))
 //        log(Log.INFO, TAG, "remote supported: " + hasProp(PROP_CAP_REMOTE))
@@ -87,17 +68,6 @@ class MainModule : XposedModule() {
         val packageName = param.packageName
         val global = readScriptForPackage(global())
 
-        if (global != null) {
-            val appScript = readScriptForPackage(packageName)
-            val userScript = readUserScript()
-            var combined = global.replace(APP_SCRIPT_GOES_HERE(), userScript ?: "")
-            combined = combined.replace(USER_SCRIPT_GOES_HERE(), appScript ?: "")
-            if (combined.isNotEmpty()) {
-                startScript(packageName, combined)
-            }
-        }
-
-
         try {
             val applicationClassName = param.applicationInfo.className ?: android_app_Application()
             val applicationClass = param.defaultClassLoader.loadClass(applicationClassName)
@@ -106,6 +76,16 @@ class MainModule : XposedModule() {
             hook(onCreate).intercept { chain ->
                 app = chain.thisObject as Application
 
+                if (global != null) {
+                    val appScript = readScriptForPackage(packageName)
+                    val userScript = readUserScript()
+                    var combined = global.replace(APP_SCRIPT_GOES_HERE(), userScript ?: "")
+                    combined = combined.replace(USER_SCRIPT_GOES_HERE(), appScript ?: "")
+                    if (combined.isNotEmpty()) {
+                        startScript(packageName, combined)
+                    }
+                }
+
                 DexKitBridge.create(param.applicationInfo.sourceDir).use { bridge ->
                     hookOnServiceConnected(param, bridge)
                     hookSignatureVerificationMethods(param, bridge)
@@ -113,15 +93,7 @@ class MainModule : XposedModule() {
                 chain.proceed()
             }
         } catch (e: Exception) {
-
         }
-
-//        AppScope.launch {
-//            NativeBridge.payloads.collect { payload ->
-//                log("payload: $payload")
-//            }
-//        }
-
     }
 
     override fun onPackageReady(param: XposedModuleInterface.PackageReadyParam) {
