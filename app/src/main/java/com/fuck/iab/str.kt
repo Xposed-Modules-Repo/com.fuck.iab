@@ -1109,3 +1109,156 @@ fun com_ea_nimble_mtx_reportingEnabled(): String {
     }
     return sb.toString()
 }
+
+fun success(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(35, 37, 51, 51, 53, 35, 35)
+    for (num in arr) {
+        sb.append((num.xor(80)).toChar())
+    }
+    return sb.toString()
+}
+
+fun _true(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(233, 239, 232, 248)
+    for (num in arr) {
+        sb.append((num.xor(157)).toChar())
+    }
+    return sb.toString()
+}
+
+fun kind(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(181, 183, 176, 186)
+    for (num in arr) {
+        sb.append((num.xor(222)).toChar())
+    }
+    return sb.toString()
+}
+
+fun purchaseTimeMillis(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(166, 163, 164, 181, 190, 183, 165, 179, 130, 191, 187, 179, 155, 191, 186, 186, 191, 165)
+    for (num in arr) {
+        sb.append((num.xor(214)).toChar())
+    }
+    return sb.toString()
+}
+
+fun consumptionState(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(17, 29, 28, 1, 7, 31, 2, 6, 27, 29, 28, 33, 6, 19, 6, 23)
+    for (num in arr) {
+        sb.append((num.xor(114)).toChar())
+    }
+    return sb.toString()
+}
+
+fun purchaseType(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(167, 162, 165, 180, 191, 182, 164, 178, 131, 174, 167, 178)
+    for (num in arr) {
+        sb.append((num.xor(215)).toChar())
+    }
+    return sb.toString()
+}
+
+fun acknowledgementState(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(68, 70, 78, 75, 74, 82, 73, 64, 65, 66, 64, 72, 64, 75, 81, 118, 81, 68, 81, 64)
+    for (num in arr) {
+        sb.append((num.xor(37)).toChar())
+    }
+    return sb.toString()
+}
+
+fun obfuscatedExternalAccountId(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(82, 95, 91, 72, 78, 94, 92, 73, 88, 89, 120, 69, 73, 88, 79, 83, 92, 81, 124, 94, 94, 82, 72, 83, 73, 116, 89)
+    for (num in arr) {
+        sb.append((num.xor(61)).toChar())
+    }
+    return sb.toString()
+}
+
+fun obfuscatedExternalProfileId(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(88, 85, 81, 66, 68, 84, 86, 67, 82, 83, 114, 79, 67, 82, 69, 89, 86, 91, 103, 69, 88, 81, 94, 91, 82, 126, 83)
+    for (num in arr) {
+        sb.append((num.xor(55)).toChar())
+    }
+    return sb.toString()
+}
+
+fun regionCode(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(188, 171, 169, 167, 161, 160, 141, 161, 170, 171)
+    for (num in arr) {
+        sb.append((num.xor(206)).toChar())
+    }
+    return sb.toString()
+}
+
+fun productPurchase(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(41, 43, 54, 61, 44, 58, 45, 9, 44, 43, 58, 49, 56, 42, 60)
+    for (num in arr) {
+        sb.append((num.xor(89)).toChar())
+    }
+    return sb.toString()
+}
+
+fun token(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(213, 206, 202, 196, 207)
+    for (num in arr) {
+        sb.append((num.xor(161)).toChar())
+    }
+    return sb.toString()
+}
+
+fun Appsflyer(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(138, 187, 187, 184, 173, 167, 178, 174, 185)
+    for (num in arr) {
+        sb.append((num.xor(203)).toChar())
+    }
+    return sb.toString()
+}
+
+fun didReceivePurchaseRevenueValidationInfo(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(211, 222, 211, 229, 210, 212, 210, 222, 193, 210, 231, 194, 197, 212, 223, 214, 196, 210, 229, 210, 193, 210, 217, 194, 210, 225, 214, 219, 222, 211, 214, 195, 222, 216, 217, 254, 217, 209, 216)
+    for (num in arr) {
+        sb.append((num.xor(183)).toChar())
+    }
+    return sb.toString()
+}
+
+fun com_unity3d_player_UnityPlayer(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(60, 48, 50, 113, 42, 49, 54, 43, 38, 108, 59, 113, 47, 51, 62, 38, 58, 45, 113, 10, 49, 54, 43, 38, 15, 51, 62, 38, 58, 45)
+    for (num in arr) {
+        sb.append((num.xor(95)).toChar())
+    }
+    return sb.toString()
+}
+
+fun void(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(202, 211, 213, 216)
+    for (num in arr) {
+        sb.append((num.xor(188)).toChar())
+    }
+    return sb.toString()
+}
+
+fun UnitySendMessage(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(221, 230, 225, 252, 241, 219, 237, 230, 236, 197, 237, 251, 251, 233, 239, 237)
+    for (num in arr) {
+        sb.append((num.xor(136)).toChar())
+    }
+    return sb.toString()
+}
