@@ -28,7 +28,7 @@ https://github.com/user-attachments/assets/df3f6d44-da88-4576-8128-d944d7041942
 Scripts live under `scripts/src/` and are named after the target app's package name:
 
 ```
-scripts/
+scripts/src/
 ├── global.js
 ├── com.kiloo.subwaysurf.js
 └── com.example.game.js
