@@ -24,5 +24,23 @@ function Hook() {
                 });
             });
         });
+
+        // const AssemblyCSharp = Il2Cpp.domain.assembly("Assembly-CSharp").image
+        // const IAPValidateResponse = AssemblyCSharp.class("SYBO.Subway.Services.IAPValidateResponse");
+        // const GetResult = Il2Cpp.corlib.class("System.Runtime.CompilerServices.TaskAwaiter`1").inflate(IAPValidateResponse).method("GetResult");
+        // const None = AssemblyCSharp.class("SYBO.Subway.Meta.PurchaseError").field("None").value
+
+        // GetResult.implementation = function () {
+        //     try {
+        //         const result = GetResult.invokeRaw(this)
+        //         if(result && !result.isNull() && result.class.name == "IAPValidateResponse") {
+        //             result.field("PurchaseError").value = None
+        //             result.field("ProductId").value = Il2Cpp.string("subwaysurfers.coins.01")
+        //         }
+        //         return result
+        //     } catch(e) {
+        //         return ptr(0)
+        //     }
+        // };
     });
 }
