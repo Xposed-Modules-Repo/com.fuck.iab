@@ -31,7 +31,7 @@ Scripts live under `scripts/src/` and are named after the target app's package n
 scripts/src/
 ├── global.js
 ├── com.kiloo.subwaysurf.js
-└── com.example.game.js
+└── com.PoxelStudios.DudeTheftAuto.js
 ```
 
 `global.js` is loaded for every app, before anything else. If a matching `<package_name>.js` file also exists, it runs right after the global script.
