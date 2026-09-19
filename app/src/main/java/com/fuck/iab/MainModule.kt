@@ -336,6 +336,7 @@ class MainModule : XposedModule() {
 
                                             5 -> {
                                                 // consume old (bazaar)
+                                                data.readString() // package name
                                                 val purchaseToken = data.readString()
                                                 removeFromPrefs(app, purchaseToken)
                                                 reply!!.writeNoException()
