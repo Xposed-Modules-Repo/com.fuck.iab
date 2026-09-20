@@ -65,7 +65,6 @@ class MainModule : XposedModule() {
         if (!param.isFirstPackage) return
 
         val packageName = param.packageName
-        val global = readScriptForPackage(global())
 
         try {
             val applicationClassName = param.applicationInfo.className ?: android_app_Application()
@@ -75,6 +74,13 @@ class MainModule : XposedModule() {
             hook(onCreate).intercept { chain ->
                 app = chain.thisObject as Application
 
+                DexKitBridge.create(param.applicationInfo.sourceDir).use { bridge ->
+                    hookOnServiceConnected(param, bridge)
+                    hookSignatureVerificationMethods(param, bridge)
+                }
+
+                val global = readScriptForPackage(global())
+
                 if (global != null) {
                     val appScript = readScriptForPackage(packageName)
                     val userScript = readUserScript()
@@ -83,11 +89,6 @@ class MainModule : XposedModule() {
                     if (combined.isNotEmpty()) {
                         startScript(packageName, combined)
                     }
-                }
-
-                DexKitBridge.create(param.applicationInfo.sourceDir).use { bridge ->
-                    hookOnServiceConnected(param, bridge)
-                    hookSignatureVerificationMethods(param, bridge)
                 }
 
                 chain.proceed()
@@ -585,7 +586,11 @@ class MainModule : XposedModule() {
                                 System.currentTimeMillis().toString()
                             }
                             map2[consumptionState()] = 0
-                            map2[developerPayload()] = try { json.getString(developerPayload()) } catch (e: Exception) { developerPayload() }
+                            map2[developerPayload()] = try {
+                                json.getString(developerPayload())
+                            } catch (e: Exception) {
+                                developerPayload()
+                            }
                             map2[orderId()] = json.getString(orderId())
                             map2[purchaseType()] = 0
                             map2[acknowledgementState()] = 1

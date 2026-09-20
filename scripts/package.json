@@ -7,8 +7,7 @@
     "build:all": "node build.js --all"
   },
   "dependencies": {
-    "frida-il2cpp-bridge": "^0.14.0",
-    "frida-java-bridge": "^7.0.13"
+    "frida-il2cpp-bridge": "^0.14.0"
   },
   "devDependencies": {
     "frida-compile": "^19.0.5"
