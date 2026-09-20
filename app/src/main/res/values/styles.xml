@@ -1,16 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="theme" parent="@android:style/Theme.Material.Light.Dialog.NoActionBar">
+    <style name="theme" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:windowIsFloating">true</item>
         <item name="android:backgroundDimEnabled">false</item>
         <item name="android:windowBackground">@android:color/transparent</item>
     </style>
 
 
-    <style name="Base.Theme.F" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.F" parent="Theme.Material3.Dark.NoActionBar">
         <item name="myBackground">?android:windowBackground</item>
+        <item name="colorPrimary">@color/my_primary</item>
+        <item name="colorOnPrimary">@color/my_on_primary</item>
+        <item name="colorSecondary">@color/my_primary</item>
+        <item name="colorOnSecondary">@color/my_on_primary</item>
     </style>
 
     <style name="Theme.F" parent="Base.Theme.F" />
+
 </resources>
