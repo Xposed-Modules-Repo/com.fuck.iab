@@ -83,9 +83,9 @@ static void on_message(const gchar *message, GBytes *data, gpointer user_data) {
 
     if (type == "log") {
         if (extract_json_string_field(message, "payload", payload)) {
-            LOG_FRIDA("[log] %s", payload.c_str());
+            LOG_FRIDA("%s", payload.c_str());
         } else {
-            LOG_FRIDA("[log] %s", message);
+            LOG_FRIDA("%s", message);
         }
         return;
     }

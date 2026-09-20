@@ -614,15 +614,13 @@ class MainModule : XposedModule() {
 
     private fun readScriptForPackage(packageName: String): String? {
         val apkPath = this.moduleApplicationInfo.sourceDir
-        return try {
+        try {
             ZipFile(apkPath).use { zip ->
-                val entry = zip.getEntry("${assets_scripts_()}$packageName${_js()}")
-                    ?: return null
-                zip.getInputStream(entry).bufferedReader(Charsets.UTF_8).use { it.readText() }
+                val entry = zip.getEntry("${assets_scripts_()}$packageName${_js()}") ?: return null
+                return zip.getInputStream(entry).bufferedReader(Charsets.UTF_8).use { it.readText() }
             }
         } catch (e: Exception) {
-//            log("Failed to read script for $packageName: ${e.message}")
-            null
+            return null
         }
     }
 
