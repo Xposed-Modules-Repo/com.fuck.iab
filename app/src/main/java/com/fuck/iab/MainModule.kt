@@ -65,6 +65,7 @@ class MainModule : XposedModule() {
         if (!param.isFirstPackage) return
 
         val packageName = param.packageName
+        val global = readScriptForPackage(global())
 
         try {
             val applicationClassName = param.applicationInfo.className ?: android_app_Application()
@@ -74,13 +75,6 @@ class MainModule : XposedModule() {
             hook(onCreate).intercept { chain ->
                 app = chain.thisObject as Application
 
-                DexKitBridge.create(param.applicationInfo.sourceDir).use { bridge ->
-                    hookOnServiceConnected(param, bridge)
-                    hookSignatureVerificationMethods(param, bridge)
-                }
-
-                val global = readScriptForPackage(global())
-
                 if (global != null) {
                     val appScript = readScriptForPackage(packageName)
                     val userScript = readUserScript()
@@ -89,6 +83,11 @@ class MainModule : XposedModule() {
                     if (combined.isNotEmpty()) {
                         startScript(packageName, combined)
                     }
+                }
+
+                DexKitBridge.create(param.applicationInfo.sourceDir).use { bridge ->
+                    hookOnServiceConnected(param, bridge)
+                    hookSignatureVerificationMethods(param, bridge)
                 }
 
                 chain.proceed()
@@ -586,11 +585,7 @@ class MainModule : XposedModule() {
                                 System.currentTimeMillis().toString()
                             }
                             map2[consumptionState()] = 0
-                            map2[developerPayload()] = try {
-                                json.getString(developerPayload())
-                            } catch (e: Exception) {
-                                developerPayload()
-                            }
+                            map2[developerPayload()] = try { json.getString(developerPayload()) } catch (e: Exception) { developerPayload() }
                             map2[orderId()] = json.getString(orderId())
                             map2[purchaseType()] = 0
                             map2[acknowledgementState()] = 1
@@ -614,13 +609,15 @@ class MainModule : XposedModule() {
 
     private fun readScriptForPackage(packageName: String): String? {
         val apkPath = this.moduleApplicationInfo.sourceDir
-        try {
+        return try {
             ZipFile(apkPath).use { zip ->
-                val entry = zip.getEntry("${assets_scripts_()}$packageName${_js()}") ?: return null
-                return zip.getInputStream(entry).bufferedReader(Charsets.UTF_8).use { it.readText() }
+                val entry = zip.getEntry("${assets_scripts_()}$packageName${_js()}")
+                    ?: return null
+                zip.getInputStream(entry).bufferedReader(Charsets.UTF_8).use { it.readText() }
             }
         } catch (e: Exception) {
-            return null
+//            log("Failed to read script for $packageName: ${e.message}")
+            null
         }
     }
 
