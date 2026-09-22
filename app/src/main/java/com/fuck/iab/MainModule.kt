@@ -14,7 +14,6 @@ import android.util.Log
 import androidx.core.content.edit
 import com.fuck.iab.NativeBridge.startScript
 import fh.d
-import io.github.libxposed.api.XposedInterface.HookHandle
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface
 import io.github.libxposed.api.XposedModuleInterface.ModuleLoadedParam
@@ -32,9 +31,7 @@ import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.security.PublicKey
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import java.util.zip.ZipFile
-import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.Duration.Companion.seconds
 
@@ -65,9 +62,6 @@ class MainModule : XposedModule() {
     lateinit var app: Application
     val latch = CountDownLatch(1)
 
-    @OptIn(ExperimentalAtomicApi::class)
-    private var onCreateAtomic = AtomicBoolean(false)
-
     companion object {
 //        const val TAG = "FKIAB"
 
@@ -95,17 +89,7 @@ class MainModule : XposedModule() {
 
         if (!param.isFirstPackage) return
 
-        AppScope.launch {
-            NativeBridge.payloads.collect { payload ->
-                if (payload == ready()) {
-//                    log("frida is alive. lets call on create")
-                    latch.countDown()
-                }
-            }
-        }
-
         val packageName = param.packageName
-        val global = readScriptForPackage(global())
 
         try {
             val applicationClassName = param.applicationInfo.className ?: android_app_Application()
@@ -117,36 +101,50 @@ class MainModule : XposedModule() {
 
                 DexKitBridge.create(param.applicationInfo.sourceDir).use { bridge ->
                     hookOnServiceConnected(param, bridge)
-                    hookSignatureVerificationMethods(param, bridge)
+                    hookPurchaseVerificationMethods(param, bridge)
                 }
 
-                if (global != null) {
+                val global = readScriptForPackage(global())
+
+                val script = if (global != null) {
                     val appScript = readScriptForPackage(packageName)
                     val userScript = readUserScript()
                     var combined = global.replace(APP_SCRIPT_GOES_HERE(), userScript ?: "")
                     combined = combined.replace(USER_SCRIPT_GOES_HERE(), appScript ?: "")
-                    if (combined.isNotEmpty()) {
-//                        log("before start script package name: $packageName")
-                        startScript(packageName, combined)
-//                        log("after start script")
+                    combined.ifEmpty { null }
+                } else null
+
+                if (script != null) {
+                    AppScope.launch {
+                        NativeBridge.payloads.collect { payload ->
+                            if (payload == ready()) {
+//                                log("frida is alive. lets call on create")
+                                latch.countDown()
+                            }
+                        }
                     }
-                }
 
-                AppScope.launch {
-                    delay(3.seconds)
-//                    log("timeout passed. frida is dead. lets call on create")
-                    latch.countDown()
-                }
+//                    log("before start script package name: $packageName")
+                    startScript(packageName, script)
+//                    log("after start script")
 
-                try {
-                    latch.await()
-                    if (onCreateAtomic.compareAndSet(false, true)) {
+                    AppScope.launch {
+                        delay(3.seconds)
+//                        log("timeout passed. frida is dead. lets call on create")
+                        latch.countDown()
+                    }
+
+                    try {
+                        latch.await()
 //                        log("calling on create")
                         chain.proceed()
+                    } catch (e: InterruptedException) {
+                        Thread.currentThread().interrupt()
                     }
-                } catch (e: InterruptedException) {
-                    Thread.currentThread().interrupt()
+                } else {
+                    chain.proceed()
                 }
+
             }
         } catch (e: Exception) {
         }
@@ -410,7 +408,7 @@ class MainModule : XposedModule() {
                                                 return true
                                             }
 
-                                            9 -> {
+                                            9, 902 -> {
                                                 // Acknowledge Purchase
                                                 data.readString() // package name
                                                 val purchaseToken = data.readString()
@@ -418,6 +416,8 @@ class MainModule : XposedModule() {
                                                 Bundle.CREATOR.createFromParcel(data)
 
                                                 val purchaseExists = app.getSharedPreferences(fuck_iab(), MODE_PRIVATE).contains(purchaseToken)
+
+//                                                log("9, 902: purchase exists: $purchaseExists")
 
                                                 val b = Bundle().apply {
                                                     putInt(RESPONSE_CODE(), if (purchaseExists) 0 else 1)
@@ -469,8 +469,8 @@ class MainModule : XposedModule() {
         }
     }
 
-    private fun hookSignatureVerificationMethods(param: PackageLoadedParam, bridge: DexKitBridge) {
-        var m = bridge.findMethod {
+    private fun hookPurchaseVerificationMethods(param: PackageLoadedParam, bridge: DexKitBridge) {
+        var methods = bridge.findMethod {
             matcher {
                 returnType = boolean()
                 // paramTypes(String::class.java, String::class.java, String::class.java)
@@ -479,16 +479,20 @@ class MainModule : XposedModule() {
                     Base64_decoding_failed()
                 )
             }
-        }.singleOrNull()
-        if (m != null) {
-            val method = m.getMethodInstance(param.defaultClassLoader)
+        }
+        for (m in methods) {
+            try {
+                val method = m.getMethodInstance(param.defaultClassLoader)
 //            log("hooking ${getMethodAsString(method)}")
-            hook(method).intercept {
-                true
+                hook(method).intercept {
+                    true
+                }
+            } catch (e: Exception) {
+
             }
         }
 
-        m = bridge.findMethod {
+        methods = bridge.findMethod {
             matcher {
                 returnType = boolean()
                 paramTypes(PublicKey::class.java, String::class.java, String::class.java)
@@ -499,16 +503,20 @@ class MainModule : XposedModule() {
                     }
                 }
             }
-        }.singleOrNull()
-        if (m != null) {
-            val method = m.getMethodInstance(param.defaultClassLoader)
-//            log("** hooking ${getMethodAsString(method)}")
-            hook(method).intercept {
-                true
+        }
+        for (m in methods) {
+            try {
+                val method = m.getMethodInstance(param.defaultClassLoader)
+//                log("** hooking ${getMethodAsString(method)}")
+                hook(method).intercept {
+                    true
+                }
+            } catch (e: Exception) {
+
             }
         }
 
-        m = bridge.findMethod {
+        methods = bridge.findMethod {
             matcher {
                 returnType = java_lang_Boolean()
                 paramTypes(PublicKey::class.java, String::class.java, String::class.java)
@@ -519,8 +527,8 @@ class MainModule : XposedModule() {
                     }
                 }
             }
-        }.singleOrNull()
-        if (m != null) {
+        }
+        for (m in methods) {
             val method = m.getMethodInstance(param.defaultClassLoader)
 //            log("** hooking ${getMethodAsString(method)}")
             hook(method).intercept {
@@ -544,7 +552,7 @@ class MainModule : XposedModule() {
         }
 
         try {
-            m = bridge.findMethod {
+            val m = bridge.findMethod {
                 matcher {
                     name = getError()
                     returnType = java_lang_Exception()
@@ -564,7 +572,7 @@ class MainModule : XposedModule() {
         }
 
         try {
-            m = bridge.findMethod {
+            val m = bridge.findMethod {
                 matcher {
                     name = getConfigValueAsString()
                     returnType = java_lang_String()
@@ -590,7 +598,7 @@ class MainModule : XposedModule() {
         }
 
         try {
-            m = bridge.findMethod {
+            val m = bridge.findMethod {
                 matcher {
                     name = UnitySendMessage()
                     returnType = void()
