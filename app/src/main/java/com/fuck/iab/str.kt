@@ -1262,3 +1262,12 @@ fun UnitySendMessage(): String {
     }
     return sb.toString()
 }
+
+fun ready(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(93, 74, 78, 75, 86)
+    for (num in arr) {
+        sb.append((num.xor(47)).toChar())
+    }
+    return sb.toString()
+}

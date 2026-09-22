@@ -10,6 +10,10 @@ try { APP_SCRIPT_GOES_HERE } catch(e) { console.log(e) }
 
 try { USER_SCRIPT_GOES_HERE } catch(e) { console.log(e) }
 
+if(globalThis["DONT_SEND_READY"] === undefined) {
+    send("ready")
+}
+
 export function toast(text) {
     var Toast = JavaBridge.use("android.widget.Toast");
     JavaBridge.scheduleOnMainThread(function () {

@@ -10,33 +10,63 @@ import android.os.Bundle
 import android.os.IBinder
 import android.os.IInterface
 import android.os.Parcel
+import android.util.Log
 import androidx.core.content.edit
 import com.fuck.iab.NativeBridge.startScript
 import fh.d
+import io.github.libxposed.api.XposedInterface.HookHandle
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface
 import io.github.libxposed.api.XposedModuleInterface.ModuleLoadedParam
 import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.luckypray.dexkit.DexKitBridge
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.security.PublicKey
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.zip.ZipFile
+import kotlin.concurrent.atomics.AtomicBoolean
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.time.Duration.Companion.seconds
 
 object NativeBridge {
-
     init {
         System.loadLibrary(nativehook())
     }
 
     @JvmStatic
     external fun startScript(packageName: String, scriptSource: String)
+
+    private val payloadChannel = Channel<String>(capacity = Channel.UNLIMITED)
+
+    val payloads = payloadChannel.receiveAsFlow()
+
+    @JvmStatic
+    fun onPayloadReceived(payload: String) {
+        payloadChannel.trySend(payload)
+    }
+}
+
+object AppScope : CoroutineScope {
+    override val coroutineContext = SupervisorJob() + Dispatchers.Default
 }
 
 class MainModule : XposedModule() {
 
     lateinit var app: Application
+    val latch = CountDownLatch(1)
+
+    @OptIn(ExperimentalAtomicApi::class)
+    private var onCreateAtomic = AtomicBoolean(false)
 
     companion object {
 //        const val TAG = "FKIAB"
@@ -58,11 +88,21 @@ class MainModule : XposedModule() {
 //        log(Log.INFO, TAG, "api protection: " + hasProp(PROP_RT_API_PROTECTION))
     }
 
+    @OptIn(ExperimentalAtomicApi::class)
     override fun onPackageLoaded(param: PackageLoadedParam) {
 //        log(Log.INFO, TAG, "onPackageLoaded: " + param.packageName)
 //        log(Log.INFO, TAG, "default classloader is " + param.defaultClassLoader)
 
         if (!param.isFirstPackage) return
+
+        AppScope.launch {
+            NativeBridge.payloads.collect { payload ->
+                if (payload == ready()) {
+//                    log("frida is alive. lets call on create")
+                    latch.countDown()
+                }
+            }
+        }
 
         val packageName = param.packageName
         val global = readScriptForPackage(global())
@@ -75,22 +115,38 @@ class MainModule : XposedModule() {
             hook(onCreate).intercept { chain ->
                 app = chain.thisObject as Application
 
+                DexKitBridge.create(param.applicationInfo.sourceDir).use { bridge ->
+                    hookOnServiceConnected(param, bridge)
+                    hookSignatureVerificationMethods(param, bridge)
+                }
+
                 if (global != null) {
                     val appScript = readScriptForPackage(packageName)
                     val userScript = readUserScript()
                     var combined = global.replace(APP_SCRIPT_GOES_HERE(), userScript ?: "")
                     combined = combined.replace(USER_SCRIPT_GOES_HERE(), appScript ?: "")
                     if (combined.isNotEmpty()) {
+//                        log("before start script package name: $packageName")
                         startScript(packageName, combined)
+//                        log("after start script")
                     }
                 }
 
-                DexKitBridge.create(param.applicationInfo.sourceDir).use { bridge ->
-                    hookOnServiceConnected(param, bridge)
-                    hookSignatureVerificationMethods(param, bridge)
+                AppScope.launch {
+                    delay(3.seconds)
+//                    log("timeout passed. frida is dead. lets call on create")
+                    latch.countDown()
                 }
 
-                chain.proceed()
+                try {
+                    latch.await()
+                    if (onCreateAtomic.compareAndSet(false, true)) {
+//                        log("calling on create")
+                        chain.proceed()
+                    }
+                } catch (e: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                }
             }
         } catch (e: Exception) {
         }
@@ -99,9 +155,7 @@ class MainModule : XposedModule() {
     override fun onPackageReady(param: XposedModuleInterface.PackageReadyParam) {
 //        log(Log.INFO, TAG, "onPackageReady: " + param.packageName)
 //        log(Log.INFO, TAG, "app classloader is " + param.classLoader)
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-//            log(Log.INFO, TAG, "app acf is " + param.appComponentFactory)
-//        }
+//        log(Log.INFO, TAG, "app acf is " + param.appComponentFactory)
 //        log(Log.INFO, TAG, "module apk path: " + this.moduleApplicationInfo.sourceDir)
     }
 
@@ -232,7 +286,7 @@ class MainModule : XposedModule() {
                                                 val developerPayload = data.readString()
 
 //                                                log("sku = $sku")
-//                                                log("dp = $developerPayload")
+//                                                log("type = $type")
 
                                                 val purchaseToken = randomPurchaseToken()
                                                 val signature = randomSignature()
@@ -585,7 +639,11 @@ class MainModule : XposedModule() {
                                 System.currentTimeMillis().toString()
                             }
                             map2[consumptionState()] = 0
-                            map2[developerPayload()] = try { json.getString(developerPayload()) } catch (e: Exception) { developerPayload() }
+                            map2[developerPayload()] = try {
+                                json.getString(developerPayload())
+                            } catch (e: Exception) {
+                                developerPayload()
+                            }
                             map2[orderId()] = json.getString(orderId())
                             map2[purchaseType()] = 0
                             map2[acknowledgementState()] = 1
