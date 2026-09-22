@@ -6,4 +6,7 @@
 -keep public class * extends androidx.fragment.app.Fragment {
     public <init>();
 }
+-keepclassmembers class com.fuck.iab.NativeBridge {
+    public static void onPayloadReceived(java.lang.String);
+}
 -repackageclasses 'fh'
