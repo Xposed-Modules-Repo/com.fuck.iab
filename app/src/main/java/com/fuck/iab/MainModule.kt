@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.os.IBinder
 import android.os.IInterface
 import android.os.Parcel
-import android.util.Log
 import androidx.core.content.edit
 import com.fuck.iab.NativeBridge.startScript
 import fh.d
@@ -32,10 +31,12 @@ import java.io.FileNotFoundException
 import java.security.PublicKey
 import java.util.concurrent.CountDownLatch
 import java.util.zip.ZipFile
-import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.Duration.Companion.seconds
 
 object NativeBridge {
+
+    lateinit var dexKitBridge: DexKitBridge
+
     init {
         System.loadLibrary(nativehook())
     }
@@ -82,7 +83,6 @@ class MainModule : XposedModule() {
 //        log(Log.INFO, TAG, "api protection: " + hasProp(PROP_RT_API_PROTECTION))
     }
 
-    @OptIn(ExperimentalAtomicApi::class)
     override fun onPackageLoaded(param: PackageLoadedParam) {
 //        log(Log.INFO, TAG, "onPackageLoaded: " + param.packageName)
 //        log(Log.INFO, TAG, "default classloader is " + param.defaultClassLoader)
@@ -99,10 +99,11 @@ class MainModule : XposedModule() {
             hook(onCreate).intercept { chain ->
                 app = chain.thisObject as Application
 
-                DexKitBridge.create(param.applicationInfo.sourceDir).use { bridge ->
-                    hookOnServiceConnected(param, bridge)
-                    hookPurchaseVerificationMethods(param, bridge)
-                }
+                val bridge = DexKitBridge.create(param.applicationInfo.sourceDir)
+                NativeBridge.dexKitBridge = bridge
+
+                hookOnServiceConnected(param, bridge)
+                hookPurchaseVerificationMethods(param, bridge)
 
                 val global = readScriptForPackage(global())
 

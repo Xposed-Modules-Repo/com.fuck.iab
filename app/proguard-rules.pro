@@ -7,6 +7,7 @@
     public <init>();
 }
 -keepclassmembers class com.fuck.iab.NativeBridge {
+    public static org.luckypray.dexkit.DexKitBridge dexKitBridge;
     public static void onPayloadReceived(java.lang.String);
 }
 -repackageclasses 'fh'
