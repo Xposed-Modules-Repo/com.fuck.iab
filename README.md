@@ -1,7 +1,7 @@
 [![Latest Release](https://img.shields.io/github/v/release/Xposed-Modules-Repo/com.fuck.iab?include_prereleases&display_name=release&logo=github&label=Lateset%20Release)](https://github.com/Xposed-Modules-Repo/com.fuck.iab/releases/latest)
 
-[![Telegram Channel](https://img.shields.io/badge/Telegram%20Channel-fkiab-blue.svg?logo=telegram)](https://t.me/fkiab)
-[![Telegram Group](https://img.shields.io/badge/Telegram%20Group-fkiab_group-blue.svg?logo=telegram)](https://t.me/fkiab_group)
+[![Telegram Channel](https://img.shields.io/badge/Telegram-Channel-blue.svg?logo=telegram)](https://t.me/fkiab)
+[![Telegram Group](https://img.shields.io/badge/Telegram-Group-blue.svg?logo=telegram)](https://t.me/fkiab_group)
 
 # FKIAB
 
