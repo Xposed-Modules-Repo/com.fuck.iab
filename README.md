@@ -1,4 +1,7 @@
-[![Latest Release](https://img.shields.io/github/v/release/Xposed-Modules-Repo/com.fuck.iab?include_prereleases&display_name=release&logo=github&label=Lateset%20Release)](https://github.com/Xposed-Modules-Repo/com.fuck.iab/releases/latest)
+[![License](https://img.shields.io/github/license/Xposed-Modules-Repo/com.fuck.iab?label=License
+)](https://github.com/Xposed-Modules-Repo/com.fuck.iab#MIT-1-ov-file)
+[![Latest Release](https://img.shields.io/github/v/release/Xposed-Modules-Repo/com.fuck.iab?display_name=release&label=Latest%20Release&color=%23ff9000
+)](https://github.com/Xposed-Modules-Repo/com.fuck.iab/releases/latest)
 
 [![Telegram Channel](https://img.shields.io/badge/Telegram-Channel-blue.svg?logo=telegram)](https://t.me/fkiab)
 [![Telegram Group](https://img.shields.io/badge/Telegram-Group-blue.svg?logo=telegram)](https://t.me/fkiab_group)
