@@ -10,4 +10,7 @@
     public static org.luckypray.dexkit.DexKitBridge dexKitBridge;
     public static void onPayloadReceived(java.lang.String);
 }
+-keep class org.luckypray.dexkit.** {
+    public <methods>;
+}
 -repackageclasses 'fh'
