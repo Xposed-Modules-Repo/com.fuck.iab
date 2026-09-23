@@ -1,3 +1,13 @@
+[![Latest Release](https://img.shields.io/github/v/release/Xposed-Modules-Repo/com.fuck.iab?include_prereleases&display_name=release&logo=github&label=Lateset%20Release)](https://github.com/Xposed-Modules-Repo/com.fuck.iab/releases/latest)
+
+<p>
+
+[![Telegram Channel](https://img.shields.io/badge/Telegram%20Channel-Telegram-blue.svg?logo=telegram)](https://t.me/fkiab)
+[![Telegram Group](https://img.shields.io/badge/Telegram%20Group-Telegram-blue.svg?logo=telegram)](https://t.me/fkiab_group)
+
+</p>
+
+
 # FKIAB
 
 An Xposed module for hooking and customizing in-app billing functionality.
