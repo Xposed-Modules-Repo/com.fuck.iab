@@ -29,8 +29,6 @@ https://github.com/user-attachments/assets/baa25c2c-baaf-4e84-86e8-51e9f4545a4a
 
 Some apps aren't supported by the module because they either verify purchase signatures locally or validate them through their own servers. These apps require custom scripts to bypass their specific verification methods.
 
-Scripts live under `scripts/src/` and are named after the target app's package name:
-
 ```
 scripts/src/
 ├── global.js
@@ -60,6 +58,10 @@ Please include:
 - The package name of the app/game
 - The custom script
 - A brief description of what it does
+
+## Telegram Channel
+
+Join the FKIAB Telegram channel to get notified as soon as a new release is available: https://t.me/fkiab
 
 ## Disclaimer
 
