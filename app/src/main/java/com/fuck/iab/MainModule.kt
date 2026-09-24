@@ -5,11 +5,14 @@ import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.os.Binder
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.os.IInterface
 import android.os.Parcel
+import androidx.annotation.RequiresApi
 import androidx.core.content.edit
 import com.fuck.iab.NativeBridge.startScript
 import fh.d
@@ -85,25 +88,48 @@ class MainModule : XposedModule() {
 
     override fun onPackageLoaded(param: PackageLoadedParam) {
 //        log(Log.INFO, TAG, "onPackageLoaded: " + param.packageName)
-//        log(Log.INFO, TAG, "default classloader is " + param.defaultClassLoader)
+//        log(Log.INFO, TAG, "default classloader is " + classLoader)
 
         if (!param.isFirstPackage) return
 
-        val packageName = param.packageName
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            packageLoaded(param.packageName, param.applicationInfo, param.defaultClassLoader)
+        }
+    }
 
+    override fun onPackageReady(param: XposedModuleInterface.PackageReadyParam) {
+//        log(Log.INFO, TAG, "onPackageReady: " + param.packageName)
+//        log(Log.INFO, TAG, "app classloader is " + param.classLoader)
+//        log(Log.INFO, TAG, "app acf is " + param.appComponentFactory)
+//        log(Log.INFO, TAG, "module apk path: " + this.moduleApplicationInfo.sourceDir)
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            packageLoaded(param.packageName, param.applicationInfo, param.classLoader)
+        }
+    }
+
+    override fun onSystemServerStarting(param: XposedModuleInterface.SystemServerStartingParam) {
+//        log(Log.INFO, TAG, "onSystemServerStarting, system classloader: " + param.classLoader)
+    }
+
+    private fun packageLoaded(
+        packageName: String,
+        applicationInfo: ApplicationInfo,
+        classLoader: ClassLoader
+    ) {
         try {
-            val applicationClassName = param.applicationInfo.className ?: android_app_Application()
-            val applicationClass = param.defaultClassLoader.loadClass(applicationClassName)
+            val applicationClassName = applicationInfo.className ?: android_app_Application()
+            val applicationClass = classLoader.loadClass(applicationClassName)
             val onCreate = applicationClass.getMethod(onCreate())
 
             hook(onCreate).intercept { chain ->
                 app = chain.thisObject as Application
 
-                val bridge = DexKitBridge.create(param.applicationInfo.sourceDir)
+                val bridge = DexKitBridge.create(applicationInfo.sourceDir)
                 NativeBridge.dexKitBridge = bridge
 
-                hookOnServiceConnected(param, bridge)
-                hookPurchaseVerificationMethods(param, bridge)
+                hookOnServiceConnected(classLoader, bridge)
+                hookPurchaseVerificationMethods(classLoader, bridge)
 
                 val global = readScriptForPackage(global())
 
@@ -151,18 +177,7 @@ class MainModule : XposedModule() {
         }
     }
 
-    override fun onPackageReady(param: XposedModuleInterface.PackageReadyParam) {
-//        log(Log.INFO, TAG, "onPackageReady: " + param.packageName)
-//        log(Log.INFO, TAG, "app classloader is " + param.classLoader)
-//        log(Log.INFO, TAG, "app acf is " + param.appComponentFactory)
-//        log(Log.INFO, TAG, "module apk path: " + this.moduleApplicationInfo.sourceDir)
-    }
-
-    override fun onSystemServerStarting(param: XposedModuleInterface.SystemServerStartingParam) {
-//        log(Log.INFO, TAG, "onSystemServerStarting, system classloader: " + param.classLoader)
-    }
-
-    private fun hookOnServiceConnected(param: PackageLoadedParam, bridge: DexKitBridge) {
+    private fun hookOnServiceConnected(classLoader: ClassLoader, bridge: DexKitBridge) {
         try {
             val classes = bridge.findClass {
                 matcher {
@@ -178,7 +193,7 @@ class MainModule : XposedModule() {
                 clazz.methods.forEach {
                     if (it.name != onServiceConnected()) return@forEach
 
-                    val onServiceConnectedMethod = it.getMethodInstance(param.defaultClassLoader)
+                    val onServiceConnectedMethod = it.getMethodInstance(classLoader)
 //                    log("hooking ${it.name}")
                     hook(onServiceConnectedMethod).intercept { chain ->
 
@@ -470,7 +485,7 @@ class MainModule : XposedModule() {
         }
     }
 
-    private fun hookPurchaseVerificationMethods(param: PackageLoadedParam, bridge: DexKitBridge) {
+    private fun hookPurchaseVerificationMethods(classLoader: ClassLoader, bridge: DexKitBridge) {
         var methods = bridge.findMethod {
             matcher {
                 returnType = boolean()
@@ -483,7 +498,7 @@ class MainModule : XposedModule() {
         }
         for (m in methods) {
             try {
-                val method = m.getMethodInstance(param.defaultClassLoader)
+                val method = m.getMethodInstance(classLoader)
 //            log("hooking ${getMethodAsString(method)}")
                 hook(method).intercept {
                     true
@@ -507,7 +522,7 @@ class MainModule : XposedModule() {
         }
         for (m in methods) {
             try {
-                val method = m.getMethodInstance(param.defaultClassLoader)
+                val method = m.getMethodInstance(classLoader)
 //                log("** hooking ${getMethodAsString(method)}")
                 hook(method).intercept {
                     true
@@ -530,7 +545,7 @@ class MainModule : XposedModule() {
             }
         }
         for (m in methods) {
-            val method = m.getMethodInstance(param.defaultClassLoader)
+            val method = m.getMethodInstance(classLoader)
 //            log("** hooking ${getMethodAsString(method)}")
             hook(method).intercept {
                 java.lang.Boolean.TRUE
@@ -562,7 +577,7 @@ class MainModule : XposedModule() {
                 }
             }.singleOrNull()
             if (m != null) {
-                val method = m.getMethodInstance(param.defaultClassLoader)
+                val method = m.getMethodInstance(classLoader)
 //            log("** hooking ${getMethodAsString(method)}")
                 hook(method).intercept { chain ->
                     null
@@ -582,7 +597,7 @@ class MainModule : XposedModule() {
                 }
             }.singleOrNull()
             if (m != null) {
-                val method = m.getMethodInstance(param.defaultClassLoader)
+                val method = m.getMethodInstance(classLoader)
 //            log("** hooking ${getMethodAsString(method)}")
                 hook(method).intercept { chain ->
                     if (chain.args[0] == com_ea_nimble_mtx_enableVerification()) {
@@ -608,7 +623,7 @@ class MainModule : XposedModule() {
                 }
             }.singleOrNull()
             if (m != null) {
-                val method = m.getMethodInstance(param.defaultClassLoader)
+                val method = m.getMethodInstance(classLoader)
 //                log("** hooking ${getMethodAsString(method)}")
                 hook(method).intercept { chain ->
                     val arg1 = chain.args[0] as String

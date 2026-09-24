@@ -8,10 +8,10 @@ android {
 
     defaultConfig {
         applicationId "com.fuck.iab"
-        minSdk 29
+        minSdk 26
         targetSdk 37
-        versionCode 32
-        versionName "1.5.7"
+        versionCode 33
+        versionName "1.5.8"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
