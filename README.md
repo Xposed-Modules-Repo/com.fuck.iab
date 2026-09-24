@@ -12,10 +12,6 @@ An Xposed module for hooking and customizing in-app billing functionality.
 
 https://github.com/user-attachments/assets/baa25c2c-baaf-4e84-86e8-51e9f4545a4a
 
-https://github.com/user-attachments/assets/3a6a2acc-4305-4006-9600-d5b8c7599663
-
-https://github.com/user-attachments/assets/df3f6d44-da88-4576-8128-d944d7041942
-
 ## Compatibility
 - [x] Google Play Store
 - [x] Bazaar (Iranian App Market)
@@ -31,6 +27,8 @@ https://github.com/user-attachments/assets/df3f6d44-da88-4576-8128-d944d7041942
 
 ## Custom Frida Scripts
 
+Some apps aren't supported by the module because they either verify purchase signatures locally or validate them through their own servers. These apps require custom scripts to bypass their specific verification methods.
+
 Scripts live under `scripts/src/` and are named after the target app's package name:
 
 ```
@@ -44,15 +42,19 @@ scripts/src/
 
 ### Custom Script Examples
 
-- Subway Surfers (`com.kiloo.subwaysurf`) - Infinite coins (just for fun, added as an example)
+- Subway Surfers `com.kiloo.subwaysurf`
 
 <img width="270" height="362" alt="ss0" src="https://github.com/user-attachments/assets/8b527efd-b4d9-47e8-a213-e09ef9f937c1" />
+
+- Ultimate USB `com.mixapplications.ultimateusb`
+
+- Bike Race `com.topfreegames.bikeracefreeworld`
 
 ### Contributing Custom Scripts
 
 Want to add support for another game or app? Feel free to open a pull request with a custom script.
 
-Scripts should focus on in-app purchase functionality (unlocking premium content, bypassing purchase checks, etc.)
+Scripts should only focus on bypassing purchase checks.
 
 Please include:
 - The package name of the app/game
