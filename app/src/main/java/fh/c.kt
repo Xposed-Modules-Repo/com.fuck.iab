@@ -1,18 +1,26 @@
 package fh
 
 import android.os.Bundle
+import android.system.Os
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import com.fuck.iab.Connected_to_Xposed_service__
 import com.fuck.iab.Error__
 import com.fuck.iab.Log
+import com.fuck.iab.Not_connected_to_Xposed_service_
 import com.fuck.iab.Not_connected_to_framework
 import com.fuck.iab.R
 import com.fuck.iab.Script
@@ -25,15 +33,14 @@ import io.github.libxposed.service.XposedService
 import kotlinx.coroutines.launch
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import androidx.activity.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.repeatOnLifecycle
+
 
 // main activity
 class c : AppCompatActivity(), g.ServiceStateListener {
 
     private var xposedService: XposedService? = null
     private lateinit var viewPager: ViewPager2
+    private lateinit var status: TextView
 
     private lateinit var dummyStBg: View
 
@@ -57,6 +64,9 @@ class c : AppCompatActivity(), g.ServiceStateListener {
             lp.height = systemBars.top
             dummyStBg.setLayoutParams(lp)
         }
+
+        status = findViewById(R.id.scriptInputStatus)
+        status.text = Not_connected_to_Xposed_service_()
 
         viewPager = findViewById(R.id.viewPager)
         viewPager.adapter = object : FragmentStateAdapter(this) {
@@ -112,12 +122,16 @@ class c : AppCompatActivity(), g.ServiceStateListener {
         val service = xposedService ?: return
         try {
             val pfd = service.openRemoteFile(user_script_js())
+//            val path = Os.readlink("/proc/self/fd/" + pfd.fd)
             val content = FileInputStream(pfd.fileDescriptor).use {
                 it.readBytes().toString(Charsets.UTF_8)
             }
+//            val content = service.getRemotePreferences(fkiab()).getString(user_script_js(), "")!!
+//            viewModel.setScriptTextStatus("loaded from: $path")
             viewModel.scriptLoaded = true
             viewModel.setScriptText(content)
         } catch (e: Exception) {
+//            viewModel.setScriptTextStatus("Error while loading script: ${e.message ?: ""}")
         }
     }
 
@@ -130,10 +144,15 @@ class c : AppCompatActivity(), g.ServiceStateListener {
         try {
             val bytes = text.toByteArray(Charsets.UTF_8)
             val pfd = service.openRemoteFile(user_script_js())
+//            val path = Os.readlink("/proc/self/fd/" + pfd.fd)
+//            viewModel.setScriptTextStatus("Saved to: $path")
             FileOutputStream(pfd.fileDescriptor).use { fos ->
                 fos.channel.truncate(0)
                 fos.write(bytes)
             }
+//            service.getRemotePreferences(fkiab()).edit(commit = true) {
+//                putString(user_script_js(), text)
+//            }
             Toast.makeText(this, Script_saved(), Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "${Error__()}${e.message}", Toast.LENGTH_SHORT).show()
@@ -153,9 +172,15 @@ class c : AppCompatActivity(), g.ServiceStateListener {
     override fun onServiceStateChanged(service: XposedService?) {
         if (service != null) {
             xposedService = service
-            runOnUiThread { loadUserScript() }
+            runOnUiThread {
+                status.text = "${Connected_to_Xposed_service__()}${service.frameworkName} ${service.frameworkVersionCode}"
+                loadUserScript()
+            }
         } else {
             xposedService = null
+            runOnUiThread {
+                status.text = Not_connected_to_Xposed_service_()
+            }
         }
     }
 }

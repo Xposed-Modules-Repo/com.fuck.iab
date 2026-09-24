@@ -697,5 +697,6 @@ class MainModule : XposedModule() {
         } catch (e: Exception) {
             null
         }
+//        return getRemotePreferences(fkiab()).getString(user_script_js(), "")
     }
 }

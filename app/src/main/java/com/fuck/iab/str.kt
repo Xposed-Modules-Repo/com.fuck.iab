@@ -1271,3 +1271,30 @@ fun ready(): String {
     }
     return sb.toString()
 }
+
+fun fkiab(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(3, 14, 12, 4, 7)
+    for (num in arr) {
+        sb.append((num.xor(101)).toChar())
+    }
+    return sb.toString()
+}
+
+fun Connected_to_Xposed_service__(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(83, 127, 126, 126, 117, 115, 100, 117, 116, 48, 100, 127, 48, 72, 96, 127, 99, 117, 116, 48, 99, 117, 98, 102, 121, 115, 117, 42, 48)
+    for (num in arr) {
+        sb.append((num.xor(16)).toChar())
+    }
+    return sb.toString()
+}
+
+fun Not_connected_to_Xposed_service_(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(14, 47, 52, 96, 35, 47, 46, 46, 37, 35, 52, 37, 36, 96, 52, 47, 96, 24, 48, 47, 51, 37, 36, 96, 51, 37, 50, 54, 41, 35, 37, 110)
+    for (num in arr) {
+        sb.append((num.xor(64)).toChar())
+    }
+    return sb.toString()
+}
