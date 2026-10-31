@@ -3,15 +3,19 @@ package com.fuck.iab
 import android.app.Activity
 import android.app.Application
 import android.app.Instrumentation
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.os.Process
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import com.fuck.iab.NativeBridge.startScript
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
@@ -148,6 +152,8 @@ class MainModule : XposedModule() {
 
                 hook(onCreate).intercept { chain ->
                     app = chain.thisObject as Application
+
+                    registerStopReceiver(app)
 
                     val bridge = DexKitBridge.create(applicationInfo.sourceDir)
                     NativeBridge.dexKitBridge = bridge
@@ -477,6 +483,27 @@ class MainModule : XposedModule() {
             }
         } catch (e: Exception) {
 
+        }
+    }
+
+    /**
+     * The framework cannot stop a target process, so the manager asks the module, which
+     * runs inside that process, to end it. Registered here because this is the first point
+     * where the target's own context exists.
+     */
+    private fun registerStopReceiver(context: Context) {
+        try {
+            val receiver = object : BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    Process.killProcess(Process.myPid())
+                }
+            }
+
+            ContextCompat.registerReceiver(
+                context, receiver, IntentFilter(ModuleActions.STOP_APP), ContextCompat.RECEIVER_EXPORTED
+            )
+        } catch (e: Exception) {
+//            log("Failed to register the stop receiver: ${e.message}")
         }
     }
 

@@ -2,11 +2,16 @@ package fh
 
 import android.app.Dialog
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
@@ -19,6 +24,8 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.fuck.iab.HookedProviders
+import com.fuck.iab.ModuleActions
 import com.fuck.iab.R
 import com.fuck.iab.ScriptDetails
 import com.fuck.iab.ScriptInfo
@@ -64,6 +71,7 @@ class scripts : Fragment() {
 
         adapter = ScriptAdapter(requireContext()) { script -> showDetails(script) }
         adapter.onEnabledChanged = { packageName, enabled -> viewModel.setEnabled(packageName, enabled) }
+        adapter.onMenu = { anchor, script -> showItemMenu(anchor, script) }
 
         list.layoutManager = LinearLayoutManager(requireContext())
         list.adapter = adapter
@@ -131,6 +139,77 @@ class scripts : Fragment() {
 
     private fun openEditor(packageName: String) {
         startActivity(editor.intent(requireContext(), packageName))
+    }
+
+    // ---- per-app menu ----------------------------------------------------------
+
+    private fun showItemMenu(anchor: View, script: ScriptInfo) {
+        val popup = PopupMenu(requireContext(), anchor)
+        popup.menuInflater.inflate(R.menu.menu_script_item, popup.menu)
+
+        // Nothing to inspect or stop for an app that is no longer on the device, but the
+        // store page still exists.
+        popup.menu.findItem(R.id.action_app_info).isEnabled = script.installed
+        popup.menu.findItem(R.id.action_force_stop).isEnabled = script.installed
+
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.action_app_info -> {
+                    openAppInfo(script.packageName)
+                    true
+                }
+
+                R.id.action_force_stop -> {
+                    stopApp(script.packageName)
+                    true
+                }
+
+                R.id.action_play_store -> {
+                    openPlayStore(script.packageName)
+                    true
+                }
+
+                else -> false
+            }
+        }
+
+        popup.show()
+    }
+
+    private fun openAppInfo(packageName: String) {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            .setData(Uri.fromParts("package", packageName, null))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+        }
+    }
+
+    /** The framework cannot stop a target, so the module inside that app ends its process. */
+    private fun stopApp(packageName: String) {
+        requireContext().sendBroadcast(Intent(ModuleActions.STOP_APP).setPackage(packageName))
+    }
+
+    private fun openPlayStore(packageName: String) {
+        val market = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName"))
+            .setPackage(HookedProviders.PLAY_STORE)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+        try {
+            startActivity(market)
+        } catch (e: Exception) {
+            try {
+                startActivity(
+                    Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("https://play.google.com/store/apps/details?id=$packageName")
+                    )
+                )
+            } catch (e: Exception) {
+            }
+        }
     }
 
     // ---- detail sheet ----------------------------------------------------------
@@ -302,6 +381,7 @@ private class ScriptAdapter(
 ) : ListAdapter<ScriptInfo, ScriptAdapter.Holder>(DIFF) {
 
     var onEnabledChanged: ((String, Boolean) -> Unit)? = null
+    var onMenu: ((View, ScriptInfo) -> Unit)? = null
 
     class Holder(view: View) : RecyclerView.ViewHolder(view) {
         val icon: ImageView = view.findViewById(R.id.scriptIcon)
@@ -309,6 +389,7 @@ private class ScriptAdapter(
         val packageName: TextView = view.findViewById(R.id.scriptPackage)
         val meta: TextView = view.findViewById(R.id.scriptMeta)
         val covers: TextView = view.findViewById(R.id.scriptCovers)
+        val menu: ImageButton = view.findViewById(R.id.scriptMenu)
         val switch: MaterialSwitch = view.findViewById(R.id.scriptSwitch)
     }
 
@@ -323,6 +404,8 @@ private class ScriptAdapter(
 
     override fun onBindViewHolder(holder: Holder, position: Int) {
         val item = getItem(position)
+
+        holder.menu.setOnClickListener { onMenu?.invoke(holder.menu, item) }
 
         val isAllApps = item.packageName == ScriptStore.ALL_APPS
 

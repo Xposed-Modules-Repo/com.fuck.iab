@@ -59,6 +59,10 @@
     <string name="scripts_covers_many">covers %1$d apps</string>
     <string name="scripts_not_in_scope">not in scope</string>
     <string name="scripts_not_installed">not installed</string>
+    <string name="more_options">More options</string>
+    <string name="menu_app_info">App info</string>
+    <string name="menu_force_stop">Force stop</string>
+    <string name="menu_play_store">View in Play Store</string>
     <string name="scripts_hook_handled">handled by the module hook</string>
 
     <!-- details -->
