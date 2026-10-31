@@ -14,7 +14,7 @@
     <string name="nav_logs">Logs</string>
 
     <!-- actions -->
-    <string name="action_new_script">New script</string>
+    <string name="action_new_script">Create</string>
     <string name="action_revert">Remove</string>
     <string name="action_theme">Theme</string>
     <string name="action_theme_light">Switch to light theme</string>
@@ -43,7 +43,7 @@
     <string name="scripts_all_apps">Global script</string>
     <string name="source_user">user</string>
     <string name="source_remote">remote</string>
-    <string name="scripts_new_title">Create</string>
+    <string name="scripts_new_title">New Script</string>
     <string name="scripts_search_hint">Search apps</string>
     <string name="scripts_search">Search scripts</string>
     <string name="scripts_no_match">No matching app</string>
