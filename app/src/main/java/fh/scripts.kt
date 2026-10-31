@@ -98,6 +98,7 @@ class scripts : Fragment() {
                 viewModel.state.collect { state ->
                     all = state.scripts
                     applyFilters(empty)
+                    viewModel.syncIfEmpty(state.scripts.size)
                 }
             }
         }

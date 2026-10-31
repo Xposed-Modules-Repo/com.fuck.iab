@@ -61,6 +61,8 @@ Per-app scripts can be published on their own, so a new script reaches the manag
 - `scripts/dist/` is committed, so the store lives in the same branch as the code and the manager reads it straight from the repository. The Update script store workflow rebuilds it when a file in `scripts/src/` changes on `dev` or `main`.
 - The store address is a build setting rather than part of the repository: pass `-PscriptsBaseUrl=...` or put `scriptsBaseUrl` in `local.properties`, and CI derives it from the repository that is building. The Scripts screen updates from it with the **Update scripts** action.
 
+A fresh install asks for the store once by itself when the Scripts screen finds nothing, so the list is not blank after installing; after that, **Update scripts** is the only thing that fetches.
+
 Downloaded copies are stored next to the user copies. The module runs a user copy if there is one, else the synced copy. The only script packaged into the APK is the global one, so a per-app script has a single source.
 
 ### Contributing Custom Scripts

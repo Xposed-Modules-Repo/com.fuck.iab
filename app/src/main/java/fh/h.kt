@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.fuck.iab.HookedApp
 import com.fuck.iab.R
+import com.fuck.iab.RemoteScripts
 import com.fuck.iab.ScriptInfo
 import com.fuck.iab.ScriptStore
 import com.fuck.iab.ScriptSync
@@ -295,6 +296,29 @@ class h(application: Application) : AndroidViewModel(application) {
                         }
                     )
                 }
+            }
+        }
+    }
+
+    private var autoSynced = false
+
+    /**
+     * A fresh install has nothing to show until the store is fetched, so the Scripts screen
+     * asks for one update the first time it finds the list empty. That happens once per run
+     * and only with a store and a service to write into, so it can never turn into a poll.
+     */
+    fun syncIfEmpty(scriptCount: Int) {
+        if (scriptCount > 0 || autoSynced) return
+        if (!RemoteScripts.configured || currentService == null) return
+
+        autoSynced = true
+
+        viewModelScope.launch {
+            try {
+                syncRemoteScripts()
+            } catch (e: Exception) {
+                // The empty list is already saying something is missing, and the update
+                // action stays there for a retry with its own error message.
             }
         }
     }
