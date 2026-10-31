@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "generatedAt": "2026-10-31T05:06:31.030Z",
+  "generatedAt": "2026-10-31T05:10:52.198Z",
   "scripts": [
     {
       "package": "app.simple.inure.play",
@@ -11,20 +11,28 @@
       "author": "you1mak"
     },
     {
-      "package": "com.adguard.android",
-      "name": "AdGuard",
-      "file": "com.adguard.android.js",
-      "sha256": "6257b16e3476ea2bd994346244e21e0da47c9fc4c1b739cdd38f7c0244160635",
-      "size": 765,
-      "author": "Fexture69"
-    },
-    {
       "package": "com.BrainLadder.Amirza",
       "name": "آمیرزا",
       "file": "com.BrainLadder.Amirza.js",
       "sha256": "d687b1eed9fdeb8edeb02bc58018016170a1b80aca74a29fef5159c6c8257be7",
       "size": 406,
       "author": "staleroot"
+    },
+    {
+      "package": "com.PoxelStudios.DudeTheftAuto",
+      "name": "Dude Theft Wars",
+      "file": "com.PoxelStudios.DudeTheftAuto.js",
+      "sha256": "f581ddea73c6c9ec390597bfa795f280115de2ea8f062787a6d471e390bce3f5",
+      "size": 513,
+      "author": "staleroot"
+    },
+    {
+      "package": "com.adguard.android",
+      "name": "AdGuard",
+      "file": "com.adguard.android.js",
+      "sha256": "6257b16e3476ea2bd994346244e21e0da47c9fc4c1b739cdd38f7c0244160635",
+      "size": 765,
+      "author": "Fexture69"
     },
     {
       "package": "com.cloudflare.onedotonedotonedotone",
@@ -65,14 +73,6 @@
       "sha256": "705794c0859b1b24c468aafdd6726bd84cda4b8c7aaded608515d9a619a45d88",
       "size": 1132,
       "author": "you1mak"
-    },
-    {
-      "package": "com.PoxelStudios.DudeTheftAuto",
-      "name": "Dude Theft Wars",
-      "file": "com.PoxelStudios.DudeTheftAuto.js",
-      "sha256": "f581ddea73c6c9ec390597bfa795f280115de2ea8f062787a6d471e390bce3f5",
-      "size": 513,
-      "author": "staleroot"
     },
     {
       "package": "com.topfreegames.bikeracefreeworld",
