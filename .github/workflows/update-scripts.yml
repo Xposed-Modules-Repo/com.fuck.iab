@@ -4,7 +4,7 @@ name: Update script store
 # be compiled and committed here rather than published to a branch of its own.
 on:
   push:
-    branches: [ dev, main ]
+    branches: [ ui, dev, main ]
     paths:
       - 'scripts/src/**'
       - 'scripts/build.js'
