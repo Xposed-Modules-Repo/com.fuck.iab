@@ -40,10 +40,6 @@
     <string name="home_scope_unconfirmed">The framework is not reporting the scope right now, so this is the last list it gave.</string>
     <string name="home_scope_unknown">The framework is not reporting the module scope right now.</string>
     <string name="home_hooked_empty">No apps in the module scope yet.</string>
-    <string name="home_script_none">no script</string>
-    <string name="home_script_global">all apps script</string>
-    <string name="home_script_hook">built-in hook</string>
-    <string name="home_script_disabled">disabled</string>
 
     <!-- scripts -->
     <string name="scripts_empty">No scripts yet. Pull to refresh or create one.</string>
@@ -62,6 +58,7 @@
     <string name="more_options">More options</string>
     <string name="menu_app_info">App info</string>
     <string name="menu_force_stop">Force stop</string>
+    <string name="menu_force_stop_no_su">Force stop needs root. Grant su access and try again.</string>
     <string name="menu_play_store">View in Play Store</string>
     <string name="scripts_hook_handled">handled by the module hook</string>
 

@@ -102,7 +102,6 @@ private class AppAdapter(private val context: Context) : ListAdapter<HookedApp, 
         val label: TextView = view.findViewById(R.id.appLabel)
         val packageName: TextView = view.findViewById(R.id.appPackage)
         val running: TextView = view.findViewById(R.id.appRunning)
-        val state: TextView = view.findViewById(R.id.appState)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
@@ -114,31 +113,12 @@ private class AppAdapter(private val context: Context) : ListAdapter<HookedApp, 
 
         holder.label.text = app.label
         holder.packageName.text = app.packageName
-        holder.state.text = stateLabel(app)
 
         val running = runningLabel(app.running)
         holder.running.text = running
         holder.running.isVisible = running != null
 
         holder.icon.setImageDrawable(iconFor(app.packageName))
-    }
-
-    private fun stateLabel(app: HookedApp): String {
-        // The stores the module hooks itself never run a script, so they must not read as one.
-        if (HookedProviders.handles(app.packageName)) {
-            return context.getString(R.string.home_script_hook)
-        }
-
-        val script = app.script
-
-        if (script == null) {
-            // Nothing dedicated for this app, but the all-apps script runs there when it is loaded.
-            val label = if (app.isRunning) R.string.home_script_global else R.string.home_script_none
-            return context.getString(label)
-        }
-
-        if (!script.enabled) return context.getString(R.string.home_script_disabled)
-        return sourceLabel(context, script.source)
     }
 
     /** "running · pid 1234", or null when the module is not loaded in that app. */

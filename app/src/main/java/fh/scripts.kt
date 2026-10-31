@@ -13,6 +13,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -25,8 +26,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.fuck.iab.HookedProviders
-import com.fuck.iab.ModuleActions
 import com.fuck.iab.R
+import com.fuck.iab._c
+import com.fuck.iab.su
 import com.fuck.iab.ScriptDetails
 import com.fuck.iab.ScriptInfo
 import com.fuck.iab.ScriptSource
@@ -187,9 +189,26 @@ class scripts : Fragment() {
         }
     }
 
-    /** The framework cannot stop a target, so the module inside that app ends its process. */
+    /** Force stopping another app needs root, so the failure is reported instead of ignored. */
     private fun stopApp(packageName: String) {
-        requireContext().sendBroadcast(Intent(ModuleActions.STOP_APP).setPackage(packageName))
+        val context = requireContext().applicationContext
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val stopped = withContext(Dispatchers.IO) {
+                try {
+                    val process = Runtime.getRuntime().exec(
+                        arrayOf(su(), _c(), "am force-stop $packageName")
+                    )
+                    process.waitFor() == 0
+                } catch (e: Exception) {
+                    false
+                }
+            }
+
+            if (!stopped) {
+                Toast.makeText(context, R.string.menu_force_stop_no_su, Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun openPlayStore(packageName: String) {
