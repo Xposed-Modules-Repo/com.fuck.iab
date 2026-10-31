@@ -7,6 +7,11 @@
         android:title="@string/action_theme"
         app:showAsAction="always" />
     <item
+        android:id="@+id/action_sync_scripts"
+        android:icon="@drawable/ic_sync"
+        android:title="@string/action_update_scripts"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/action_logs_retry"
         android:icon="@drawable/ic_refresh"
         android:title="@string/action_retry"

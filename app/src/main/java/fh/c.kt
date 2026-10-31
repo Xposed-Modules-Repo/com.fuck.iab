@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.pm.PackageInfoCompat
@@ -11,13 +12,16 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.fuck.iab.R
+import com.fuck.iab.RemoteScripts
 import com.fuck.iab.ScriptStore
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import io.github.libxposed.service.XposedService
+import kotlinx.coroutines.launch
 
 // main activity: home, scripts and logs behind a bottom navigation bar
 class c : AppCompatActivity(), g.ServiceStateListener {
@@ -91,9 +95,16 @@ class c : AppCompatActivity(), g.ServiceStateListener {
         // current page can do.
         val onLogs = viewPager.currentItem == PAGE_LOGS
         val onHome = viewPager.currentItem == PAGE_HOME
+        val onScripts = viewPager.currentItem == PAGE_SCRIPTS
 
         menu.findItem(R.id.action_logs_retry)?.isVisible = onLogs
         menu.findItem(R.id.action_logs_clear)?.isVisible = onLogs
+
+        // Updating the store belongs to the scripts screen, and only one update runs at a time.
+        menu.findItem(R.id.action_sync_scripts)?.apply {
+            isVisible = onScripts
+            isEnabled = !syncing
+        }
 
         // The theme button belongs to the home page, and offers the mode the app is not in.
         menu.findItem(R.id.action_theme)?.apply {
@@ -117,6 +128,11 @@ class c : AppCompatActivity(), g.ServiceStateListener {
                 true
             }
 
+            R.id.action_sync_scripts -> {
+                updateScripts()
+                true
+            }
+
             R.id.action_logs_retry -> {
                 viewModel.retryLogcatStreaming()
                 true
@@ -128,6 +144,43 @@ class c : AppCompatActivity(), g.ServiceStateListener {
             }
 
             else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private var syncing = false
+
+    /**
+     * Downloads the published scripts. The store is remote, so the outcome is a toast rather
+     * than a dialog, and the list reloads itself once the new copies are in place.
+     */
+    private fun updateScripts() {
+        if (syncing) return
+
+        if (!RemoteScripts.configured) {
+            Toast.makeText(this, R.string.toast_scripts_no_store, Toast.LENGTH_LONG).show()
+            return
+        }
+
+        syncing = true
+        invalidateOptionsMenu()
+
+        lifecycleScope.launch {
+            val text = try {
+                val result = viewModel.syncRemoteScripts()
+
+                if (result.downloaded == 0) {
+                    getString(R.string.toast_scripts_current)
+                } else {
+                    getString(R.string.toast_scripts_updated, result.downloaded)
+                }
+            } catch (e: Exception) {
+                getString(R.string.toast_scripts_failed, e.message ?: e.javaClass.simpleName)
+            } finally {
+                syncing = false
+                invalidateOptionsMenu()
+            }
+
+            Toast.makeText(this@c, text, Toast.LENGTH_LONG).show()
         }
     }
 

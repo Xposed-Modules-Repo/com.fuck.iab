@@ -12,7 +12,7 @@ import java.io.FileOutputStream
 import java.util.Locale
 
 /** Where the script that is currently used for a package comes from. */
-enum class ScriptSource { USER, BUNDLED }
+enum class ScriptSource { USER, REMOTE, BUNDLED }
 
 data class ScriptInfo(
     val packageName: String,
@@ -164,6 +164,7 @@ object ScriptStore {
     ): List<ScriptInfo> {
         val files = if (service != null) RemoteFiles.list(service) else emptySet()
         val bundled = bundledScripts(context)
+        val synced = if (service != null) syncedEntries(service) else emptyMap()
         val disabled = if (service != null) disabledApps(service) else emptySet()
         val users = userEntries(context, files)
 
@@ -171,10 +172,12 @@ object ScriptStore {
         // per-app scripts leaves it out.
         val names = sortedSetOf<String>()
         names += users.keys.filter { it != ALL_APPS }
+        names += synced.keys.filter { it != ALL_APPS }
         names += bundled.keys.filter { it != ALL_APPS }
 
         return names.map { packageName ->
             val user = users[packageName]
+            val syncedEntry = synced[packageName]
             val builtIn = bundled[packageName]
             val installed = isInstalled(context, packageName)
 
@@ -187,6 +190,10 @@ object ScriptStore {
                 source = ScriptSource.USER
                 size = text?.toByteArray(Charsets.UTF_8)?.size ?: 0
                 author = text?.let { authorOf(it) }
+            } else if (syncedEntry != null) {
+                source = ScriptSource.REMOTE
+                size = syncedEntry.size.toInt()
+                author = syncedEntry.author
             } else {
                 source = ScriptSource.BUNDLED
                 size = builtIn?.second ?: 0
@@ -213,6 +220,12 @@ object ScriptStore {
             compareByDescending<ScriptInfo> { it.installed }
                 .thenBy { appLabel(context, it.packageName).lowercase(Locale.US) }
         )
+    }
+
+    /** The scripts the store lists, keyed by package, as of the last sync. */
+    private fun syncedEntries(service: XposedService): Map<String, RemoteScripts.Entry> {
+        return RemoteScripts.parseIndex(RemoteFiles.read(service, RemoteScripts.INDEX_FILE))
+            ?.entries?.associateBy { it.packageName } ?: emptyMap()
     }
 
     /** Whether [packageName] is installed, so the list can say when it is not. */
@@ -262,6 +275,7 @@ object ScriptStore {
         val scoped = if (service != null) scope(service) else emptyList()
 
         val userFile = userFile(packageName)
+        val syncedFile = RemoteScripts.fileName(packageName)
         val bundled = bundledScripts(context)[packageName]?.first
 
         val source: ScriptSource
@@ -273,6 +287,12 @@ object ScriptStore {
                 source = ScriptSource.USER
                 file = userFile
                 text = RemoteFiles.read(service, userFile)
+            }
+
+            service != null && files.contains(syncedFile) -> {
+                source = ScriptSource.REMOTE
+                file = syncedFile
+                text = RemoteFiles.read(service, syncedFile)
             }
 
             else -> {
@@ -312,6 +332,9 @@ object ScriptStore {
 
         val user = readUserScript(context, service, packageName)
         if (!user.isNullOrBlank()) return ScriptSource.USER to user
+
+        val synced = RemoteFiles.read(service, RemoteScripts.fileName(packageName))
+        if (!synced.isNullOrBlank()) return ScriptSource.REMOTE to synced
 
         val bundled = bundledScripts(context)[packageName]?.first
         if (!bundled.isNullOrBlank()) return ScriptSource.BUNDLED to bundled

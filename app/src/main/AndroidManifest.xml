@@ -4,6 +4,8 @@
 
     <!-- The script list shows the name and icon of the apps it covers. -->
     <uses-permission
+        android:name="android.permission.INTERNET" />
+    <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
 

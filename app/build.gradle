@@ -13,6 +13,11 @@ android {
         versionCode 39
         versionName "1.6.5"
 
+        // Where scripts/publish.js stores the compiled scripts, so the manager can update
+        // them without a new APK. Set scriptsBaseUrl in gradle.properties; an empty value
+        // means this build has no store.
+        buildConfigField "String", "SCRIPTS_BASE_URL", "\"${project.findProperty('scriptsBaseUrl') ?: ''}\""
+
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
@@ -42,6 +47,10 @@ android {
                 signingConfig signingConfigs.release
             }
         }
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 
     compileOptions {

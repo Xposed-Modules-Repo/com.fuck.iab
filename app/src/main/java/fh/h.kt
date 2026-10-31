@@ -7,6 +7,7 @@ import com.fuck.iab.HookedApp
 import com.fuck.iab.R
 import com.fuck.iab.ScriptInfo
 import com.fuck.iab.ScriptStore
+import com.fuck.iab.ScriptSync
 import com.fuck.iab.__A_Z__
 import com.fuck.iab._c
 import com.fuck.iab._s_
@@ -296,6 +297,21 @@ class h(application: Application) : AndroidViewModel(application) {
                 }
             }
         }
+    }
+
+    /**
+     * Downloads the published scripts and reloads the list, so the new copies show up as
+     * synced. Throws when the store cannot be reached or the service is not connected.
+     */
+    suspend fun syncRemoteScripts(): ScriptSync.Result {
+        val service = currentService
+            ?: throw IllegalStateException(
+                getApplication<Application>().getString(R.string.toast_not_connected)
+            )
+
+        val result = withContext(Dispatchers.IO) { ScriptSync.sync(service) }
+        refresh()
+        return result
     }
 
     fun setEnabled(packageName: String, enabled: Boolean) {

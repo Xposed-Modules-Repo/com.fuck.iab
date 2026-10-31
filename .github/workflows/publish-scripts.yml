@@ -1,0 +1,58 @@
+name: Publish scripts
+
+# A script change on its own should go live without building and releasing an apk,
+# so this publishes the compiled store on its own whenever scripts change.
+on:
+  push:
+    branches: [ dev, main ]
+    paths:
+      - 'scripts/src/**'
+      - 'scripts/build.js'
+      - 'scripts/publish.js'
+      - 'scripts/package.json'
+      - 'scripts/package-lock.json'
+  workflow_dispatch:
+
+concurrency:
+  group: publish-scripts
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish script store
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: scripts/package-lock.json
+
+      - name: Build the script store
+        working-directory: scripts
+        run: |
+          npm ci
+          npm run build:dist
+
+      - name: Prepare git credentials
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Passed through the environment rather than a url or argv, so the token
+          # cannot end up in the log or in a git error message.
+          AUTH="$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 -w0)"
+          {
+            echo "GIT_CONFIG_COUNT=1"
+            echo "GIT_CONFIG_KEY_0=http.https://github.com/.extraheader"
+            echo "GIT_CONFIG_VALUE_0=AUTHORIZATION: basic $AUTH"
+          } >> "$GITHUB_ENV"
+
+      - name: Publish to the scripts-dist branch
+        working-directory: scripts
+        run: node publish.js

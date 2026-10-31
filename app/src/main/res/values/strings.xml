@@ -21,6 +21,7 @@
     <string name="action_theme_light">Switch to light theme</string>
     <string name="action_theme_dark">Switch to dark theme</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_update_scripts">Update scripts</string>
 
     <!-- home -->
     <string name="home_hooked">Hooked apps</string>
@@ -42,6 +43,7 @@
     <string name="scripts_empty">No scripts yet. Pull to refresh or create one.</string>
     <string name="scripts_all_apps">Global script</string>
     <string name="source_user">user</string>
+    <string name="source_remote">synced</string>
     <string name="source_bundled">bundled</string>
     <string name="scripts_new_title">New script</string>
     <string name="scripts_search_hint">Search apps</string>
@@ -90,4 +92,8 @@
     <string name="toast_restore_failed">Could not restore, nothing was changed</string>
     <string name="toast_not_connected">Not connected to the Xposed service.</string>
     <string name="toast_package_required">Enter a package name</string>
+    <string name="toast_scripts_updated">%1$d scripts updated</string>
+    <string name="toast_scripts_current">Scripts are up to date</string>
+    <string name="toast_scripts_failed">Could not update scripts: %1$s</string>
+    <string name="toast_scripts_no_store">This build has no script store configured</string>
 </resources>

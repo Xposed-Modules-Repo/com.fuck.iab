@@ -484,7 +484,9 @@ class MainModule : XposedModule() {
         // A script switched off in the manager app must not run for that app.
         if (isScriptDisabled(packageName)) return null
 
-        return readUserScriptForPackage(packageName) ?: readBundledScript(packageName)
+        return readUserScriptForPackage(packageName)
+            ?: readSyncedScriptForPackage(packageName)
+            ?: readBundledScript(packageName)
     }
 
     // The scripts compiled into the APK are what runs when the manager has no user copy.
@@ -526,6 +528,26 @@ class MainModule : XposedModule() {
                 .takeIf { it.isNotBlank() }
         } catch (e: Exception) {
 //            log("Failed to read the user script for $packageName: ${e.message}")
+            null
+        }
+    }
+
+    // A script downloaded by the manager from the store, which wins over the bundled one but
+    // not over a copy the user wrote. The store only holds per-app scripts, so the global
+    // script is always the one compiled into the APK.
+    private fun readSyncedScriptForPackage(packageName: String): String? {
+        if (packageName == global()) return null
+        if (frameworkProperties.and(XposedInterface.PROP_CAP_REMOTE) == 0L) return null
+
+        val name = RemoteScripts.fileName(packageName)
+
+        return try {
+            if (listRemoteFiles().none { it == name }) return null
+
+            val pfd = openRemoteFile(name)
+            FileInputStream(pfd.fileDescriptor).use { it.readBytes().toString(Charsets.UTF_8) }
+                .takeIf { it.isNotBlank() }
+        } catch (e: Exception) {
             null
         }
     }

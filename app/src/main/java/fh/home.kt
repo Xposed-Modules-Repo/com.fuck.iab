@@ -206,6 +206,7 @@ fun coverageLabel(
 fun sourceLabel(context: Context, source: ScriptSource): String {
     return when (source) {
         ScriptSource.USER -> context.getString(R.string.source_user)
+        ScriptSource.REMOTE -> context.getString(R.string.source_remote)
         ScriptSource.BUNDLED -> context.getString(R.string.source_bundled)
     }
 }

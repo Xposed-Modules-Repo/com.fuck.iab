@@ -86,6 +86,7 @@ class scripts : Fragment() {
             .setOnCheckedStateChangeListener { _, checkedIds ->
                 filter = when (checkedIds.firstOrNull()) {
                     R.id.filterStore -> ScriptSource.BUNDLED
+                    R.id.filterSynced -> ScriptSource.REMOTE
                     R.id.filterUser -> ScriptSource.USER
                     else -> null
                 }
