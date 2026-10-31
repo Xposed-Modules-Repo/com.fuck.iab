@@ -24,6 +24,8 @@ Home lists the apps the module is loaded in, with the processes it is running in
 
 Scripts lists every script with an on/off switch. Tapping a row opens the editor, where your own copy can be written; the same menu appears on each row. **Update scripts** downloads the newer scripts from the repository.
 
+An app that is installed is named by the system, as usual. One that is not installed is named by the store, so a script for a game you removed still reads as the game instead of its package name.
+
 Logs shows what the module and the scripts print. It reads logcat, so it needs root access.
 
 ## Scripts
