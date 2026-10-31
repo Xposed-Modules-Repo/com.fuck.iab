@@ -170,7 +170,9 @@ jobs:
       - name: Verify packaged Frida scripts
         run: |
           test -s app/src/main/assets/scripts/global.js
-          test -s app/src/main/assets/scripts/com.adguard.android.js
+          # The per-app scripts travel in the store, which the manager downloads from.
+          test -s scripts/dist/manifest.json
+          test -s scripts/dist/scripts/com.adguard.android.js
 
       - name: Upload release arm64 apk
         uses: actions/upload-artifact@v7
