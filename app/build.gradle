@@ -2,6 +2,22 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+// Where the manager updates its per-app scripts from. The address is not part of the
+// repository: pass -PscriptsBaseUrl=..., or put scriptsBaseUrl in local.properties, which is
+// not committed. CI falls back to GITHUB_REPOSITORY, so any fork builds its own store.
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withInputStream { localProperties.load(it) }
+}
+
+def scriptsBaseUrl = project.findProperty('scriptsBaseUrl')
+        ?: localProperties.getProperty('scriptsBaseUrl')
+        ?: System.getenv('GITHUB_REPOSITORY')?.with {
+            "https://raw.githubusercontent.com/${it}/HEAD/scripts/dist/"
+        }
+        ?: ''
+
 android {
     namespace 'com.fuck.iab'
     compileSdk 37
@@ -13,10 +29,9 @@ android {
         versionCode 39
         versionName "1.6.5"
 
-        // Where scripts/publish.js stores the compiled scripts, so the manager can update
-        // them without a new APK. Set scriptsBaseUrl in gradle.properties; an empty value
-        // means this build has no store.
-        buildConfigField "String", "SCRIPTS_BASE_URL", "\"${project.findProperty('scriptsBaseUrl') ?: ''}\""
+        // An empty value means this build has no store, which the Scripts screen says
+        // instead of offering an update that cannot work.
+        buildConfigField "String", "SCRIPTS_BASE_URL", "\"${scriptsBaseUrl}\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
