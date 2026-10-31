@@ -61,7 +61,7 @@ Per-app scripts can be published on their own, so a new script reaches the manag
 - `scripts/dist/` is committed, so the store lives in the same branch as the code and the manager reads it straight from the repository. The Update script store workflow rebuilds it when a file in `scripts/src/` changes on `dev` or `main`.
 - The store address is the `scriptsBaseUrl` property in `gradle.properties`, and the Scripts screen updates from it with the **Update scripts** action.
 
-Downloaded copies are stored next to the user copies. The module runs a user copy if there is one, else the synced copy, else the script bundled in the APK.
+Downloaded copies are stored next to the user copies. The module runs a user copy if there is one, else the synced copy. The only script packaged into the APK is the global one, so a per-app script has a single source.
 
 ### Contributing Custom Scripts
 

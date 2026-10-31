@@ -108,8 +108,9 @@ abstract class CompileFridaScriptsTask extends DefaultTask {
         def workDir = scriptsWorkingDir.get().asFile
         def outDir = outputDir.get().asFile
 
-        // build.js compiles every script in scripts/src, including the global one that
-        // needs different flags, and clears the files of removed scripts first.
+        // build.js compiles the global script, which is the only one packaged into the apk,
+        // and clears the files of removed scripts first. Per-app scripts live in scripts/dist
+        // and reach a device through the store instead.
         if (!new File(workDir, 'node_modules/frida-compile').exists()) {
             throw new GradleException(
                     "Frida scripts cannot be compiled: run `npm install` in ${workDir.path} first.")
@@ -130,7 +131,7 @@ abstract class CompileFridaScriptsTask extends DefaultTask {
 
 tasks.register('compileFridaScripts', CompileFridaScriptsTask) {
     group = 'frida'
-    description = 'Compile the scripts in scripts/src into assets/scripts/<package>.js'
+    description = 'Compile the global script in scripts/src into assets/scripts/global.js'
 
     scriptsSrcDir.set(layout.projectDirectory.dir('../scripts/src'))
     scriptsWorkingDir.set(layout.projectDirectory.dir('../scripts'))

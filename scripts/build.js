@@ -10,8 +10,9 @@ const ASSETS_DIR = path.join(__dirname, "..", "app", "src", "main", "assets", "s
 const DIST_DIR = path.join(__dirname, "dist");
 const DIST_SCRIPTS_DIR = path.join(DIST_DIR, "scripts");
 
-// The global script carries the bridge and is compiled into the apk, so the store that the
-// manager downloads from holds per-app scripts only.
+// The global script carries the bridge and is compiled into the apk. Every per-app script
+// comes from the store in dist/, which the manager downloads from, so the apk holds one
+// copy of each script rather than two.
 const GLOBAL = "global";
 
 function cleanOutputDir(dir) {
@@ -97,13 +98,16 @@ if (args.includes("--dist")) {
 
     writeDistManifest(entries);
 } else if (args.includes("--all") || args.length === 0) {
+    // Only the global script belongs in the apk; the rest are downloaded from the store.
     cleanOutputDir(ASSETS_DIR);
-
-    const files = readdirSync(SRC_DIR).filter(f => f.endsWith(".js"));
-    if (files.length === 0) {
-        console.warn("No .js files found.");
-    }
-    files.forEach(f => compile(f.replace(/\.js$/, ""), ASSETS_DIR));
+    compile(GLOBAL, ASSETS_DIR);
 } else {
-    args.forEach(name => compile(name, ASSETS_DIR));
+    // A single script is built for trying it out, so it goes to the store copy instead of
+    // being packaged into the apk.
+    mkdirSync(DIST_SCRIPTS_DIR, { recursive: true });
+    args.forEach(name => compile(name, name === GLOBAL ? ASSETS_DIR : DIST_SCRIPTS_DIR));
+
+    if (args.some(name => name !== GLOBAL)) {
+        console.log("Run `npm run build:dist` to refresh dist/manifest.json before committing.");
+    }
 }
