@@ -1,6 +1,7 @@
 package fh
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.LruCache
@@ -119,6 +120,20 @@ private class AppAdapter(private val context: Context) : ListAdapter<HookedApp, 
         holder.running.isVisible = running != null
 
         holder.icon.setImageDrawable(iconFor(app.packageName))
+
+        holder.itemView.setOnClickListener { open(app.packageName) }
+    }
+
+    /** Tapping a row opens the app itself, which is what the list is about. */
+    private fun open(packageName: String) {
+        val intent = context.packageManager.getLaunchIntentForPackage(packageName) ?: return
+
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+        try {
+            context.startActivity(intent)
+        } catch (e: Exception) {
+        }
     }
 
     /** "running · pid 1234", or null when the module is not loaded in that app. */
