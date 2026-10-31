@@ -58,7 +58,7 @@ A script can be edited in the manager app. The saved copy lives in the module's 
 Per-app scripts can be published on their own, so a new script reaches the manager without a new APK:
 
 - `npm run build:dist` in `scripts/` compiles every per-app script into `scripts/dist/` and writes `dist/manifest.json` with the size, author and SHA-256 of each file. The global script is left out: it carries the bridge and is compiled into the APK.
-- `npm run publish` pushes `scripts/dist/` to the `scripts-dist` branch, which is where the manager downloads from. The Publish scripts workflow does the same whenever a file in `scripts/src/` changes on `dev` or `main`.
+- `scripts/dist/` is committed, so the store lives in the same branch as the code and the manager reads it straight from the repository. The Update script store workflow rebuilds it when a file in `scripts/src/` changes on `dev` or `main`.
 - The store address is the `scriptsBaseUrl` property in `gradle.properties`, and the Scripts screen updates from it with the **Update scripts** action.
 
 Downloaded copies are stored next to the user copies. The module runs a user copy if there is one, else the synced copy, else the script bundled in the APK.
