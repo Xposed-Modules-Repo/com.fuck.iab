@@ -1,0 +1,82 @@
+name: Add script
+
+# Contributors fill in the "Add a script" issue form, and this turns it into a pull request
+# with the script file, its name in the store and the rebuilt store. Nothing is merged here:
+# the pull request is reviewed like any other.
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: add-script-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  add:
+    name: Write the script and open a pull request
+    if: contains(github.event.issue.labels.*.name, 'add script')
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: scripts/package-lock.json
+
+      - name: Write the script, its name and its scope entry
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: node .github/scripts/from-issue.js
+
+      - name: Build the store
+        working-directory: scripts
+        run: |
+          npm ci
+          npm run build:dist
+
+      - name: Open the pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+
+          BRANCH="script/$PACKAGE"
+          EXISTING="$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')"
+
+          if [ -n "$EXISTING" ]; then
+            echo "Pull request #$EXISTING is already open for $PACKAGE."
+            exit 0
+          fi
+
+          git config user.name fkiab
+          git config user.email fkiab@users.noreply.github.com
+          git switch -c "$BRANCH"
+          git add "scripts/src/$PACKAGE.js" scripts/names.json scripts/dist \
+            app/src/main/resources/META-INF/xposed/scope.list
+          git commit -m "feat(scripts): add script for $APP_NAME"
+          # The branch belongs to this bot, so a retry after a failure replaces it instead of
+          # being rejected as a non-fast-forward.
+          git push --force -u origin "$BRANCH"
+
+          gh pr create \
+            --base "${{ github.event.repository.default_branch }}" \
+            --head "$BRANCH" \
+            --title "feat(scripts): add script for $APP_NAME" \
+            --body "$(printf 'Script for `%s` (`%s`), added to the module scope and to the store.\n\n%s\n\nCloses #%s\n' "$APP_NAME" "$PACKAGE" "$NOTES" "$ISSUE")"
+
+      - name: Say what went wrong
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE: ${{ github.event.issue.number }}
+        run: |
+          gh issue comment "$ISSUE" --body "The bot could not use this form: ${ERROR:-see the workflow log}. Fix the issue body and add the \`add script\` label again, or open a pull request by hand."

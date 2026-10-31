@@ -2,6 +2,8 @@ package fh;
 
 import android.app.Application;
 
+import com.fuck.iab.ScriptStore;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -22,6 +24,9 @@ public class g extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        ScriptStore.applyTheme(this);
+
         XposedServiceHelper.registerListener(new XposedServiceHelper.OnServiceListener() {
             @Override
             public void onServiceBind(XposedService bound) {

@@ -1,48 +1,34 @@
 package fh
 
 import android.os.Bundle
-import android.system.Os
-import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Lifecycle
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
-import com.fuck.iab.Connected_to_Xposed_service__
-import com.fuck.iab.Error__
-import com.fuck.iab.Log
-import com.fuck.iab.Not_connected_to_Xposed_service_
-import com.fuck.iab.Not_connected_to_framework
 import com.fuck.iab.R
-import com.fuck.iab.Script
-import com.fuck.iab.Script_saved
-import com.fuck.iab.user_script_js
-import com.google.android.material.tabs.TabLayout
-import com.google.android.material.tabs.TabLayoutMediator
-import fh.g.removeServiceStateListener
+import com.fuck.iab.RemoteScripts
+import com.fuck.iab.ScriptStore
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import io.github.libxposed.service.XposedService
 import kotlinx.coroutines.launch
-import java.io.FileInputStream
-import java.io.FileOutputStream
 
-
-// main activity
+// main activity: home, scripts and logs behind a bottom navigation bar
 class c : AppCompatActivity(), g.ServiceStateListener {
 
-    private var xposedService: XposedService? = null
     private lateinit var viewPager: ViewPager2
-    private lateinit var status: TextView
-
-    private lateinit var dummyStBg: View
+    private lateinit var bottomNav: BottomNavigationView
+    private lateinit var toolbar: MaterialToolbar
 
     private val viewModel: h by viewModels()
 
@@ -50,112 +36,194 @@ class c : AppCompatActivity(), g.ServiceStateListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        dummyStBg = findViewById(R.id.dummy_st_bg)
-
-        val root = findViewById<View?>(R.id.root)!!
+        val root = findViewById<View>(R.id.root)
+        applySystemBarIcons(this, root)
         root.post {
             val rootWindowInsets = ViewCompat.getRootWindowInsets(root) ?: return@post
             val systemBars = rootWindowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-            root.setPadding(
-                systemBars.left, systemBars.top,
-                systemBars.right, systemBars.bottom
-            )
-            val lp: ViewGroup.LayoutParams = dummyStBg.layoutParams
-            lp.height = systemBars.top
-            dummyStBg.setLayoutParams(lp)
+            // The bottom bar sits in the navigation bar area itself, so the root keeps no
+            // bottom padding and the bar's surface fills that strip instead of leaving a gap.
+            root.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
         }
 
-        status = findViewById(R.id.scriptInputStatus)
-        status.text = Not_connected_to_Xposed_service_()
+        toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
 
         viewPager = findViewById(R.id.viewPager)
-        viewPager.adapter = object : FragmentStateAdapter(this) {
+        bottomNav = findViewById(R.id.bottomNav)
 
-            override fun getItemCount() = 2
-
-            override fun createFragment(position: Int): Fragment {
-                return when (position) {
-                    0 -> e()
-                    else -> f()
-                }
-            }
+        // The bar keeps its own background down to the navigation bar, using that height as
+        // padding for the labels instead of leaving an empty strip below the app.
+        ViewCompat.setOnApplyWindowInsetsListener(bottomNav) { view, insets ->
+            val bar = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
+            view.setPadding(view.paddingLeft, view.paddingTop, view.paddingRight, bar)
+            insets
         }
 
-        val tabLayout = findViewById<TabLayout>(R.id.tabLayout)
-        tabLayout.addTab(tabLayout.newTab().setText(Script()))
-        tabLayout.addTab(tabLayout.newTab().setText(Log()))
+        viewPager.adapter = ScreensAdapter(this)
+        viewPager.offscreenPageLimit = PAGE_COUNT
 
-        tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab) {
+        bottomNav.setOnItemSelectedListener { item ->
+            viewPager.setCurrentItem(pageOf(item.itemId), true)
+            true
+        }
+
+        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                val itemId = itemOf(position)
+                if (bottomNav.selectedItemId != itemId) {
+                    bottomNav.selectedItemId = itemId
+                }
+
+                titleFor(position)
+                invalidateOptionsMenu()
+                viewModel.setHomeVisible(position == PAGE_HOME)
             }
-
-            override fun onTabUnselected(tab: TabLayout.Tab) {}
-            override fun onTabReselected(tab: TabLayout.Tab) {}
         })
 
-        TabLayoutMediator(
-            tabLayout,
-            viewPager
-        ) { tab, position ->
-            tab.text = if (position == 0) Script() else Log()
-        }.attach()
+        titleFor(PAGE_HOME)
+        viewModel.setHomeVisible(true)
+    }
 
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.logInit.collect {
-                    viewModel.startLogcatStreaming()
-                }
-            }
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        // The log actions belong to the logs screen, so the toolbar only offers what the
+        // current page can do.
+        val onLogs = viewPager.currentItem == PAGE_LOGS
+        val onHome = viewPager.currentItem == PAGE_HOME
+        val onScripts = viewPager.currentItem == PAGE_SCRIPTS
+
+        menu.findItem(R.id.action_logs_retry)?.isVisible = onLogs
+        menu.findItem(R.id.action_logs_clear)?.isVisible = onLogs
+
+        // Updating the store belongs to the scripts screen, and only one update runs at a time.
+        menu.findItem(R.id.action_sync_scripts)?.apply {
+            isVisible = onScripts
+            isEnabled = !syncing
         }
 
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.saveRequest.collect { text ->
-                    saveUserScript(text)
-                }
+        // The theme button belongs to the home page, and offers the mode the app is not in.
+        menu.findItem(R.id.action_theme)?.apply {
+            val night = ScriptStore.isNight(this@c)
+            isVisible = onHome
+            setIcon(if (night) R.drawable.ic_light_mode else R.drawable.ic_dark_mode)
+            setTitle(if (night) R.string.action_theme_light else R.string.action_theme_dark)
+        }
+
+        return super.onPrepareOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_theme -> {
+                val night = ScriptStore.isNight(this)
+                ScriptStore.setTheme(
+                    this,
+                    if (night) ScriptStore.THEME_LIGHT else ScriptStore.THEME_DARK
+                )
+                true
             }
+
+            R.id.action_sync_scripts -> {
+                updateScripts()
+                true
+            }
+
+            R.id.action_logs_retry -> {
+                viewModel.retryLogcatStreaming()
+                true
+            }
+
+            R.id.action_logs_clear -> {
+                viewModel.clearLogView()
+                true
+            }
+
+            else -> super.onOptionsItemSelected(item)
         }
     }
 
-    private fun loadUserScript() {
-        if (viewModel.scriptLoaded) return
-        val service = xposedService ?: return
-        try {
-            val pfd = service.openRemoteFile(user_script_js())
-//            val path = Os.readlink("/proc/self/fd/" + pfd.fd)
-            val content = FileInputStream(pfd.fileDescriptor).use {
-                it.readBytes().toString(Charsets.UTF_8)
-            }
-//            val content = service.getRemotePreferences(fkiab()).getString(user_script_js(), "")!!
-//            viewModel.setScriptTextStatus("loaded from: $path")
-            viewModel.scriptLoaded = true
-            viewModel.setScriptText(content)
-        } catch (e: Exception) {
-//            viewModel.setScriptTextStatus("Error while loading script: ${e.message ?: ""}")
-        }
-    }
+    private var syncing = false
 
-    private fun saveUserScript(text: String) {
-        val service = xposedService
-        if (service == null) {
-            Toast.makeText(this, Not_connected_to_framework(), Toast.LENGTH_SHORT).show()
+    /**
+     * Downloads the published scripts. The store is remote, so the outcome is a toast rather
+     * than a dialog, and the list reloads itself once the new copies are in place.
+     */
+    private fun updateScripts() {
+        if (syncing) return
+
+        if (!RemoteScripts.configured) {
+            Toast.makeText(this, R.string.toast_scripts_no_store, Toast.LENGTH_LONG).show()
             return
         }
-        try {
-            val bytes = text.toByteArray(Charsets.UTF_8)
-            val pfd = service.openRemoteFile(user_script_js())
-//            val path = Os.readlink("/proc/self/fd/" + pfd.fd)
-//            viewModel.setScriptTextStatus("Saved to: $path")
-            FileOutputStream(pfd.fileDescriptor).use { fos ->
-                fos.channel.truncate(0)
-                fos.write(bytes)
+
+        syncing = true
+        invalidateOptionsMenu()
+
+        lifecycleScope.launch {
+            val text = try {
+                val result = viewModel.syncRemoteScripts()
+
+                if (result.downloaded == 0) {
+                    getString(R.string.toast_scripts_current)
+                } else {
+                    getString(R.string.toast_scripts_updated, result.downloaded)
+                }
+            } catch (e: Exception) {
+                getString(R.string.toast_scripts_failed, e.message ?: e.javaClass.simpleName)
+            } finally {
+                syncing = false
+                invalidateOptionsMenu()
             }
-//            service.getRemotePreferences(fkiab()).edit(commit = true) {
-//                putString(user_script_js(), text)
-//            }
-            Toast.makeText(this, Script_saved(), Toast.LENGTH_SHORT).show()
+
+            Toast.makeText(this@c, text, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    /** "version 1.6.4 (38)", taken from the installed package. */
+    private fun versionLabel(): String {
+        return try {
+            val info = packageManager.getPackageInfo(packageName, 0)
+            getString(
+                R.string.app_version,
+                info.versionName ?: "?",
+                PackageInfoCompat.getLongVersionCode(info)
+            )
         } catch (e: Exception) {
-            Toast.makeText(this, "${Error__()}${e.message}", Toast.LENGTH_SHORT).show()
+            ""
+        }
+    }
+
+    private fun titleFor(position: Int) {
+        supportActionBar?.setTitle(
+            when (position) {
+                PAGE_SCRIPTS -> R.string.nav_scripts
+                PAGE_LOGS -> R.string.nav_logs
+                else -> R.string.app_name
+            }
+        )
+
+        // The build number belongs to the home page, not to every screen.
+        supportActionBar?.subtitle = if (position == PAGE_HOME) versionLabel() else null
+    }
+
+    private fun pageOf(itemId: Int): Int {
+        return when (itemId) {
+            R.id.nav_scripts -> PAGE_SCRIPTS
+            R.id.nav_logs -> PAGE_LOGS
+            else -> PAGE_HOME
+        }
+    }
+
+    private fun itemOf(position: Int): Int {
+        return when (position) {
+            PAGE_SCRIPTS -> R.id.nav_scripts
+            PAGE_LOGS -> R.id.nav_logs
+            else -> R.id.nav_home
         }
     }
 
@@ -165,22 +233,33 @@ class c : AppCompatActivity(), g.ServiceStateListener {
     }
 
     override fun onStop() {
-        removeServiceStateListener(this)
+        g.removeServiceStateListener(this)
+        viewModel.setHomeVisible(false)
         super.onStop()
     }
 
     override fun onServiceStateChanged(service: XposedService?) {
-        if (service != null) {
-            xposedService = service
-            runOnUiThread {
-                status.text = "${Connected_to_Xposed_service__()}${service.frameworkName} ${service.frameworkVersionCode}"
-                loadUserScript()
-            }
-        } else {
-            xposedService = null
-            runOnUiThread {
-                status.text = Not_connected_to_Xposed_service_()
+        viewModel.attachService(service)
+    }
+
+    private class ScreensAdapter(activity: FragmentActivity) : FragmentStateAdapter(activity) {
+
+        override fun getItemCount() = PAGE_COUNT
+
+        override fun createFragment(position: Int): Fragment {
+            return when (position) {
+                PAGE_SCRIPTS -> scripts()
+                PAGE_LOGS -> f()
+                else -> home()
             }
         }
+    }
+
+    companion object {
+        const val PAGE_HOME = 0
+        const val PAGE_SCRIPTS = 1
+        const val PAGE_LOGS = 2
+
+        private const val PAGE_COUNT = 3
     }
 }

@@ -1,0 +1,217 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ ui, dev, main ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Source build of the gumjs devkit linked into libnativehook.so. Frida's prebuilt
+  # devkit includes V8, which is why build-frida-gum.sh builds a diet QuickJS-only
+  # devkit from a frida-gum checkout instead.
+  GUM_VERSION: "17.24.3"
+  # One NDK for both the devkit and the app. The devkit script patches releng's
+  # revision pin to the one it is given.
+  NDK_VERSION: "30.0.16248370"
+  GUM_NDK_REQUIRED: "30"
+  CMAKE_VERSION: "3.22.1"
+  # frida-java-bridge with the Android 17 ART fix and the opt-in JVMTI opt-out that
+  # global.js relies on. Loading the JVMTI plugin on a non-debuggable runtime aborts
+  # ART on some devices, so the flag has to be honoured.
+  JAVA_BRIDGE_URL: "https://github.com/staleroot/frida-java-bridge/archive/55e0dc8a26dd7b858fbcae55a93d16826e576c64.tar.gz"
+
+jobs:
+  apk:
+    name: Build FKIAB
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Install NDK and CMake
+        run: |
+          # The runner image ships cmdline-tools but no NDK matching the versions
+          # pinned here, so install them and accept the licences.
+          SDKMANAGER="$(ls "$ANDROID_SDK_ROOT"/cmdline-tools/*/bin/sdkmanager | tail -1)"
+          echo "sdkmanager: $SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" --install "ndk;$NDK_VERSION" "cmake;$CMAKE_VERSION"
+
+      - name: Cache frida-gum devkit
+        id: frida-cache
+        uses: actions/cache@v4
+        with:
+          path: app/src/main/libs
+          key: frida-gum-${{ env.GUM_VERSION }}-ndk${{ env.GUM_NDK_REQUIRED }}-${{ hashFiles('build-frida-gum.sh') }}
+
+      - name: Build frida-gum devkit
+        if: steps.frida-cache.outputs.cache-hit != 'true'
+        run: |
+          export ANDROID_NDK_ROOT="${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}/ndk/$NDK_VERSION"
+          echo "NDK: $ANDROID_NDK_ROOT"
+          git clone --depth 1 --branch "$GUM_VERSION" --recurse-submodules \
+            https://github.com/frida/frida-gum.git frida-gum
+          bash ./build-frida-gum.sh frida-gum .
+          du -sh app/src/main/libs/*
+
+      - name: Check devkit files
+        run: |
+          for abi in arm64-v8a armeabi-v7a; do
+            test -f "app/src/main/libs/$abi/libfrida-gumjs.a" \
+              || { echo "missing libfrida-gumjs.a for $abi"; exit 1; }
+            test -f "app/src/main/libs/$abi/frida-gumjs.h" \
+              || { echo "missing frida-gumjs.h for $abi"; exit 1; }
+          done
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: scripts/package-lock.json
+
+      # global.js imports ../libs/frida-java-bridge.js, which git does not track, so the
+      # build needs a copy here. It re-exports the package and frida-compile bundles it
+      # once, which keeps the bridge readable instead of minifying it twice.
+      - name: Prepare the Java bridge
+        working-directory: scripts
+        run: |
+          npm ci
+          npm install --no-save "$JAVA_BRIDGE_URL"
+          mkdir -p libs
+          printf 'export { default } from "frida-java-bridge";\n' > libs/frida-java-bridge.js
+
+      - name: Decode signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          : "${KEYSTORE_BASE64:?Repository secret KEYSTORE_BASE64 is not set}"
+          : "${KEYSTORE_PASSWORD:?Repository secret KEYSTORE_PASSWORD is not set}"
+          : "${KEY_ALIAS:?Repository secret KEY_ALIAS is not set}"
+          : "${KEY_PASSWORD:?Repository secret KEY_PASSWORD is not set}"
+
+          KEYSTORE_PATH="$RUNNER_TEMP/fkiab-ci.jks"
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_PATH"
+
+          {
+            echo "KEYSTORE_FILE=$KEYSTORE_PATH"
+            echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD"
+            echo "KEY_ALIAS=$KEY_ALIAS"
+            echo "KEY_PASSWORD=$KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
+
+      - name: Grant execution permission
+        run: chmod +x ./gradlew
+
+      # compileFridaScripts runs before preBuild and writes assets/scripts, so this also
+      # checks that the script toolchain works.
+      - name: Build APKs
+        run: ./gradlew assembleDebug assembleRelease --console=plain
+
+      - name: Verify release APK signatures
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          BUILD_TOOLS="$(ls -d "$ANDROID_SDK_ROOT"/build-tools/* | sort -V | tail -n 1)"
+          EXPECTED_SHA256="$(keytool -list -v -keystore "$KEYSTORE_FILE" -storepass "$KEYSTORE_PASSWORD" \
+            -alias "$KEY_ALIAS" | grep -m 1 'SHA256:' | awk '{print $2}' | tr -d ':' | tr 'A-F' 'a-f')"
+
+          for apk in app/build/outputs/apk/release/*-release.apk; do
+            SIGNED_SHA256="$("$BUILD_TOOLS/apksigner" verify --print-certs "$apk" \
+              | grep -m 1 'SHA-256 digest' | awk '{print $NF}' | tr 'A-F' 'a-f')"
+            if [ "$SIGNED_SHA256" != "$EXPECTED_SHA256" ]; then
+              echo "::error::$apk is not signed with the repository key (got $SIGNED_SHA256, expected $EXPECTED_SHA256)."
+              exit 1
+            fi
+            echo "signed: $apk"
+          done
+
+      - name: Name the APKs
+        id: naming
+        run: |
+          set -euo pipefail
+
+          VERSION="$(grep -oP 'versionName\s+"\K[^"]+' app/build.gradle)"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          mkdir -p dist/release dist/debug
+
+          for apk in app/build/outputs/apk/release/*.apk; do
+            abi="$(basename "$apk" .apk)"
+            abi="${abi#app-}"
+            abi="${abi%-release}"
+            abi="${abi%-unsigned}"
+            cp "$apk" "dist/release/com.fuck.iab-v$VERSION-$abi.apk"
+          done
+
+          for apk in app/build/outputs/apk/debug/*.apk; do
+            abi="$(basename "$apk" .apk)"
+            abi="${abi#app-}"
+            abi="${abi%-debug}"
+            cp "$apk" "dist/debug/com.fuck.iab-v$VERSION-debug-$abi.apk"
+          done
+
+          ls -l dist/release dist/debug
+
+      - name: Verify packaged Frida scripts
+        run: |
+          test -s app/src/main/assets/scripts/global.js
+          # The per-app scripts travel in the store, which the manager downloads from.
+          test -s scripts/dist/manifest.json
+          test -s scripts/dist/scripts/com.adguard.android.js
+
+      - name: Upload release arm64 apk
+        uses: actions/upload-artifact@v7
+        with:
+          path: dist/release/com.fuck.iab-v${{ steps.naming.outputs.version }}-arm64-v8a.apk
+          archive: false
+          if-no-files-found: error
+
+      - name: Upload release armeabi-v7a apk
+        uses: actions/upload-artifact@v7
+        with:
+          path: dist/release/com.fuck.iab-v${{ steps.naming.outputs.version }}-armeabi-v7a.apk
+          archive: false
+          if-no-files-found: error
+
+      - name: Upload release universal apk
+        uses: actions/upload-artifact@v7
+        with:
+          path: dist/release/com.fuck.iab-v${{ steps.naming.outputs.version }}-universal.apk
+          archive: false
+          if-no-files-found: error
+
+      - name: Upload debug arm64 apk
+        uses: actions/upload-artifact@v7
+        with:
+          path: dist/debug/com.fuck.iab-v${{ steps.naming.outputs.version }}-debug-arm64-v8a.apk
+          archive: false
+          if-no-files-found: error
+
+      - name: Upload debug armeabi-v7a apk
+        uses: actions/upload-artifact@v7
+        with:
+          path: dist/debug/com.fuck.iab-v${{ steps.naming.outputs.version }}-debug-armeabi-v7a.apk
+          archive: false
+          if-no-files-found: error
+
+      - name: Upload debug universal apk
+        uses: actions/upload-artifact@v7
+        with:
+          path: dist/debug/com.fuck.iab-v${{ steps.naming.outputs.version }}-debug-universal.apk
+          archive: false
+          if-no-files-found: error

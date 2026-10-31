@@ -1,5 +1,12 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="my_primary">#ff9000</color>
+    <color name="my_primary">#FF9000</color>
     <color name="my_on_primary">#FFFFFF</color>
+    <color name="my_primary_container">#FFDDB3</color>
+    <color name="my_on_primary_container">#2B1700</color>
+    <color name="my_secondary">#795900</color>
+    <color name="my_on_secondary">#FFFFFF</color>
+    <color name="my_secondary_container">#FFDF9C</color>
+    <color name="my_on_secondary_container">#261A00</color>
+    <!-- Icons drawn as a plain src, which nothing tints. -->
+    <color name="my_icon">#49454F</color>
 </resources>

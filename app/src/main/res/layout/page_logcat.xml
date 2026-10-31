@@ -5,6 +5,30 @@
     android:layoutDirection="ltr"
     android:orientation="vertical">
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="16dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/auto_scroll"
+            android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/autoScrollSwitch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true" />
+
+    </LinearLayout>
+
     <ScrollView
         android:id="@+id/logcatScroll"
         android:layout_width="match_parent"
@@ -16,27 +40,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="monospace"
-            android:padding="8dp"
+            android:padding="12dp"
             android:textIsSelectable="true"
-            android:textSize="14sp" />
+            android:textSize="13sp" />
 
     </ScrollView>
-
-    <CheckBox
-        android:id="@+id/autoScrollCheckBox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="12dp"
-        android:checked="true"
-        android:text="@string/auto_scroll" />
-
-    <Button
-        android:id="@+id/clearLogButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="12dp"
-        android:layout_marginRight="12dp"
-        android:layout_marginBottom="8dp"
-        android:text="@string/clear_log" />
 
 </LinearLayout>

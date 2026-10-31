@@ -1,7 +1,94 @@
 <resources>
     <string name="app_name">FKIAB</string>
     <string name="description">An Xposed module for hooking and customizing in-app billing functionality.</string>
+
     <string name="save">Save</string>
     <string name="clear_log">Clear Log</string>
     <string name="auto_scroll">Auto scroll</string>
+
+    <string name="app_version">version %1$s (%2$d)</string>
+
+    <!-- navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_scripts">Scripts</string>
+    <string name="nav_logs">Logs</string>
+
+    <!-- actions -->
+    <string name="action_new_script">Create</string>
+    <string name="action_revert">Remove</string>
+    <string name="action_theme">Theme</string>
+    <string name="action_theme_light">Switch to light theme</string>
+    <string name="action_theme_dark">Switch to dark theme</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_update_scripts">Update scripts</string>
+
+    <!-- home -->
+    <string name="home_hooked">Hooked apps</string>
+    <string name="home_installed">Installed</string>
+    <string name="home_enabled">Enabled</string>
+    <string name="home_hooked_title">Hooked apps</string>
+    <string name="home_hooked_running">%1$d of %2$d running</string>
+    <string name="home_running">running</string>
+    <string name="home_running_stale">stale</string>
+    <string name="home_running_reloading">reloading</string>
+    <string name="home_running_failed">reload failed</string>
+    <string name="home_running_pid">pid %1$d</string>
+    <string name="home_running_processes">%1$d processes</string>
+    <string name="home_scope_unconfirmed">Scope unconfirmed</string>
+    <string name="home_scope_unknown">Scope unknown</string>
+    <string name="home_hooked_empty">No apps in the module scope yet.</string>
+
+    <!-- scripts -->
+    <string name="scripts_empty">No scripts yet.</string>
+    <string name="scripts_all_apps">Global script</string>
+    <string name="source_user">user</string>
+    <string name="source_remote">remote</string>
+    <string name="scripts_new_title">New Script</string>
+    <string name="scripts_search_hint">Search apps</string>
+    <string name="scripts_search">Search scripts</string>
+    <string name="scripts_no_match">No matching app</string>
+    <string name="scripts_nothing_matches">Nothing matches that search</string>
+    <string name="filter_all">All</string>
+    <string name="scripts_covers_many">covers %1$d apps</string>
+    <string name="scripts_not_in_scope">not in scope</string>
+    <string name="scripts_not_installed">not installed</string>
+    <string name="more_options">More options</string>
+    <string name="menu_app_info">App info</string>
+    <string name="menu_force_stop">Force stop</string>
+    <string name="menu_force_stop_no_su">Force stop needs root access</string>
+    <string name="menu_play_store">Open in Play Store</string>
+    <string name="scripts_hook_handled">handled by the module hook</string>
+
+    <!-- details -->
+    <string name="detail_file_local">Module file</string>
+    <string name="detail_covers">Covers</string>
+    <string name="detail_status">Status</string>
+    <string name="detail_checksum">SHA-256</string>
+    <string name="status_enabled">enabled</string>
+    <string name="status_disabled">disabled</string>
+    <string name="action_edit">Edit script</string>
+
+    <!-- editor -->
+    <string name="editor_author">Author: %1$s</string>
+    <string name="editor_source">Source: %1$s</string>
+    <string name="editor_word_wrap">Word wrap</string>
+    <string name="editor_revert_note">Your edited script is deleted.</string>
+
+    <!-- logs -->
+    <string name="action_retry">Retry</string>
+    <string name="logs_no_su">Reading the module log needs root. The app runs \"su logcat\", and no su was found on this device, so nothing can be shown here.</string>
+    <string name="logs_root_denied">Root access was denied. Allow root for FKIAB in your root manager, then retry.</string>
+    <string name="logs_no_output">The log stream ended without any output.</string>
+    <string name="logs_stream_failed">Could not read the log: %1$s</string>
+
+    <!-- messages -->
+    <string name="toast_saved">Script saved</string>
+    <string name="toast_save_failed">Could not save the script</string>
+    <string name="toast_reverted">User script removed</string>
+    <string name="toast_not_connected">Not connected to the Xposed service.</string>
+    <string name="toast_package_required">Enter a package name</string>
+    <string name="toast_scripts_updated">%1$d scripts updated</string>
+    <string name="toast_scripts_current">Scripts are up to date</string>
+    <string name="toast_scripts_failed">Could not update scripts: %1$s</string>
+    <string name="toast_scripts_no_store">This build has no script store configured</string>
 </resources>

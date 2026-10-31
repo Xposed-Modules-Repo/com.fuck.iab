@@ -1,0 +1,11 @@
+<resources>
+    <color name="my_primary">#FFB866</color>
+    <color name="my_on_primary">#4A2800</color>
+    <color name="my_primary_container">#6B3D00</color>
+    <color name="my_on_primary_container">#FFDDB3</color>
+    <color name="my_secondary">#E6C36A</color>
+    <color name="my_on_secondary">#3F2E00</color>
+    <color name="my_secondary_container">#5C4300</color>
+    <color name="my_on_secondary_container">#FFDF9C</color>
+    <color name="my_icon">#CAC4D0</color>
+</resources>

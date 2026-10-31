@@ -7,15 +7,28 @@
         <item name="android:windowBackground">@android:color/transparent</item>
     </style>
 
-
-    <style name="Base.Theme.F" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="myBackground">?android:windowBackground</item>
+    <style name="Base.Theme.F" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="myBackground">?attr/colorSurface</item>
         <item name="colorPrimary">@color/my_primary</item>
         <item name="colorOnPrimary">@color/my_on_primary</item>
-        <item name="colorSecondary">@color/my_primary</item>
-        <item name="colorOnSecondary">@color/my_on_primary</item>
+        <item name="colorPrimaryContainer">@color/my_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/my_on_primary_container</item>
+        <item name="colorSecondary">@color/my_secondary</item>
+        <item name="colorOnSecondary">@color/my_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/my_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/my_on_secondary_container</item>
+        <item name="android:windowBackground">?attr/colorSurface</item>
     </style>
 
-    <style name="Theme.F" parent="Base.Theme.F" />
+    <!-- Dark system bar icons, since the window background is light here. The night
+         variant flips both back to light icons. -->
+    <style name="Theme.F" parent="Base.Theme.F">
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+
+    <style name="Widget.F.StatCard" parent="Widget.Material3.CardView.Filled">
+        <item name="cardCornerRadius">20dp</item>
+    </style>
 
 </resources>

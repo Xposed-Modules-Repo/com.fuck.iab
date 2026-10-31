@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.os.IBinder
 import android.widget.Toast
 import com.fuck.iab.NativeBridge.startScript
+import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface
 import io.github.libxposed.api.XposedModuleInterface.ModuleLoadedParam
@@ -28,9 +29,9 @@ import org.json.JSONObject
 import org.luckypray.dexkit.DexKitBridge
 import java.io.FileInputStream
 import java.io.FileNotFoundException
+import java.util.zip.ZipFile
 import java.security.PublicKey
 import java.util.concurrent.CountDownLatch
-import java.util.zip.ZipFile
 import kotlin.time.Duration.Companion.seconds
 
 object NativeBridge {
@@ -60,10 +61,14 @@ object AppScope : CoroutineScope {
 
 class MainModule : XposedModule() {
 
+    /**
+     * Stores handled by the hook below. The package list lives in [HookedProviders], because the
+     * manager app has to label these apps as hooked instead of scripted.
+     */
     val iabProviders = mapOf(
-        com_android_vending() to com_google_android_finsky_billing_iab_InAppBillingService(),
-        com_farsitel_bazaar() to com_farsitel_bazaar_inappbilling_service_InAppBillingService(),
-        ir_mservices_market() to ir_mservices_market_service_InAppBillingService()
+        HookedProviders.PLAY_STORE to com_google_android_finsky_billing_iab_InAppBillingService(),
+        HookedProviders.BAZAAR to com_farsitel_bazaar_inappbilling_service_InAppBillingService(),
+        HookedProviders.MYKET to ir_mservices_market_service_InAppBillingService()
     )
 
     lateinit var app: Application
@@ -118,6 +123,7 @@ class MainModule : XposedModule() {
     override fun onSystemServerStarting(param: XposedModuleInterface.SystemServerStartingParam) {
 //        log(Log.INFO, TAG, "onSystemServerStarting, system classloader: " + param.classLoader)
     }
+
 
     private fun packageLoaded(
         packageName: String,
@@ -475,15 +481,73 @@ class MainModule : XposedModule() {
     }
 
     private fun readScriptForPackage(packageName: String): String? {
-        val apkPath = this.moduleApplicationInfo.sourceDir
+        // A script switched off in the manager app must not run for that app.
+        if (isScriptDisabled(packageName)) return null
+
+        return readUserScriptForPackage(packageName)
+            ?: readSyncedScriptForPackage(packageName)
+            ?: readBundledScript(packageName)
+    }
+
+    // The scripts compiled into the APK are what runs when the manager has no user copy.
+    private fun readBundledScript(packageName: String): String? {
         return try {
-            ZipFile(apkPath).use { zip ->
-                val entry = zip.getEntry("${assets_scripts_()}$packageName${_js()}")
-                    ?: return null
+            ZipFile(this.moduleApplicationInfo.sourceDir).use { zip ->
+                val entry = zip.getEntry("${assets_scripts_()}$packageName${_js()}") ?: return null
                 zip.getInputStream(entry).bufferedReader(Charsets.UTF_8).use { it.readText() }
             }
         } catch (e: Exception) {
-//            log("Failed to read script for $packageName: ${e.message}")
+            null
+        }
+    }
+
+    private fun isScriptDisabled(packageName: String): Boolean {
+        if (frameworkProperties.and(XposedInterface.PROP_CAP_REMOTE) == 0L) return false
+
+        return try {
+            val disabled = getRemotePreferences(fuck_iab())
+                .getStringSet(RemoteScripts.DISABLED_SCRIPTS_KEY, emptySet()) ?: return false
+
+            disabled.contains(packageName) || disabled.contains(global())
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    // A script written in the manager app wins over the script bundled in the APK.
+    private fun readUserScriptForPackage(packageName: String): String? {
+        if (frameworkProperties.and(XposedInterface.PROP_CAP_REMOTE) == 0L) return null
+
+        val name = RemoteScripts.userFileName(packageName)
+
+        return try {
+            if (listRemoteFiles().none { it == name }) return null
+
+            val pfd = openRemoteFile(name)
+            FileInputStream(pfd.fileDescriptor).use { it.readBytes().toString(Charsets.UTF_8) }
+                .takeIf { it.isNotBlank() }
+        } catch (e: Exception) {
+//            log("Failed to read the user script for $packageName: ${e.message}")
+            null
+        }
+    }
+
+    // A script downloaded by the manager from the store, which wins over the bundled one but
+    // not over a copy the user wrote. The store only holds per-app scripts, so the global
+    // script is always the one compiled into the APK.
+    private fun readSyncedScriptForPackage(packageName: String): String? {
+        if (packageName == global()) return null
+        if (frameworkProperties.and(XposedInterface.PROP_CAP_REMOTE) == 0L) return null
+
+        val name = RemoteScripts.fileName(packageName)
+
+        return try {
+            if (listRemoteFiles().none { it == name }) return null
+
+            val pfd = openRemoteFile(name)
+            FileInputStream(pfd.fileDescriptor).use { it.readBytes().toString(Charsets.UTF_8) }
+                .takeIf { it.isNotBlank() }
+        } catch (e: Exception) {
             null
         }
     }
