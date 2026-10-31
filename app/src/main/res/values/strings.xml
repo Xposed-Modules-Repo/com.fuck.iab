@@ -15,8 +15,8 @@
 
     <!-- actions -->
     <string name="action_new_script">New script</string>
-    <string name="action_revert">Remove user script</string>
-    <string name="action_restore">Restore bundled version</string>
+    <string name="action_revert">Remove</string>
+    <string name="action_restore">Restore</string>
     <string name="action_theme">Theme</string>
     <string name="action_theme_light">Switch to light theme</string>
     <string name="action_theme_dark">Switch to dark theme</string>
@@ -25,27 +25,27 @@
 
     <!-- home -->
     <string name="home_hooked">Hooked apps</string>
-    <string name="home_installed">Installed scripts</string>
-    <string name="home_enabled">Enabled scripts</string>
+    <string name="home_installed">Installed</string>
+    <string name="home_enabled">Enabled</string>
     <string name="home_hooked_title">Hooked apps</string>
     <string name="home_hooked_running">%1$d of %2$d running</string>
     <string name="home_running">running</string>
-    <string name="home_running_stale">running an old build</string>
+    <string name="home_running_stale">stale</string>
     <string name="home_running_reloading">reloading</string>
     <string name="home_running_failed">reload failed</string>
     <string name="home_running_pid">pid %1$d</string>
     <string name="home_running_processes">%1$d processes</string>
-    <string name="home_scope_unconfirmed">The framework is not reporting the scope right now, so this is the last list it gave.</string>
-    <string name="home_scope_unknown">The framework is not reporting the module scope right now.</string>
+    <string name="home_scope_unconfirmed">Scope unconfirmed</string>
+    <string name="home_scope_unknown">Scope unknown</string>
     <string name="home_hooked_empty">No apps in the module scope yet.</string>
 
     <!-- scripts -->
-    <string name="scripts_empty">No scripts yet. Pull to refresh or create one.</string>
+    <string name="scripts_empty">No scripts yet.</string>
     <string name="scripts_all_apps">Global script</string>
     <string name="source_user">user</string>
-    <string name="source_remote">synced</string>
+    <string name="source_remote">remote</string>
     <string name="source_bundled">bundled</string>
-    <string name="scripts_new_title">New script</string>
+    <string name="scripts_new_title">Create</string>
     <string name="scripts_search_hint">Search apps</string>
     <string name="scripts_search">Search scripts</string>
     <string name="scripts_no_match">No matching app</string>
@@ -57,8 +57,8 @@
     <string name="more_options">More options</string>
     <string name="menu_app_info">App info</string>
     <string name="menu_force_stop">Force stop</string>
-    <string name="menu_force_stop_no_su">Force stop needs root. Grant su access and try again.</string>
-    <string name="menu_play_store">View in Play Store</string>
+    <string name="menu_force_stop_no_su">Force stop needs root access</string>
+    <string name="menu_play_store">Open in Play Store</string>
     <string name="scripts_hook_handled">handled by the module hook</string>
 
     <!-- details -->
@@ -74,8 +74,8 @@
     <string name="editor_author">Author: %1$s</string>
     <string name="editor_source">Source: %1$s</string>
     <string name="editor_word_wrap">Word wrap</string>
-    <string name="editor_revert_note">The user copy of this script is deleted, so the remote copy is used again.</string>
-    <string name="editor_restore_note">Your copy is deleted and the script bundled in the app is used again. Edits that are not saved yet are dropped too.</string>
+    <string name="editor_revert_note">Your edited script is deleted.</string>
+    <string name="editor_restore_note">Your edited script is deleted, and the version included with the app is restored.</string>
 
     <!-- logs -->
     <string name="action_retry">Retry</string>
