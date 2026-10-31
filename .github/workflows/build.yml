@@ -14,9 +14,10 @@ env:
   # devkit includes V8, which is why build-frida-gum.sh builds a diet QuickJS-only
   # devkit from a frida-gum checkout instead.
   GUM_VERSION: "17.24.3"
-  # frida-gum 17.x requires NDK r29; the app itself builds with r30.
-  GUM_NDK_VERSION: "29.0.14206865"
+  # One NDK for both the devkit and the app. The devkit script patches releng's
+  # revision pin to the one it is given.
   NDK_VERSION: "30.0.16248370"
+  GUM_NDK_REQUIRED: "30"
   CMAKE_VERSION: "3.22.1"
   # frida-java-bridge with the Android 17 ART fix and the opt-in JVMTI opt-out that
   # global.js relies on. Loading the JVMTI plugin on a non-debuggable runtime aborts
@@ -44,19 +45,19 @@ jobs:
           SDKMANAGER="$(ls "$ANDROID_SDK_ROOT"/cmdline-tools/*/bin/sdkmanager | tail -1)"
           echo "sdkmanager: $SDKMANAGER"
           yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
-          "$SDKMANAGER" --install "ndk;$NDK_VERSION" "ndk;$GUM_NDK_VERSION" "cmake;$CMAKE_VERSION"
+          "$SDKMANAGER" --install "ndk;$NDK_VERSION" "cmake;$CMAKE_VERSION"
 
       - name: Cache frida-gum devkit
         id: frida-cache
         uses: actions/cache@v4
         with:
           path: app/src/main/libs
-          key: frida-gum-${{ env.GUM_VERSION }}-${{ hashFiles('build-frida-gum.sh') }}
+          key: frida-gum-${{ env.GUM_VERSION }}-ndk${{ env.GUM_NDK_REQUIRED }}-${{ hashFiles('build-frida-gum.sh') }}
 
       - name: Build frida-gum devkit
         if: steps.frida-cache.outputs.cache-hit != 'true'
         run: |
-          export ANDROID_NDK_ROOT="${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}/ndk/$GUM_NDK_VERSION"
+          export ANDROID_NDK_ROOT="${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}/ndk/$NDK_VERSION"
           echo "NDK: $ANDROID_NDK_ROOT"
           git clone --depth 1 --branch "$GUM_VERSION" --recurse-submodules \
             https://github.com/frida/frida-gum.git frida-gum

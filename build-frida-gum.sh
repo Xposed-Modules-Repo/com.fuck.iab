@@ -19,10 +19,12 @@ mkdir -p "$OUT_IN"
 OUT="$(cd "$OUT_IN" && pwd)"
 
 # --- Android NDK ------------------------------------------------------------
-# The pinned frida-gum 17.24.3 releng requires r29; the app's native wrapper
-# separately uses the r30 version pinned in app/build.gradle.
+# GUM_NDK_REQUIRED picks the revision, r29 by default. Upstream releng only accepts
+# the revision it was pinned to, so the checkout is patched to the one we build with.
+GUM_NDK_REQUIRED="${GUM_NDK_REQUIRED:-29}"
 if [ -z "${ANDROID_NDK_ROOT:-}" ]; then
-  for cand in "$HOME/android/android-ndk-r29" "$HOME/Android/Sdk/ndk/29.0.14206865"; do
+  for cand in "$HOME/android/android-ndk-r$GUM_NDK_REQUIRED" \
+              "$HOME/Android/Sdk/ndk/$GUM_NDK_REQUIRED.0.0"; do
     if [ -f "$cand/source.properties" ]; then
       export ANDROID_NDK_ROOT="$cand"
       break
@@ -30,13 +32,19 @@ if [ -z "${ANDROID_NDK_ROOT:-}" ]; then
   done
 fi
 [ -n "${ANDROID_NDK_ROOT:-}" ] || \
-  die "ANDROID_NDK_ROOT is not set and no r29 NDK found in ~/android"
+  die "ANDROID_NDK_ROOT is not set and no r$GUM_NDK_REQUIRED NDK found in ~/android"
 [ -f "$ANDROID_NDK_ROOT/source.properties" ] || \
   die "ANDROID_NDK_ROOT=$ANDROID_NDK_ROOT has no source.properties"
-grep -q "Pkg.Revision = 29" "$ANDROID_NDK_ROOT/source.properties" || \
-  die "NDK r29 required (found: $(grep Pkg.Revision "$ANDROID_NDK_ROOT/source.properties"))"
+grep -q "Pkg.Revision = $GUM_NDK_REQUIRED" "$ANDROID_NDK_ROOT/source.properties" || \
+  die "NDK r$GUM_NDK_REQUIRED required (found: $(grep Pkg.Revision "$ANDROID_NDK_ROOT/source.properties"))"
 export ANDROID_NDK_ROOT
 echo "NDK: $ANDROID_NDK_ROOT"
+
+RELENG_ENV="$SRC/releng/env_android.py"
+if [ -f "$RELENG_ENV" ]; then
+  sed -i -E "s/^NDK_REQUIRED = [0-9]+$/NDK_REQUIRED = $GUM_NDK_REQUIRED/" "$RELENG_ENV"
+  echo "releng NDK pin: $(grep -m1 '^NDK_REQUIRED' "$RELENG_ENV")"
+fi
 
 # --- Host tools ----------------------------------------------------------
 missing=()

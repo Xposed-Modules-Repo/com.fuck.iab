@@ -66,13 +66,13 @@ Please include:
 
 ## Building
 
-Requirements: JDK 17, the Android SDK with NDK `30.0.16248370` and CMake `3.22.1`, Node 20, and NDK `29.0.14206865` for frida-gum, which needs the older revision.
+Requirements: JDK 17, the Android SDK with NDK `30.0.16248370` and CMake `3.22.1`, and Node 20. One NDK serves both the devkit and the app; the script moves releng's revision pin to the one it is given.
 
 The native wrapper links a QuickJS-only gumjs devkit built from source, so it has to exist before Gradle runs:
 
 ```
 git clone --depth 1 --branch 17.24.3 --recurse-submodules https://github.com/frida/frida-gum.git frida-gum
-ANDROID_NDK_ROOT=~/Android/Sdk/ndk/29.0.14206865 bash ./build-frida-gum.sh frida-gum .
+ANDROID_NDK_ROOT=~/Android/Sdk/ndk/30.0.16248370 GUM_NDK_REQUIRED=30 bash ./build-frida-gum.sh frida-gum .
 ```
 
 `global.js` imports `scripts/libs/frida-java-bridge.js`, which git does not track. Create it once with the package it re-exports:
