@@ -85,7 +85,6 @@ class scripts : Fragment() {
         v.findViewById<ChipGroup>(R.id.filterGroup)
             .setOnCheckedStateChangeListener { _, checkedIds ->
                 filter = when (checkedIds.firstOrNull()) {
-                    R.id.filterStore -> ScriptSource.BUNDLED
                     R.id.filterSynced -> ScriptSource.REMOTE
                     R.id.filterUser -> ScriptSource.USER
                     else -> null
