@@ -1,5 +1,6 @@
-// Turns the "Add a script" issue form into files in the tree: the script itself and its
-// entry in scripts/names.json. The workflow then builds the store and opens a pull request.
+// Turns the "Add a script" issue form into files in the tree: the script itself, its entry in
+// scripts/names.json and its package in the module scope. The workflow then builds the store
+// and opens a pull request.
 //
 // Reads ISSUE_BODY, ISSUE_NUMBER and GITHUB_ENV from the environment.
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -10,6 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..", "..");
 const SRC_DIR = path.join(ROOT, "scripts", "src");
 const NAMES_FILE = path.join(ROOT, "scripts", "names.json");
+const SCOPE_FILE = path.join(ROOT, "app", "src", "main", "resources", "META-INF", "xposed", "scope.list");
 
 const PACKAGE_PATTERN = /^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z0-9_]+)+$/;
 
@@ -85,6 +87,14 @@ writeFileSync(path.join(SRC_DIR, `${packageName}.js`), `${text}\n`);
 const names = existsSync(NAMES_FILE) ? JSON.parse(readFileSync(NAMES_FILE, "utf8")) : {};
 names[packageName] = appName;
 writeFileSync(NAMES_FILE, `${JSON.stringify(names, null, 2)}\n`);
+
+// The module only loads into apps it is scoped to, so a new script needs its package there.
+const scope = existsSync(SCOPE_FILE) ? readFileSync(SCOPE_FILE, "utf8") : "";
+const scoped = scope.split("\n").map(line => line.trim()).filter(Boolean);
+
+if (!scoped.includes(packageName)) {
+    writeFileSync(SCOPE_FILE, `${scope.replace(/\s*$/, "")}\n${packageName}\n`);
+}
 
 appendFileSync(process.env.GITHUB_ENV, [
     `PACKAGE=${packageName}`,

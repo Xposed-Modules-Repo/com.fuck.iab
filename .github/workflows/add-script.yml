@@ -31,7 +31,7 @@ jobs:
           cache: npm
           cache-dependency-path: scripts/package-lock.json
 
-      - name: Write the script and its name
+      - name: Write the script, its name and its scope entry
         env:
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: node .github/scripts/from-issue.js
@@ -60,7 +60,8 @@ jobs:
           git config user.name fkiab
           git config user.email fkiab@users.noreply.github.com
           git switch -c "$BRANCH"
-          git add "scripts/src/$PACKAGE.js" scripts/names.json scripts/dist
+          git add "scripts/src/$PACKAGE.js" scripts/names.json scripts/dist \
+            app/src/main/resources/META-INF/xposed/scope.list
           git commit -m "feat(scripts): add script for $APP_NAME"
           git push -u origin "$BRANCH"
 
@@ -68,7 +69,7 @@ jobs:
             --base "${{ github.event.repository.default_branch }}" \
             --head "$BRANCH" \
             --title "feat(scripts): add script for $APP_NAME" \
-            --body "$(printf 'Script for `%s` (`%s`).\n\n%s\n\nCloses #%s\n' "$APP_NAME" "$PACKAGE" "$NOTES" "$ISSUE")"
+            --body "$(printf 'Script for `%s` (`%s`), added to the module scope and to the store.\n\n%s\n\nCloses #%s\n' "$APP_NAME" "$PACKAGE" "$NOTES" "$ISSUE")"
 
       - name: Say what went wrong
         if: failure()

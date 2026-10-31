@@ -6,8 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        Fill this in and a bot writes the script into `scripts/src`, updates the store and opens a pull request for review.
-        You do not need to know git for this.
+        Fill this in and a bot writes the script into `scripts/src`, adds the package to the module scope,
+        names the app in the store and opens a pull request for review. You do not need to know git for this.
 
   - type: input
     id: package
