@@ -92,7 +92,11 @@ object RemoteScripts {
                 file = file,
                 sha256 = sha256.lowercase(Locale.US),
                 size = script.optLong("size"),
-                author = script.optString("author").ifEmpty { null }
+                // A script without an author line is published as a json null, which optString
+                // would turn into the text "null".
+                author = script.opt("author")
+                    ?.toString()
+                    ?.takeIf { it.isNotBlank() && it != "null" }
             )
         }
 
