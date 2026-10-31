@@ -10,33 +10,6 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <com.google.android.material.card.MaterialCardView
-            style="@style/Widget.F.StatCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/home_status"
-                    android:textAppearance="?attr/textAppearanceLabelLarge" />
-
-                <TextView
-                    android:id="@+id/serviceStatus"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textAppearance="?attr/textAppearanceTitleMedium" />
-
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

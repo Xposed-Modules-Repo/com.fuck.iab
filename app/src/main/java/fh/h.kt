@@ -27,8 +27,6 @@ import kotlinx.coroutines.withContext
 
 /** Everything the screens show about the module and its scripts. */
 data class UiState(
-    val connected: Boolean = false,
-    val framework: String = "",
     val scripts: List<ScriptInfo> = emptyList(),
     val hookedApps: List<HookedApp> = emptyList(),
     /** True when the framework did not report the scope and the last known one is shown. */
@@ -176,13 +174,6 @@ class h(application: Application) : AndroidViewModel(application) {
     /** Called when the framework connection comes up or goes away. */
     fun attachService(service: XposedService?) {
         currentService = service
-
-        _state.update {
-            it.copy(
-                connected = service != null,
-                framework = service?.let { s -> "${s.frameworkName} ${s.frameworkVersionCode}" } ?: ""
-            )
-        }
 
         if (service == null) {
             // The scripts are not cleared here. Without the service the user copies cannot be

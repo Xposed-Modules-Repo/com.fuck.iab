@@ -43,7 +43,6 @@ class home : Fragment() {
     ): View {
         val v = inflater.inflate(R.layout.page_home, container, false)
 
-        val serviceStatus = v.findViewById<TextView>(R.id.serviceStatus)
         val hookedCount = v.findViewById<TextView>(R.id.hookedCount)
         val hookedLabel = v.findViewById<TextView>(R.id.hookedLabel)
         val installedCount = v.findViewById<TextView>(R.id.installedCount)
@@ -66,10 +65,6 @@ class home : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.state.collect { state ->
-                    serviceStatus.text = getString(
-                        if (state.connected) R.string.home_status_active else R.string.home_status_inactive
-                    )
-
                     hookedCount.text = state.scope.toString()
 
                     val running = state.hookedApps.count { it.isRunning }

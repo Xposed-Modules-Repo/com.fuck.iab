@@ -23,9 +23,6 @@
     <string name="action_cancel">Cancel</string>
 
     <!-- home -->
-    <string name="home_status">Xposed Status</string>
-    <string name="home_status_active">Active</string>
-    <string name="home_status_inactive">Inactive</string>
     <string name="home_hooked">Hooked apps</string>
     <string name="home_installed">Installed scripts</string>
     <string name="home_enabled">Enabled scripts</string>
