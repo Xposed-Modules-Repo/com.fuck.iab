@@ -8,6 +8,7 @@ import android.util.LruCache
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.view.isVisible
@@ -52,6 +53,13 @@ class home : Fragment() {
         val hookedList = v.findViewById<RecyclerView>(R.id.hookedList)
 
         adapter = AppAdapter(requireContext())
+        adapter.onMenu = { anchor, app ->
+            showAppMenu(
+                requireContext(), anchor, app.packageName,
+                ScriptStore.isInstalled(requireContext(), app.packageName),
+                viewLifecycleOwner.lifecycleScope
+            )
+        }
         hookedList.layoutManager = LinearLayoutManager(requireContext())
         hookedList.adapter = adapter
 
@@ -98,11 +106,14 @@ private class AppAdapter(private val context: Context) : ListAdapter<HookedApp, 
 
     private val icons = LruCache<String, Drawable>(64)
 
+    var onMenu: ((View, HookedApp) -> Unit)? = null
+
     class Holder(view: View) : RecyclerView.ViewHolder(view) {
         val icon: ImageView = view.findViewById(R.id.appIcon)
         val label: TextView = view.findViewById(R.id.appLabel)
         val packageName: TextView = view.findViewById(R.id.appPackage)
         val running: TextView = view.findViewById(R.id.appRunning)
+        val menu: ImageButton = view.findViewById(R.id.appMenu)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
@@ -122,6 +133,7 @@ private class AppAdapter(private val context: Context) : ListAdapter<HookedApp, 
         holder.icon.setImageDrawable(iconFor(app.packageName))
 
         holder.itemView.setOnClickListener { open(app.packageName) }
+        holder.menu.setOnClickListener { onMenu?.invoke(holder.menu, app) }
     }
 
     /** Tapping a row opens the app itself, which is what the list is about. */
