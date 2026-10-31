@@ -1,0 +1,61 @@
+name: Add a script
+description: Send a Frida script for an app the module does not handle yet
+title: "[script] "
+labels: ["add script"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Fill this in and a bot writes the script into `scripts/src`, updates the store and opens a pull request for review.
+        You do not need to know git for this.
+
+  - type: input
+    id: package
+    attributes:
+      label: Package name
+      description: The app's package name, as shown in its Play Store or Bazaar link.
+      placeholder: com.example.game
+    validations:
+      required: true
+
+  - type: input
+    id: app_name
+    attributes:
+      label: App name
+      description: What the app is called, shown in the manager when the app is not installed.
+      placeholder: Example Game
+    validations:
+      required: true
+
+  - type: input
+    id: author
+    attributes:
+      label: Your name or handle
+      description: Written above the script as its author. Leave empty to keep the script's own author line.
+      placeholder: yourname
+
+  - type: textarea
+    id: script
+    attributes:
+      label: The script
+      description: Plain JavaScript. It runs after global.js, so it can use `Java` directly.
+      render: javascript
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: What it does
+      description: One or two lines for the pull request.
+      placeholder: Fakes the purchase check in the app's billing service.
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Before sending
+      options:
+        - label: The script only bypasses purchase checks
+          required: true
+        - label: I tried it on this app
+          required: true

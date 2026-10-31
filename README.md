@@ -77,7 +77,9 @@ The app needs to know where to download scripts from. Pass `-PscriptsBaseUrl=htt
 
 ## Contributing
 
-Scripts are welcome. Send the package name, the script, and one line about what it does. A script should only bypass the purchase checks.
+Open **Add a script** in the issue tracker and fill in the form: package name, app name, who wrote it, the script and one line about what it does. A bot turns it into a pull request with the script in `scripts/src`, its name in `scripts/names.json` and the store rebuilt. You do not need to know git.
+
+A script should only bypass the purchase checks.
 
 ## Telegram
 
