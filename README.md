@@ -12,82 +12,46 @@ https://github.com/user-attachments/assets/baa25c2c-baaf-4e84-86e8-51e9f4545a4a
 
 ## Compatibility
 - [x] Google Play Store
-- [x] Bazaar (Iranian App Market)
-- [x] Myket (Iranian App Market)
+- [x] Bazaar
+- [x] Myket
 - [ ] Samsung
 - [ ] Amazon
 - [ ] Huawei
 
-## Features
+## The app
 
-- Support for restoring previously purchased items.
-- Custom Frida scripts, compiled into the APK per app.
-- Manager app with Home, Scripts and Logs pages.
-- Per-app script switches, a script editor and a revert to the bundled version.
-- Live module log, including the output of the running scripts.
+Home lists the apps the module is loaded in, with the processes it is running in. Each row has a three-dot menu with app info, force stop and Play Store.
 
-## Custom Frida Scripts
+Scripts lists every script with an on/off switch. Tapping a row opens the editor, where your own copy can be written; the same menu appears on each row. **Update scripts** downloads the newer scripts from the repository.
 
-Some apps aren't supported by the module because they either verify purchase signatures locally or validate them through their own servers. These apps require custom scripts to bypass their specific verification methods.
+Logs shows what the module and the scripts print. It reads logcat, so it needs root access.
 
-```
-scripts/src/
-├── global.js
-├── com.kiloo.subwaysurf.js
-└── com.PoxelStudios.DudeTheftAuto.js
-```
+## Scripts
 
-`global.js` is loaded for every app, before anything else. If a matching `<package_name>.js` file also exists, it runs right after the global script.
+`scripts/src/global.js` runs in every hooked app before anything else. It sets up the Frida Java and il2cpp bridges, so a per-app script can just use `Java` and `Il2Cpp`. A file named after the app, such as `scripts/src/com.kiloo.subwaysurf.js`, runs right after the global one.
 
-The scripts in `scripts/src` are compiled into `assets/scripts` during the build, so the module carries them itself. Only `global.js` has imports to bundle (the il2cpp bridge and the Java bridge); the per-app scripts are plain scripts that use the `Java` and `Il2Cpp` globals that `global.js` provides.
+`global.js` is compiled into the APK during the build. Per-app scripts are not: they live in `scripts/dist` and the app downloads them, so a new or fixed script does not need a new APK.
 
-A script can be edited in the manager app. The saved copy lives in the module's shared directory and is used instead of the bundled script until you pick **Restore bundled version**, and the switch on the Scripts page stops a script from running for that app without touching the APK.
+To add one:
 
-### Custom Script Examples
+1. Add `scripts/src/<package name>.js` with a `// author: your name` first line.
+2. Run `npm run build:dist` in `scripts/`. On `ui`, `dev` and `main` CI does this and commits the result itself.
+3. In the app, tap **Update scripts**.
 
-- Subway Surfers `com.kiloo.subwaysurf`
-
-<img width="270" height="362" alt="ss0" src="https://github.com/user-attachments/assets/8b527efd-b4d9-47e8-a213-e09ef9f937c1" />
-
-- Ultimate USB `com.mixapplications.ultimateusb`
-
-- Bike Race `com.topfreegames.bikeracefreeworld`
-
-### Remote script store
-
-Per-app scripts can be published on their own, so a new script reaches the manager without a new APK:
-
-- `npm run build:dist` in `scripts/` compiles every per-app script into `scripts/dist/` and writes `dist/manifest.json` with the size, author and SHA-256 of each file. The global script is left out: it carries the bridge and is compiled into the APK.
-- `scripts/dist/` is committed, so the store lives in the same branch as the code and the manager reads it straight from the repository. The Update script store workflow rebuilds it when a file in `scripts/src/` changes on `dev` or `main`.
-- The store address is a build setting rather than part of the repository: pass `-PscriptsBaseUrl=...` or put `scriptsBaseUrl` in `local.properties`, and CI derives it from the repository that is building. The Scripts screen updates from it with the **Update scripts** action.
-
-A fresh install asks for the store once by itself when the Scripts screen finds nothing, so the list is not blank after installing; after that, **Update scripts** is the only thing that fetches.
-
-Downloaded copies are stored next to the user copies. The module runs a user copy if there is one, else the synced copy. The only script packaged into the APK is the global one, so a per-app script has a single source.
-
-### Contributing Custom Scripts
-
-Want to add support for another game or app? Feel free to open a pull request with a custom script.
-
-Scripts should only focus on bypassing purchase checks.
-
-Please include:
-- The package name of the app/game
-- The custom script
-- A brief description of what it does
+A script runs when its app starts, so restart the app after an update. Force stop in the row menu does that for you. If you edit a script in the app, your copy is used until you remove it, and **Update scripts** leaves it alone.
 
 ## Building
 
-Requirements: JDK 17, the Android SDK with NDK `30.0.16248370` and CMake `3.22.1`, and Node 20. One NDK serves both the devkit and the app; the script moves releng's revision pin to the one it is given.
+You need JDK 17, Node 20, and the Android SDK with NDK `30.0.16248370` and CMake `3.22.1`.
 
-The native wrapper links a QuickJS-only gumjs devkit built from source, so it has to exist before Gradle runs:
+The native wrapper links a QuickJS-only gumjs devkit that has to be built first:
 
 ```
 git clone --depth 1 --branch 17.24.3 --recurse-submodules https://github.com/frida/frida-gum.git frida-gum
 ANDROID_NDK_ROOT=~/Android/Sdk/ndk/30.0.16248370 GUM_NDK_REQUIRED=30 bash ./build-frida-gum.sh frida-gum .
 ```
 
-`global.js` imports `scripts/libs/frida-java-bridge.js`, which git does not track. Create it once with the package it re-exports:
+`global.js` imports `scripts/libs/frida-java-bridge.js`, which git does not track. Create it once:
 
 ```
 cd scripts
@@ -96,22 +60,26 @@ npm install --no-save https://github.com/staleroot/frida-java-bridge/archive/55e
 mkdir -p libs && printf 'export { default } from "frida-java-bridge";\n' > libs/frida-java-bridge.js
 ```
 
-Then build. `compileFridaScripts` runs before `preBuild`, so the scripts are compiled automatically:
+Then build. `compileFridaScripts` runs before `preBuild`, so `global.js` is compiled for you:
 
 ```
 ./gradlew assembleDebug
 ```
 
-The APKs are produced for `arm64-v8a` and `armeabi-v7a`, plus a universal one. A release build is only signed when the keystore is available:
+APKs are built for `arm64-v8a` and `armeabi-v7a`, plus a universal one. A release is only signed when a keystore is available:
 
 ```
 KEYSTORE_FILE=/path/to/keystore.jks KEYSTORE_PASSWORD=... KEY_ALIAS=... KEY_PASSWORD=... \
   ./gradlew assembleRelease
 ```
 
-GitHub Actions runs the same steps on pushes and pull requests, and publishes the debug and signed release APKs as artifacts.
+The app needs to know where to download scripts from. Pass `-PscriptsBaseUrl=https://.../scripts/dist/` or put `scriptsBaseUrl` in `local.properties`; CI works it out from the repository it builds. A debug build without either has no store and says so.
 
-## Telegram Channel
+## Contributing
+
+Scripts are welcome. Send the package name, the script, and one line about what it does. A script should only bypass the purchase checks.
+
+## Telegram
 
 Join the FKIAB Telegram channel to get notified as soon as a new release is available: [t.me/fkiab](https://t.me/+j3i-S8nMy_o0MThk)
 
