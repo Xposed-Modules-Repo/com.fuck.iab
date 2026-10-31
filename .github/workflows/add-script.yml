@@ -63,7 +63,9 @@ jobs:
           git add "scripts/src/$PACKAGE.js" scripts/names.json scripts/dist \
             app/src/main/resources/META-INF/xposed/scope.list
           git commit -m "feat(scripts): add script for $APP_NAME"
-          git push -u origin "$BRANCH"
+          # The branch belongs to this bot, so a retry after a failure replaces it instead of
+          # being rejected as a non-fast-forward.
+          git push --force -u origin "$BRANCH"
 
           gh pr create \
             --base "${{ github.event.repository.default_branch }}" \
