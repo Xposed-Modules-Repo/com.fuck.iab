@@ -9,6 +9,9 @@ const SRC_DIR = path.join(__dirname, "src");
 const ASSETS_DIR = path.join(__dirname, "..", "app", "src", "main", "assets", "scripts");
 const DIST_DIR = path.join(__dirname, "dist");
 const DIST_SCRIPTS_DIR = path.join(DIST_DIR, "scripts");
+// App names for the store, so the manager can name a script's app when it is not installed.
+const NAMES_FILE = path.join(__dirname, "names.json");
+const appNames = existsSync(NAMES_FILE) ? JSON.parse(readFileSync(NAMES_FILE, "utf8")) : {};
 
 // The global script carries the bridge and is compiled into the apk. Every per-app script
 // comes from the store in dist/, which the manager downloads from, so the apk holds one
@@ -57,6 +60,7 @@ function compile(packageName, outDir) {
 
     return {
         package: packageName,
+        name: appNames[packageName] ?? null,
         file: `${packageName}.js`,
         sha256: createHash("sha256").update(bytes).digest("hex"),
         size: bytes.length,

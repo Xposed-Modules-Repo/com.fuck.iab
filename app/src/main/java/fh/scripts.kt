@@ -127,6 +127,7 @@ class scripts : Fragment() {
             val matchesFilter = filter == null || script.source == filter
             val matchesQuery = needle.isEmpty() ||
                     script.packageName.contains(needle, true) ||
+                    script.name?.contains(needle, true) == true ||
                     ScriptStore.appLabel(requireContext(), script.packageName).contains(needle, true)
 
             matchesFilter && matchesQuery
@@ -150,7 +151,9 @@ class scripts : Fragment() {
         view.findViewById<ImageView>(R.id.detailIcon).setImageDrawable(
             ScriptStore.appIcon(context, script.packageName) ?: context.getDrawable(R.drawable.ic_description)
         )
-        view.findViewById<TextView>(R.id.detailLabel).text = ScriptStore.appLabel(context, script.packageName)
+        view.findViewById<TextView>(R.id.detailLabel).text =
+            if (script.installed) ScriptStore.appLabel(context, script.packageName)
+            else script.name ?: script.packageName
         view.findViewById<TextView>(R.id.detailPackage).text = script.packageName
 
         val sheetDialog = BottomSheetDialog(context)
@@ -341,8 +344,8 @@ private class ScriptAdapter(
         holder.label.text = when {
             isAllApps -> context.getString(R.string.scripts_all_apps)
             item.installed -> ScriptStore.appLabel(context, item.packageName)
-            // Nothing but the package name is known for an app that is gone.
-            else -> item.packageName
+            // The store knows what the app is called even where it is not installed.
+            else -> item.name ?: item.packageName
         }
 
         // The package name would only repeat the label for an app that is not installed.

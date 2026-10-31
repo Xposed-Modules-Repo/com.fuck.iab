@@ -1,9 +1,10 @@
 {
   "format": 1,
-  "generatedAt": "2026-10-31T03:24:06.419Z",
+  "generatedAt": "2026-10-31T04:21:10.303Z",
   "scripts": [
     {
       "package": "app.simple.inure.play",
+      "name": "Inure App Manager",
       "file": "app.simple.inure.play.js",
       "sha256": "dfaee2337eee89925247b21101ed2eaaca46abc1632361dd7ccbd2860743f410",
       "size": 1242,
@@ -11,6 +12,7 @@
     },
     {
       "package": "com.adguard.android",
+      "name": "AdGuard",
       "file": "com.adguard.android.js",
       "sha256": "785551f7e7c4691d53f0d83db96f82cd8173f1465c6bcd5b6d713da6fd25bdaf",
       "size": 794,
@@ -18,6 +20,7 @@
     },
     {
       "package": "com.BrainLadder.Amirza",
+      "name": "آمیرزا",
       "file": "com.BrainLadder.Amirza.js",
       "sha256": "d687b1eed9fdeb8edeb02bc58018016170a1b80aca74a29fef5159c6c8257be7",
       "size": 406,
@@ -25,6 +28,7 @@
     },
     {
       "package": "com.cloudflare.onedotonedotonedotone",
+      "name": "1.1.1.1",
       "file": "com.cloudflare.onedotonedotonedotone.js",
       "sha256": "3147c4f01475c99b245b319bf61f6937b5fc1b48f66bb91064e45f6420f8333c",
       "size": 1880,
@@ -32,6 +36,7 @@
     },
     {
       "package": "com.kiloo.subwaysurf",
+      "name": "Subway Surfers",
       "file": "com.kiloo.subwaysurf.js",
       "sha256": "8cc4dc3d07447b68f53956e32e8c69a99e461b69800a702edbd71bad0331c19c",
       "size": 689,
@@ -39,6 +44,7 @@
     },
     {
       "package": "com.life360.android.safetymapd",
+      "name": "Life360",
       "file": "com.life360.android.safetymapd.js",
       "sha256": "49bdc2d10b38b2ea6a59d1b7e6dd9e1ab8809fdb02e937acbc160dc41e860a30",
       "size": 12297,
@@ -46,6 +52,7 @@
     },
     {
       "package": "com.mixapplications.ultimateusb",
+      "name": "Ultimate USB",
       "file": "com.mixapplications.ultimateusb.js",
       "sha256": "251e80c13ed49e07a65eee4ddf3f32edeba69ee65b18baac7b7b047bb5ff8654",
       "size": 719,
@@ -53,6 +60,7 @@
     },
     {
       "package": "com.parallel.space.pro",
+      "name": "Parallel Space Pro",
       "file": "com.parallel.space.pro.js",
       "sha256": "705794c0859b1b24c468aafdd6726bd84cda4b8c7aaded608515d9a619a45d88",
       "size": 1132,
@@ -60,6 +68,7 @@
     },
     {
       "package": "com.PoxelStudios.DudeTheftAuto",
+      "name": "Dude Theft Wars",
       "file": "com.PoxelStudios.DudeTheftAuto.js",
       "sha256": "f581ddea73c6c9ec390597bfa795f280115de2ea8f062787a6d471e390bce3f5",
       "size": 513,
@@ -67,6 +76,7 @@
     },
     {
       "package": "com.topfreegames.bikeracefreeworld",
+      "name": "Bike Race",
       "file": "com.topfreegames.bikeracefreeworld.js",
       "sha256": "e2451055753afe67288e636f388f6f97bdf1ae22a8348885386fdb8ed5d11825",
       "size": 435,
@@ -74,6 +84,7 @@
     },
     {
       "package": "io.github.sds100.keymapper",
+      "name": "Key Mapper",
       "file": "io.github.sds100.keymapper.js",
       "sha256": "33da6cc4c246f5486bf61dabfc108d2723d9e99717c1386ec8ceec96fc2bc3de",
       "size": 2128,

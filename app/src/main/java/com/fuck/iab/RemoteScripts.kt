@@ -45,6 +45,8 @@ object RemoteScripts {
     /** One script in the store. */
     data class Entry(
         val packageName: String,
+        /** The app as the store names it, for a device the app is not installed on. */
+        val name: String?,
         val file: String,
         val sha256: String,
         val size: Long,
@@ -82,6 +84,7 @@ object RemoteScripts {
 
             entries += Entry(
                 packageName = packageName,
+                name = script.opt("name")?.toString()?.takeIf { it.isNotBlank() && it != "null" },
                 file = file,
                 sha256 = sha256.lowercase(Locale.US),
                 size = script.optLong("size"),

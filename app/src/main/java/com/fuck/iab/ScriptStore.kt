@@ -16,6 +16,8 @@ enum class ScriptSource { USER, REMOTE }
 
 data class ScriptInfo(
     val packageName: String,
+    /** App name from the store, used when the app is not installed to read its own. */
+    val name: String?,
     val source: ScriptSource,
     val author: String?,
     val size: Int,
@@ -32,6 +34,7 @@ data class ScriptInfo(
 /** Everything the detail sheet can say about one script. */
 data class ScriptDetails(
     val packageName: String,
+    val name: String?,
     val source: ScriptSource,
     val size: Int,
     val author: String?,
@@ -196,6 +199,7 @@ object ScriptStore {
 
             ScriptInfo(
                 packageName = packageName,
+                name = syncedEntry?.name,
                 source = source,
                 author = author,
                 size = size,
@@ -241,6 +245,12 @@ object ScriptStore {
     fun details(context: Context, service: XposedService?, packageName: String): ScriptDetails {
         val files = if (service != null) RemoteFiles.list(service) else emptySet()
         val scoped = if (service != null) scope(service) else emptyList()
+        val entry = if (service != null) {
+            RemoteScripts.parseIndex(RemoteFiles.read(service, RemoteScripts.INDEX_FILE))
+                ?.firstOrNull { it.packageName == packageName }
+        } else {
+            null
+        }
 
         val userFile = userFile(packageName)
         val syncedFile = RemoteScripts.fileName(packageName)
@@ -273,6 +283,7 @@ object ScriptStore {
 
         return ScriptDetails(
             packageName = packageName,
+            name = entry?.name,
             source = source,
             size = text?.toByteArray(Charsets.UTF_8)?.size ?: 0,
             author = text?.let { authorOf(it) },
