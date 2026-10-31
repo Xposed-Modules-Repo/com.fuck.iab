@@ -12,7 +12,7 @@ import java.io.FileOutputStream
 import java.util.Locale
 
 /** Where the script that is currently used for a package comes from. */
-enum class ScriptSource { USER, REMOTE, BUNDLED }
+enum class ScriptSource { USER, REMOTE }
 
 data class ScriptInfo(
     val packageName: String,
@@ -113,9 +113,6 @@ object ScriptStore {
     /** The all-apps script, the entry the store publishes as global. */
     const val ALL_APPS = "global"
 
-    /** Where the scripts compiled into the APK live. */
-    private const val BUNDLED_DIR = "assets/scripts/"
-
     private const val SETTINGS_GROUP = "ui"
     private const val THEME_KEY = "theme"
     private const val USER_INDEX_KEY = "user_scripts"
@@ -163,7 +160,6 @@ object ScriptStore {
         scopeConfirmed: Boolean = true
     ): List<ScriptInfo> {
         val files = if (service != null) RemoteFiles.list(service) else emptySet()
-        val bundled = bundledScripts(context)
         val synced = if (service != null) syncedEntries(service) else emptyMap()
         val disabled = if (service != null) disabledApps(service) else emptySet()
         val users = userEntries(context, files)
@@ -173,12 +169,10 @@ object ScriptStore {
         val names = sortedSetOf<String>()
         names += users.keys.filter { it != ALL_APPS }
         names += synced.keys.filter { it != ALL_APPS }
-        names += bundled.keys.filter { it != ALL_APPS }
 
         return names.map { packageName ->
             val user = users[packageName]
             val syncedEntry = synced[packageName]
-            val builtIn = bundled[packageName]
             val installed = isInstalled(context, packageName)
 
             val source: ScriptSource
@@ -190,14 +184,10 @@ object ScriptStore {
                 source = ScriptSource.USER
                 size = text?.toByteArray(Charsets.UTF_8)?.size ?: 0
                 author = text?.let { authorOf(it) }
-            } else if (syncedEntry != null) {
-                source = ScriptSource.REMOTE
-                size = syncedEntry.size.toInt()
-                author = syncedEntry.author
             } else {
-                source = ScriptSource.BUNDLED
-                size = builtIn?.second ?: 0
-                author = builtIn?.first?.let { authorOf(it) }
+                source = ScriptSource.REMOTE
+                size = syncedEntry?.size?.toInt() ?: 0
+                author = syncedEntry?.author
             }
 
             // While the framework has not reported the scope, claiming an app is out of it
@@ -225,7 +215,7 @@ object ScriptStore {
     /** The scripts the store lists, keyed by package, as of the last sync. */
     private fun syncedEntries(service: XposedService): Map<String, RemoteScripts.Entry> {
         return RemoteScripts.parseIndex(RemoteFiles.read(service, RemoteScripts.INDEX_FILE))
-            ?.entries?.associateBy { it.packageName } ?: emptyMap()
+            ?.associateBy { it.packageName } ?: emptyMap()
     }
 
     /** Whether [packageName] is installed, so the list can say when it is not. */
@@ -237,28 +227,6 @@ object ScriptStore {
         } catch (e: Exception) {
             false
         }
-    }
-
-    /** Package name -> (script text, size) for the scripts compiled into this APK. */
-    private fun bundledScripts(context: Context): Map<String, Pair<String, Int>> {
-        return try {
-            java.util.zip.ZipFile(context.applicationInfo.sourceDir).use { zip ->
-                zip.entries().asSequence()
-                    .filter { !it.isDirectory && it.name.startsWith(BUNDLED_DIR) && it.name.endsWith(".js") }
-                    .associate { entry ->
-                        val packageName = entry.name.removePrefix(BUNDLED_DIR).removeSuffix(".js")
-                        val text = zip.getInputStream(entry).bufferedReader(Charsets.UTF_8).use { it.readText() }
-                        packageName to (text to text.toByteArray(Charsets.UTF_8).size)
-                    }
-            }
-        } catch (e: Exception) {
-            emptyMap()
-        }
-    }
-
-    /** Whether this APK ships a script for [packageName]. */
-    fun hasBundledScript(context: Context, packageName: String): Boolean {
-        return bundledScripts(context).containsKey(packageName)
     }
 
     fun authorOf(script: String): String? {
@@ -276,7 +244,6 @@ object ScriptStore {
 
         val userFile = userFile(packageName)
         val syncedFile = RemoteScripts.fileName(packageName)
-        val bundled = bundledScripts(context)[packageName]?.first
 
         val source: ScriptSource
         val text: String?
@@ -296,8 +263,9 @@ object ScriptStore {
             }
 
             else -> {
-                source = ScriptSource.BUNDLED
-                text = bundled
+                // A script the store lists but the device never received.
+                source = ScriptSource.REMOTE
+                text = null
             }
         }
 
@@ -327,17 +295,14 @@ object ScriptStore {
     // ---- content ---------------------------------------------------------------
 
     /** The script the module would run for [packageName]: the user copy, else the remote one. */
-    fun readScript(context: Context, service: XposedService?, packageName: String): Pair<ScriptSource, String>? {
+    fun readScript(service: XposedService?, packageName: String): Pair<ScriptSource, String>? {
         if (service == null) return null
 
-        val user = readUserScript(context, service, packageName)
+        val user = readUserScript(service, packageName)
         if (!user.isNullOrBlank()) return ScriptSource.USER to user
 
         val synced = RemoteFiles.read(service, RemoteScripts.fileName(packageName))
         if (!synced.isNullOrBlank()) return ScriptSource.REMOTE to synced
-
-        val bundled = bundledScripts(context)[packageName]?.first
-        if (!bundled.isNullOrBlank()) return ScriptSource.BUNDLED to bundled
 
         return null
     }
@@ -352,7 +317,7 @@ object ScriptStore {
     /** File the module reads as the all-apps user script. */
     fun userScriptName(): String = user_script_js()
 
-    fun readUserScript(context: Context, service: XposedService, packageName: String): String? {
+    private fun readUserScript(service: XposedService, packageName: String): String? {
         val file = userFile(packageName)
         if (!RemoteFiles.list(service).contains(file)) return null
         return RemoteFiles.read(service, file)

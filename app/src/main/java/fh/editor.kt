@@ -34,10 +34,7 @@ class editor : AppCompatActivity() {
     private var packageName: String = ScriptStore.ALL_APPS
     private var service: XposedService? = null
 
-    /** The store publishes this package, so there is a repo copy to go back to. */
-    private var published = false
-
-    /** The script on screen is a user copy, so an edit is what took it away from the repo. */
+    /** The script on screen is a user copy, so it can be deleted again. */
     private var hasUserCopy = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,20 +88,12 @@ class editor : AppCompatActivity() {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        val connected = service != null
-        menu.findItem(R.id.action_revert)?.isVisible = connected
-        // Only an edited copy of a published script can be restored to the repo version.
-        menu.findItem(R.id.action_restore)?.isVisible = connected && published && hasUserCopy
+        menu.findItem(R.id.action_revert)?.isVisible = service != null && hasUserCopy
         return super.onPrepareOptionsMenu(menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.action_restore -> {
-                confirmRestore()
-                true
-            }
-
             R.id.action_revert -> {
                 confirmRevert()
                 true
@@ -125,7 +114,7 @@ class editor : AppCompatActivity() {
 
         lifecycleScope.launch {
             val content = withContext(Dispatchers.IO) {
-                ScriptStore.readScript(this@editor, current, packageName)
+                ScriptStore.readScript(current, packageName)
             }
 
             val details = withContext(Dispatchers.IO) {
@@ -133,9 +122,6 @@ class editor : AppCompatActivity() {
             }
 
             hasUserCopy = details.hasUserScript
-            published = withContext(Dispatchers.IO) {
-                ScriptStore.hasBundledScript(this@editor, packageName)
-            }
             invalidateOptionsMenu()
 
             if (content == null) {
@@ -179,40 +165,6 @@ class editor : AppCompatActivity() {
             Toast.makeText(this@editor, R.string.toast_saved, Toast.LENGTH_SHORT).show()
             setResult(Activity.RESULT_OK)
             finish()
-        }
-    }
-
-    private fun confirmRestore() {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.action_restore)
-            .setMessage(R.string.editor_restore_note)
-            .setNegativeButton(R.string.action_cancel, null)
-            .setPositiveButton(R.string.action_restore, DialogInterface.OnClickListener { _, _ -> restore() })
-            .show()
-    }
-
-    /** Drops the user copy so the script bundled in the APK is used again. */
-    private fun restore() {
-        val current = service ?: return
-
-        lifecycleScope.launch {
-            val restored = withContext(Dispatchers.IO) {
-                try {
-                    ScriptStore.revertUserScript(this@editor, current, packageName)
-                    true
-                } catch (e: Exception) {
-                    false
-                }
-            }
-
-            if (!restored) {
-                Toast.makeText(this@editor, R.string.toast_restore_failed, Toast.LENGTH_SHORT).show()
-                return@launch
-            }
-
-            Toast.makeText(this@editor, R.string.toast_restored, Toast.LENGTH_SHORT).show()
-            setResult(Activity.RESULT_OK)
-            load()
         }
     }
 

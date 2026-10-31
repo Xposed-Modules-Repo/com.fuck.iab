@@ -53,13 +53,6 @@ object RemoteScripts {
         val url: String get() = "$BASE_URL$SCRIPTS_PATH$file"
     }
 
-    /** The manifest that was downloaded last, with when it was fetched. */
-    data class Index(
-        val fetchedAt: Long,
-        val publishedAt: Long,
-        val entries: List<Entry>
-    )
-
     /**
      * Reads the entries of a published manifest.
      *
@@ -103,39 +96,21 @@ object RemoteScripts {
         return entries
     }
 
-    /** The cached index, holding the manifest text so the store survives a restart. */
-    fun indexJson(fetchedAt: Long, manifestText: String): String {
+    /** The cached manifest, so the list still knows the scripts after a restart. */
+    fun indexJson(manifestText: String): String {
         return JSONObject().apply {
-            put("fetchedAt", fetchedAt)
             put("manifest", JSONObject(manifestText))
         }.toString()
     }
 
-    fun parseIndex(text: String?): Index? {
+    fun parseIndex(text: String?): List<Entry>? {
         if (text.isNullOrBlank()) return null
 
         return try {
-            val json = JSONObject(text)
-            val manifest = json.optJSONObject("manifest") ?: return null
-
-            Index(
-                fetchedAt = json.optLong("fetchedAt"),
-                publishedAt = publishedAt(manifest.optString("generatedAt")),
-                entries = parseManifest(manifest.toString())
-            )
+            val manifest = JSONObject(text).optJSONObject("manifest") ?: return null
+            parseManifest(manifest.toString())
         } catch (e: Exception) {
             null
-        }
-    }
-
-    /** The manifest stamps its build time as an ISO-8601 string. */
-    private fun publishedAt(generatedAt: String): Long {
-        if (generatedAt.isEmpty()) return 0
-
-        return try {
-            java.time.Instant.parse(generatedAt).toEpochMilli()
-        } catch (e: Exception) {
-            0
         }
     }
 

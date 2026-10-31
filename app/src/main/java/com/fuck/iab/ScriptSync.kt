@@ -18,12 +18,8 @@ object ScriptSync {
 
     private const val TIMEOUT_MS = 20000
 
-    /**
-     * @param downloaded scripts that were written because they were new or had changed
-     * @param removed scripts that the store no longer lists
-     * @param total scripts the manifest lists
-     */
-    data class Result(val downloaded: Int, val removed: Int, val total: Int)
+    /** @param downloaded scripts that were written because they were new or had changed */
+    data class Result(val downloaded: Int)
 
     fun sync(service: XposedService): Result {
         if (!RemoteScripts.configured) {
@@ -62,32 +58,22 @@ object ScriptSync {
         }
 
         // A script dropped from the store should stop running rather than stay behind.
-        var removed = 0
         for (name in present) {
             if (!RemoteScripts.isScriptFile(name) || wanted.contains(name)) continue
-            if (RemoteFiles.delete(service, name)) removed++
+            RemoteFiles.delete(service, name)
         }
 
         val stored = RemoteFiles.write(
             service,
             RemoteScripts.INDEX_FILE,
-            RemoteScripts.indexJson(System.currentTimeMillis(), manifestText)
+            RemoteScripts.indexJson(manifestText)
         )
 
         if (!stored) {
             throw IOException("could not store the manifest index")
         }
 
-        return Result(downloaded, removed, manifest.size)
-    }
-
-    /** Time of the last successful sync, or 0 when nothing has been synced yet. */
-    fun lastSync(service: XposedService): Long {
-        return try {
-            RemoteScripts.parseIndex(RemoteFiles.read(service, RemoteScripts.INDEX_FILE))?.fetchedAt ?: 0
-        } catch (e: Exception) {
-            0
-        }
+        return Result(downloaded)
     }
 
     private fun download(url: String): ByteArray {
