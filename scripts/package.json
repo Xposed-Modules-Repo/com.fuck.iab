@@ -10,6 +10,6 @@
     "frida-il2cpp-bridge": "^0.14.0"
   },
   "devDependencies": {
-    "frida-compile": "^19.0.5"
+    "frida-compile": "^19.1.0"
   }
 }
