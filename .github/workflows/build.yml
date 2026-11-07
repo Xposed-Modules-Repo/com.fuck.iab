@@ -1,0 +1,157 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main, master, dev, ui ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GUM_VERSION: "17.24.3"
+  NDK_VERSION: "30.0.16248370"
+  GUM_NDK_REQUIRED: "30"
+  CMAKE_VERSION: "3.22.1"
+  JAVA_BRIDGE_URL: "https://github.com/staleroot/frida-java-bridge/archive/55e0dc8a26dd7b858fbcae55a93d16826e576c64.tar.gz"
+
+jobs:
+  apk:
+    name: Build FKIAB APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Install Android NDK and CMake
+        run: |
+          SDKMANAGER="$(ls "$ANDROID_SDK_ROOT"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | tail -1 || echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager")"
+          echo "sdkmanager: $SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" --install "ndk;$NDK_VERSION" "cmake;$CMAKE_VERSION"
+
+      - name: Cache frida-gum devkit
+        id: frida-cache
+        uses: actions/cache@v4
+        with:
+          path: app/src/main/libs
+          key: frida-gum-${{ env.GUM_VERSION }}-ndk${{ env.GUM_NDK_REQUIRED }}-${{ hashFiles('build-frida-gum.sh') }}
+
+      - name: Build frida-gum devkit
+        if: steps.frida-cache.outputs.cache-hit != 'true'
+        run: |
+          export ANDROID_NDK_ROOT="${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}/ndk/$NDK_VERSION"
+          echo "NDK: $ANDROID_NDK_ROOT"
+          git clone --depth 1 --branch "$GUM_VERSION" --recurse-submodules \
+            https://github.com/frida/frida-gum.git frida-gum
+          bash ./build-frida-gum.sh frida-gum .
+          du -sh app/src/main/libs/*
+
+      - name: Check devkit files
+        run: |
+          for abi in arm64-v8a armeabi-v7a; do
+            test -f "app/src/main/libs/$abi/libfrida-gumjs.a" \
+              || { echo "missing libfrida-gumjs.a for $abi"; exit 1; }
+            test -f "app/src/main/libs/$abi/frida-gumjs.h" \
+              || { echo "missing frida-gumjs.h for $abi"; exit 1; }
+          done
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: scripts/package-lock.json
+
+      - name: Prepare Java bridge & Frida scripts
+        working-directory: scripts
+        run: |
+          npm ci
+          npm install --no-save "$JAVA_BRIDGE_URL"
+          mkdir -p libs
+          printf 'export { default } from "frida-java-bridge";\n' > libs/frida-java-bridge.js
+          npm run build:all
+
+      - name: Configure Signing Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          KEYSTORE_PATH="$RUNNER_TEMP/fkiab-ci.jks"
+          if [ -n "${KEYSTORE_BASE64:-}" ]; then
+            echo "Using repository secret KEYSTORE_BASE64"
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_PATH"
+            echo "KEYSTORE_FILE=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+            echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+          else
+            echo "No KEYSTORE_BASE64 secret found; generating a release signing keystore"
+            keytool -genkeypair -v -keystore "$KEYSTORE_PATH" -alias fkiab -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass fkiabpass -keypass fkiabpass -dname "CN=FKIAB, OU=FKIAB, O=FKIAB, L=Unknown, S=Unknown, C=US"
+            echo "KEYSTORE_FILE=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+            echo "KEYSTORE_PASSWORD=fkiabpass" >> "$GITHUB_ENV"
+            echo "KEY_ALIAS=fkiab" >> "$GITHUB_ENV"
+            echo "KEY_PASSWORD=fkiabpass" >> "$GITHUB_ENV"
+          fi
+
+      - name: Grant execution permission
+        run: chmod +x ./gradlew
+
+      - name: Build APKs (assembleDebug & assembleRelease)
+        run: ./gradlew assembleDebug assembleRelease --console=plain
+
+      - name: Organize output APKs
+        id: naming
+        run: |
+          set -euo pipefail
+          VERSION="$(grep -oP 'versionName\s+"\K[^"]+' app/build.gradle || echo "1.6.6")"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          mkdir -p dist/release dist/debug
+
+          for apk in app/build/outputs/apk/release/*.apk; do
+            [ -f "$apk" ] || continue
+            abi="$(basename "$apk" .apk)"
+            abi="${abi#app-}"
+            abi="${abi%-release}"
+            abi="${abi%-unsigned}"
+            cp "$apk" "dist/release/com.fuck.iab-v$VERSION-$abi.apk"
+          done
+
+          for apk in app/build/outputs/apk/debug/*.apk; do
+            [ -f "$apk" ] || continue
+            abi="$(basename "$apk" .apk)"
+            abi="${abi#app-}"
+            abi="${abi%-debug}"
+            cp "$apk" "dist/debug/com.fuck.iab-v$VERSION-debug-$abi.apk"
+          done
+
+          echo "Generated APKs:"
+          ls -la dist/release dist/debug
+
+      - name: Upload Release APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: fkiab-release-apks
+          path: dist/release/*.apk
+          if-no-files-found: warn
+
+      - name: Upload Debug APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: fkiab-debug-apks
+          path: dist/debug/*.apk
+          if-no-files-found: warn

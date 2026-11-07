@@ -1,15 +1,16 @@
 {
-  "name": "frida-scripts",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "build": "node build.js",
-    "build:all": "node build.js --all"
-  },
-  "dependencies": {
-    "frida-il2cpp-bridge": "^0.14.0"
-  },
-  "devDependencies": {
-    "frida-compile": "^19.1.0"
-  }
+    "name":  "frida-scripts",
+    "private":  true,
+    "type":  "module",
+    "scripts":  {
+                    "build":  "node build.js",
+                    "build:all":  "node build.js --all",
+                    "build:dist":  "node build.js --dist"
+                },
+    "dependencies":  {
+                         "frida-il2cpp-bridge":  "^0.14.0"
+                     },
+    "devDependencies":  {
+                            "frida-compile":  "^19.1.0"
+                        }
 }
