@@ -1,37 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layoutDirection="ltr"
     android:orientation="vertical">
-
-    <!-- Log search / filter -->
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/logFilterLayout"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="16dp"
-        android:hint="@string/logs_search_hint"
-        app:boxCornerRadiusBottomEnd="20dp"
-        app:boxCornerRadiusBottomStart="20dp"
-        app:boxCornerRadiusTopEnd="20dp"
-        app:boxCornerRadiusTopStart="20dp"
-        app:endIconMode="clear_text"
-        app:startIconDrawable="@drawable/ic_search"
-        app:startIconTint="?attr/colorPrimary">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/logFilterInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:imeOptions="actionDone"
-            android:inputType="text"
-            android:maxLines="1" />
-    </com.google.android.material.textfield.TextInputLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -39,9 +11,8 @@
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="16dp"
-        android:paddingTop="6dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="6dp">
+        android:paddingTop="4dp"
+        android:paddingEnd="16dp">
 
         <TextView
             android:layout_width="0dp"
@@ -49,16 +20,6 @@
             android:layout_weight="1"
             android:text="@string/auto_scroll"
             android:textAppearance="?attr/textAppearanceBodyMedium" />
-
-        <ImageButton
-            android:id="@+id/pauseResumeButton"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginEnd="12dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Pause/Resume"
-            android:src="@drawable/ic_pause"
-            app:tint="?attr/colorPrimary" />
 
         <com.google.android.material.materialswitch.MaterialSwitch
             android:id="@+id/autoScrollSwitch"
@@ -72,12 +33,7 @@
         android:id="@+id/logcatScroll"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
-        android:layout_marginBottom="12dp"
-        android:layout_weight="1"
-        android:background="@drawable/ic_launcher_background"
-        android:backgroundTint="@color/my_surface_container">
+        android:layout_weight="1">
 
         <TextView
             android:id="@+id/logcatView"
@@ -86,7 +42,7 @@
             android:fontFamily="monospace"
             android:padding="12dp"
             android:textIsSelectable="true"
-            android:textSize="12.5sp" />
+            android:textSize="13sp" />
 
     </ScrollView>
 

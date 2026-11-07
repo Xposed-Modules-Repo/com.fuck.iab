@@ -2,7 +2,6 @@ package fh
 
 import android.content.Context
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.LruCache
@@ -12,7 +11,6 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -30,7 +28,6 @@ import com.fuck.iab.RunningProcess
 import com.fuck.iab.RunningState
 import com.fuck.iab.ScriptSource
 import com.fuck.iab.ScriptStore
-import com.google.android.material.card.MaterialCardView
 import kotlinx.coroutines.launch
 
 // home screen: module state, counters and the apps in scope
@@ -46,17 +43,10 @@ class home : Fragment() {
     ): View {
         val v = inflater.inflate(R.layout.page_home, container, false)
 
-        val statusBannerCard = v.findViewById<MaterialCardView>(R.id.statusBannerCard)
-        val statusBannerIcon = v.findViewById<ImageView>(R.id.statusBannerIcon)
-        val statusBannerTitle = v.findViewById<TextView>(R.id.statusBannerTitle)
-        val statusBannerDesc = v.findViewById<TextView>(R.id.statusBannerDesc)
-
         val hookedCount = v.findViewById<TextView>(R.id.hookedCount)
         val hookedLabel = v.findViewById<TextView>(R.id.hookedLabel)
         val installedCount = v.findViewById<TextView>(R.id.installedCount)
         val enabledCount = v.findViewById<TextView>(R.id.enabledCount)
-        val runningCount = v.findViewById<TextView>(R.id.runningCount)
-
         val hookedEmpty = v.findViewById<TextView>(R.id.hookedEmpty)
         val hookedNote = v.findViewById<TextView>(R.id.hookedNote)
         val hookedList = v.findViewById<RecyclerView>(R.id.hookedList)
@@ -69,76 +59,30 @@ class home : Fragment() {
                 viewLifecycleOwner.lifecycleScope
             )
         }
-        adapter.onItemClick = { app ->
-            val launchIntent = requireContext().packageManager.getLaunchIntentForPackage(app.packageName)
-            if (launchIntent != null) {
-                try {
-                    startActivity(launchIntent)
-                } catch (ignored: Exception) {
-                }
-            }
-        }
         hookedList.layoutManager = LinearLayoutManager(requireContext())
         hookedList.adapter = adapter
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.state.collect { state ->
-                    // Framework connection banner
-                    if (state.isConnected) {
-                        statusBannerCard.setCardBackgroundColor(
-                            ContextCompat.getColor(requireContext(), R.color.status_green_bg)
-                        )
-                        statusBannerIcon.setImageResource(R.drawable.ic_check_circle)
-                        statusBannerIcon.imageTintList = ColorStateList.valueOf(
-                            ContextCompat.getColor(requireContext(), R.color.status_green)
-                        )
-                        statusBannerTitle.setText(R.string.status_framework_active)
-                        statusBannerTitle.setTextColor(
-                            ContextCompat.getColor(requireContext(), R.color.status_green)
-                        )
-                        statusBannerDesc.setText(R.string.status_framework_active_desc)
-                    } else {
-                        statusBannerCard.setCardBackgroundColor(
-                            ContextCompat.getColor(requireContext(), R.color.status_amber_bg)
-                        )
-                        statusBannerIcon.setImageResource(R.drawable.ic_warning)
-                        statusBannerIcon.imageTintList = ColorStateList.valueOf(
-                            ContextCompat.getColor(requireContext(), R.color.status_amber)
-                        )
-                        statusBannerTitle.setText(R.string.status_framework_waiting)
-                        statusBannerTitle.setTextColor(
-                            ContextCompat.getColor(requireContext(), R.color.status_amber)
-                        )
-                        statusBannerDesc.setText(R.string.status_framework_waiting_desc)
-                    }
-
                     hookedCount.text = state.scope.toString()
 
                     val running = state.hookedApps.count { it.isRunning }
-                    val installed = state.hookedApps.count {
-                        ScriptStore.isInstalled(requireContext(), it.packageName)
-                    }
-
-                    installedCount.text = installed.toString()
-                    enabledCount.text = state.enabled.toString()
-                    runningCount.text = state.runningProcessesCount.toString()
-
-                    hookedLabel.text = if (state.scopeUnconfirmed) {
-                        getString(R.string.home_scope_unconfirmed)
+                    hookedLabel.text = if (running > 0) {
+                        getString(R.string.home_hooked_running, running, state.scope)
                     } else {
                         getString(R.string.home_hooked)
                     }
 
-                    hookedNote.text = if (state.hookedApps.isNotEmpty()) {
-                        getString(R.string.home_hooked_running, running, state.hookedApps.size)
-                    } else {
-                        ""
-                    }
-
+                    installedCount.text = state.scripts.size.toString()
+                    enabledCount.text = state.enabled.toString()
+                    // Never claim there are no apps in scope while the framework has not
+                    // actually reported the scope.
                     hookedEmpty.isVisible = state.hookedApps.isEmpty()
-                    hookedList.isVisible = state.hookedApps.isNotEmpty()
-
+                    hookedEmpty.setText(
+                        if (state.scopeUnconfirmed) R.string.home_scope_unknown else R.string.home_hooked_empty
+                    )
+                    hookedNote.isVisible = state.scopeUnconfirmed && state.hookedApps.isNotEmpty()
                     adapter.submitList(state.hookedApps)
                 }
             }
@@ -147,80 +91,121 @@ class home : Fragment() {
         return v
     }
 
-    private class AppAdapter(private val context: Context) :
-        ListAdapter<HookedApp, AppViewHolder>(DiffCallback) {
-
-        var onMenu: ((View, HookedApp) -> Unit)? = null
-        var onItemClick: ((HookedApp) -> Unit)? = null
-
-        private val icons = LruCache<String, Drawable>(64)
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppViewHolder {
-            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_app, parent, false)
-            return AppViewHolder(view)
-        }
-
-        override fun onBindViewHolder(holder: AppViewHolder, position: Int) {
-            val app = getItem(position)
-            holder.label.text = app.label
-            holder.packageName.text = app.packageName
-
-            val cached = icons.get(app.packageName)
-            if (cached != null) {
-                holder.icon.setImageDrawable(cached)
-            } else {
-                val icon = ScriptStore.appIcon(context, app.packageName)
-                if (icon != null) {
-                    icons.put(app.packageName, icon)
-                    holder.icon.setImageDrawable(icon)
-                } else {
-                    holder.icon.setImageResource(
-                        if (HookedProviders.handles(app.packageName)) R.drawable.ic_extension
-                        else R.drawable.ic_description
-                    )
-                }
-            }
-
-            val running = app.running
-            if (running.isNotEmpty()) {
-                holder.running.isVisible = true
-                holder.running.text = "● " + runningLabel(context, running)
-            } else {
-                holder.running.isVisible = false
-            }
-
-            holder.menu.setOnClickListener { onMenu?.invoke(it, app) }
-            holder.itemView.setOnClickListener { onItemClick?.invoke(app) }
-        }
-
-        private fun runningLabel(context: Context, processes: List<RunningProcess>): String {
-            if (processes.size == 1) {
-                val process = processes.first()
-                val stateText = when (process.state) {
-                    RunningState.CURRENT -> context.getString(R.string.home_running)
-                    RunningState.STALE -> context.getString(R.string.home_running_stale)
-                    RunningState.RELOADING -> context.getString(R.string.home_running_reloading)
-                    RunningState.FAILED -> context.getString(R.string.home_running_failed)
-                }
-                return " ()"
-            }
-            return context.getString(R.string.home_running_processes, processes.size)
-        }
-
-        private object DiffCallback : DiffUtil.ItemCallback<HookedApp>() {
-            override fun areItemsTheSame(oldItem: HookedApp, newItem: HookedApp) =
-                oldItem.packageName == newItem.packageName
-
-            override fun areContentsTheSame(oldItem: HookedApp, newItem: HookedApp) =
-                oldItem == newItem
-        }
+    override fun onResume() {
+        super.onResume()
+        viewModel.refresh()
     }
+}
 
-    private class AppViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+private class AppAdapter(private val context: Context) : ListAdapter<HookedApp, AppAdapter.Holder>(DIFF) {
+
+    private val icons = LruCache<String, Drawable>(64)
+
+    var onMenu: ((View, HookedApp) -> Unit)? = null
+
+    class Holder(view: View) : RecyclerView.ViewHolder(view) {
         val icon: ImageView = view.findViewById(R.id.appIcon)
         val label: TextView = view.findViewById(R.id.appLabel)
         val packageName: TextView = view.findViewById(R.id.appPackage)
         val running: TextView = view.findViewById(R.id.appRunning)
         val menu: ImageButton = view.findViewById(R.id.appMenu)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
+        return Holder(LayoutInflater.from(parent.context).inflate(R.layout.item_app, parent, false))
+    }
+
+    override fun onBindViewHolder(holder: Holder, position: Int) {
+        val app = getItem(position)
+
+        holder.label.text = app.label
+        holder.packageName.text = app.packageName
+
+        val running = runningLabel(app.running)
+        holder.running.text = running
+        holder.running.isVisible = running != null
+
+        holder.icon.setImageDrawable(iconFor(app.packageName))
+
+        holder.itemView.setOnClickListener { open(app.packageName) }
+        holder.menu.setOnClickListener { onMenu?.invoke(holder.menu, app) }
+    }
+
+    /** Tapping a row opens the app itself, which is what the list is about. */
+    private fun open(packageName: String) {
+        val intent = context.packageManager.getLaunchIntentForPackage(packageName) ?: return
+
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+        try {
+            context.startActivity(intent)
+        } catch (e: Exception) {
+        }
+    }
+
+    /** "running · pid 1234", or null when the module is not loaded in that app. */
+    private fun runningLabel(processes: List<RunningProcess>): String? {
+        val first = processes.firstOrNull() ?: return null
+
+        val state = when (first.state) {
+            RunningState.CURRENT -> R.string.home_running
+            RunningState.STALE -> R.string.home_running_stale
+            RunningState.RELOADING -> R.string.home_running_reloading
+            RunningState.FAILED -> R.string.home_running_failed
+        }
+
+        val detail = if (processes.size == 1) {
+            context.getString(R.string.home_running_pid, first.pid)
+        } else {
+            context.getString(R.string.home_running_processes, processes.size)
+        }
+
+        return context.getString(state) + " · " + detail
+    }
+
+    private fun iconFor(packageName: String): Drawable? {
+        icons.get(packageName)?.let { return it }
+
+        val drawable = ScriptStore.appIcon(context, packageName) ?: return null
+        icons.put(packageName, drawable)
+        return drawable
+    }
+
+    companion object {
+        private val DIFF = object : DiffUtil.ItemCallback<HookedApp>() {
+            override fun areItemsTheSame(oldItem: HookedApp, newItem: HookedApp) =
+                oldItem.packageName == newItem.packageName
+
+            override fun areContentsTheSame(oldItem: HookedApp, newItem: HookedApp) = oldItem == newItem
+        }
+    }
+}
+
+/**
+ * What a script covers: a store handled by the module's own hook runs no script at all, an app
+ * outside the scope never runs one either, and otherwise it is one app per package.
+ */
+/**
+ * What the script covers, or null when there is nothing worth saying. A script that covers one
+ * app says nothing the row does not already show, so that case stays out.
+ */
+fun coverageLabel(
+    context: Context,
+    packageName: String,
+    coveredApps: Int,
+    inScope: Boolean,
+    installed: Boolean
+): String? {
+    if (HookedProviders.handles(packageName)) return context.getString(R.string.scripts_hook_handled)
+    if (!installed) return context.getString(R.string.scripts_not_installed)
+    if (!inScope) return context.getString(R.string.scripts_not_in_scope)
+    if (coveredApps <= 1) return null
+    return context.getString(R.string.scripts_covers_many, coveredApps)
+}
+
+fun sourceLabel(context: Context, source: ScriptSource): String {
+    return when (source) {
+        ScriptSource.USER -> context.getString(R.string.source_user)
+        ScriptSource.REMOTE -> context.getString(R.string.source_remote)
     }
 }

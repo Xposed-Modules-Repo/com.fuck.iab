@@ -1,19 +1,14 @@
 package fh
 
 import android.app.Dialog
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
-import android.graphics.drawable.Drawable
 import android.os.Bundle
-import android.util.LruCache
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -25,7 +20,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.fuck.iab.HookedProviders
 import com.fuck.iab.R
 import com.fuck.iab.ScriptDetails
 import com.fuck.iab.ScriptInfo
@@ -33,7 +27,6 @@ import com.fuck.iab.ScriptSource
 import com.fuck.iab.ScriptStore
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
@@ -58,10 +51,6 @@ class scripts : Fragment() {
     private var filter: ScriptSource? = null
     private var all: List<ScriptInfo> = emptyList()
 
-    private lateinit var filterAllChip: Chip
-    private lateinit var filterSyncedChip: Chip
-    private lateinit var filterUserChip: Chip
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -73,11 +62,6 @@ class scripts : Fragment() {
         val empty = v.findViewById<TextView>(R.id.scriptsEmpty)
         val newScript = v.findViewById<ExtendedFloatingActionButton>(R.id.newScriptButton)
         val search = v.findViewById<TextInputEditText>(R.id.searchInput)
-
-        val filterGroup = v.findViewById<ChipGroup>(R.id.filterGroup)
-        filterAllChip = v.findViewById(R.id.filterAll)
-        filterSyncedChip = v.findViewById(R.id.filterSynced)
-        filterUserChip = v.findViewById(R.id.filterUser)
 
         adapter = ScriptAdapter(requireContext()) { script -> showDetails(script) }
         adapter.onEnabledChanged = { packageName, enabled -> viewModel.setEnabled(packageName, enabled) }
@@ -91,29 +75,30 @@ class scripts : Fragment() {
         list.layoutManager = LinearLayoutManager(requireContext())
         list.adapter = adapter
 
-        newScript.setOnClickListener { showChoiceDialog() }
+        newScript.setOnClickListener { pickPackage() }
 
-        search.doAfterTextChanged { text ->
-            query = text?.toString().orEmpty().trim()
-            applyFilter()
+        search.doAfterTextChanged {
+            query = it?.toString().orEmpty()
+            applyFilters(empty)
         }
 
-        filterGroup.setOnCheckedStateChangeListener { _, checkedIds ->
-            filter = when (checkedIds.firstOrNull()) {
-                R.id.filterSynced -> ScriptSource.REMOTE
-                R.id.filterUser -> ScriptSource.USER
-                else -> null
+        v.findViewById<ChipGroup>(R.id.filterGroup)
+            .setOnCheckedStateChangeListener { _, checkedIds ->
+                filter = when (checkedIds.firstOrNull()) {
+                    R.id.filterSynced -> ScriptSource.REMOTE
+                    R.id.filterUser -> ScriptSource.USER
+                    else -> null
+                }
+
+                applyFilters(empty)
             }
-            applyFilter()
-        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.state.collect { state ->
                     all = state.scripts
-                    viewModel.syncIfEmpty(all.size)
-                    updateFilterChipLabels()
-                    applyFilter()
+                    applyFilters(empty)
+                    viewModel.syncIfEmpty(state.scripts.size)
                 }
             }
         }
@@ -121,321 +106,279 @@ class scripts : Fragment() {
         return v
     }
 
-    private fun updateFilterChipLabels() {
-        val allCount = all.size
-        val syncedCount = all.count { it.source == ScriptSource.REMOTE }
-        val userCount = all.count { it.source == ScriptSource.USER }
-
-        filterAllChip.text = getString(R.string.filter_all, allCount)
-        filterSyncedChip.text = getString(R.string.filter_synced, syncedCount)
-        filterUserChip.text = getString(R.string.filter_user, userCount)
-    }
-
-    private fun applyFilter() {
-        val view = view ?: return
-        val empty = view.findViewById<TextView>(R.id.scriptsEmpty)
-
-        val visible = all
-            .filter { script ->
-                filter == null || script.source == filter
-            }
-            .filter { script ->
-                if (query.isEmpty()) return@filter true
-
-                val label = script.name ?: ScriptStore.appLabel(requireContext(), script.packageName)
-                label.contains(query, ignoreCase = true) ||
-                        script.packageName.contains(query, ignoreCase = true)
-            }
-
-        adapter.submitList(visible)
-
-        if (visible.isEmpty()) {
-            empty.isVisible = true
-            empty.text = if (query.isNotEmpty()) {
-                getString(R.string.scripts_nothing_matches, query)
-            } else {
-                getString(R.string.scripts_empty)
-            }
-        } else {
-            empty.isVisible = false
-        }
-    }
-
-    private fun showDetails(info: ScriptInfo) {
-        val service = fh.g.getService() ?: return
-        val currentSheet = BottomSheetDialog(requireContext())
-        sheet = currentSheet
-
-        val v = layoutInflater.inflate(R.layout.sheet_script_details, null)
-        currentSheet.setContentView(v)
-
-        val icon = v.findViewById<ImageView>(R.id.detailIcon)
-        val label = v.findViewById<TextView>(R.id.detailLabel)
-        val packageName = v.findViewById<TextView>(R.id.detailPackage)
-        val summary = v.findViewById<TextView>(R.id.detailSummary)
-        val status = v.findViewById<TextView>(R.id.detailStatus)
-        val covers = v.findViewById<TextView>(R.id.detailCovers)
-        val coversRow = v.findViewById<View>(R.id.detailCoversRow)
-        val file = v.findViewById<TextView>(R.id.detailFile)
-        val fileRow = v.findViewById<View>(R.id.detailFileRow)
-        val checksum = v.findViewById<TextView>(R.id.detailChecksum)
-        val copyChecksum = v.findViewById<ImageButton>(R.id.detailCopyChecksum)
-        val edit = v.findViewById<MaterialButton>(R.id.detailEdit)
-
-        label.text = info.name ?: ScriptStore.appLabel(requireContext(), info.packageName)
-        packageName.text = info.packageName
-
-        val appIcon = ScriptStore.appIcon(requireContext(), info.packageName)
-        if (appIcon != null) {
-            icon.setImageDrawable(appIcon)
-        } else {
-            icon.setImageResource(
-                if (HookedProviders.handles(info.packageName)) R.drawable.ic_extension
-                else R.drawable.ic_description
-            )
-        }
-
-        edit.setOnClickListener {
-            currentSheet.dismiss()
-            startActivity(editor.intent(requireContext(), info.packageName))
-        }
-
-        copyChecksum.setOnClickListener {
-            val cs = checksum.text.toString()
-            if (cs.isNotBlank()) {
-                val clip = ClipData.newPlainText("checksum", cs)
-                val cm = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                cm.setPrimaryClip(clip)
-                Toast.makeText(requireContext(), R.string.toast_checksum_copied, Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            val details = withContext(Dispatchers.IO) {
-                ScriptStore.details(requireContext(), service, info.packageName)
-            }
-
-            status.text = getString(
-                if (details.enabled) R.string.status_enabled else R.string.status_disabled
-            )
-
-            val sourceText = sourceLabel(requireContext(), details.source)
-            val sizeText = ScriptStore.sizeLabel(details.size)
-            summary.text = if (details.author == null) {
-                " • "
-            } else {
-                " •  • " + getString(R.string.editor_author, details.author)
-            }
-
-            if (details.coveredApps > 1) {
-                coversRow.isVisible = true
-                covers.text = getString(R.string.scripts_covers_many, details.coveredApps)
-            } else {
-                coversRow.isVisible = false
-            }
-
-            if (details.file != null) {
-                fileRow.isVisible = true
-                file.text = details.file
-            } else {
-                fileRow.isVisible = false
-            }
-
-            checksum.text = details.sha256 ?: ""
-        }
-
-        currentSheet.show()
-    }
-
-    private fun showChoiceDialog() {
-        val context = requireContext()
-        val dialog = Dialog(context)
-        pickerDialog = dialog
-
-        val v = layoutInflater.inflate(R.layout.dialog_new_script, null)
-        dialog.setContentView(v)
-
-        val search = v.findViewById<TextInputEditText>(R.id.searchInput)
-        val list = v.findViewById<RecyclerView>(R.id.choiceList)
-        val empty = v.findViewById<TextView>(R.id.choiceEmpty)
-
-        val choiceAdapter = ChoiceAdapter(context) { choice ->
-            dialog.dismiss()
-            startActivity(editor.intent(context, choice.packageName))
-        }
-
-        list.layoutManager = LinearLayoutManager(context)
-        list.adapter = choiceAdapter
-
-        var fullList: List<AppChoice> = emptyList()
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            fullList = withContext(Dispatchers.IO) {
-                ScriptStore.installedApps(context)
-                    .map { AppChoice(ScriptStore.appLabel(context, it), it) }
-                    .sortedBy { it.label.lowercase() }
-            }
-            choiceAdapter.submitList(fullList)
-        }
-
-        search.doAfterTextChanged { text ->
-            val q = text?.toString().orEmpty().trim()
-            val filtered = if (q.isEmpty()) {
-                fullList
-            } else {
-                fullList.filter {
-                    it.label.contains(q, ignoreCase = true) ||
-                            it.packageName.contains(q, ignoreCase = true)
-                }
-            }
-            choiceAdapter.submitList(filtered)
-            empty.isVisible = filtered.isEmpty()
-        }
-
-        dialog.show()
+    override fun onResume() {
+        super.onResume()
+        // Picks up scripts saved in the editor.
+        viewModel.refresh()
     }
 
     override fun onDestroyView() {
-        sheet?.dismiss()
         pickerDialog?.dismiss()
+        pickerDialog = null
+        sheet?.dismiss()
+        sheet = null
         super.onDestroyView()
     }
 
-    private class ScriptAdapter(
-        private val context: Context,
-        private val onClick: (ScriptInfo) -> Unit
-    ) : ListAdapter<ScriptInfo, ScriptViewHolder>(DiffCallback) {
+    private fun applyFilters(empty: TextView) {
+        val needle = query.trim()
 
-        var onEnabledChanged: ((String, Boolean) -> Unit)? = null
-        var onMenu: ((View, ScriptInfo) -> Unit)? = null
+        val visible = all.filter { script ->
+            val matchesFilter = filter == null || script.source == filter
+            val matchesQuery = needle.isEmpty() ||
+                    script.packageName.contains(needle, true) ||
+                    script.name?.contains(needle, true) == true ||
+                    ScriptStore.appLabel(requireContext(), script.packageName).contains(needle, true)
 
-        private val icons = LruCache<String, Drawable>(64)
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ScriptViewHolder {
-            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_script, parent, false)
-            return ScriptViewHolder(view)
+            matchesFilter && matchesQuery
         }
 
-        override fun onBindViewHolder(holder: ScriptViewHolder, position: Int) {
-            val script = getItem(position)
+        adapter.submitList(visible)
+        empty.setText(if (all.isEmpty()) R.string.scripts_empty else R.string.scripts_nothing_matches)
+        empty.isVisible = visible.isEmpty()
+    }
 
-            holder.label.text = script.name ?: ScriptStore.appLabel(context, script.packageName)
-            holder.packageName.text = script.packageName
+    private fun openEditor(packageName: String) {
+        startActivity(editor.intent(requireContext(), packageName))
+    }
 
-            val cached = icons.get(script.packageName)
-            if (cached != null) {
-                holder.icon.setImageDrawable(cached)
-            } else {
-                val icon = ScriptStore.appIcon(context, script.packageName)
-                if (icon != null) {
-                    icons.put(script.packageName, icon)
-                    holder.icon.setImageDrawable(icon)
+    // ---- detail sheet ----------------------------------------------------------
+
+    private fun showDetails(script: ScriptInfo) {
+        val view = layoutInflater.inflate(R.layout.sheet_script_details, null)
+        val context = requireContext()
+
+        view.findViewById<ImageView>(R.id.detailIcon).setImageDrawable(
+            ScriptStore.appIcon(context, script.packageName) ?: context.getDrawable(R.drawable.ic_description)
+        )
+        view.findViewById<TextView>(R.id.detailLabel).text =
+            if (script.installed) ScriptStore.appLabel(context, script.packageName)
+            else script.name ?: script.packageName
+        view.findViewById<TextView>(R.id.detailPackage).text = script.packageName
+
+        val sheetDialog = BottomSheetDialog(context)
+        sheetDialog.setContentView(view)
+        sheet = sheetDialog
+
+        view.findViewById<MaterialButton>(R.id.detailEdit).setOnClickListener {
+            sheetDialog.dismiss()
+            openEditor(script.packageName)
+        }
+
+        sheetDialog.show()
+
+        val service = g.getService()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val details = withContext(Dispatchers.IO) {
+                ScriptStore.details(context, service, script.packageName)
+            }
+
+            bindDetails(view, details)
+        }
+    }
+
+    private fun bindDetails(view: View, details: ScriptDetails) {
+        val context = requireContext()
+
+        // Source, size and author, once each, on one line.
+        val summary = buildList {
+            add(sourceLabel(context, details.source))
+            add(ScriptStore.sizeLabel(details.size))
+            details.author?.let { add(it) }
+            if (details.hasUserScript) add(getString(R.string.source_user))
+        }
+        view.findViewById<TextView>(R.id.detailSummary).text = summary.joinToString(" · ")
+
+        val covers = coverageLabel(
+            context, details.packageName, details.coveredApps, details.inScope, details.installed
+        )
+        view.findViewById<TextView>(R.id.detailCovers).text = covers ?: ""
+        view.findViewById<View>(R.id.detailCoversRow).isVisible = covers != null
+
+        view.findViewById<TextView>(R.id.detailStatus).text =
+            getString(if (details.enabled) R.string.status_enabled else R.string.status_disabled)
+
+        view.findViewById<TextView>(R.id.detailFile).text = details.file ?: "-"
+        view.findViewById<View>(R.id.detailFileRow).isVisible = details.file != null
+
+        view.findViewById<TextView>(R.id.detailChecksum).text = details.sha256 ?: "-"
+    }
+
+    // ---- new script picker -----------------------------------------------------
+
+    /** Asks which app the new script is for, instead of making the user type a package name. */
+    private fun pickPackage() {
+        val view = layoutInflater.inflate(R.layout.dialog_new_script, null)
+        val input = view.findViewById<TextInputEditText>(R.id.searchInput)
+        val list = view.findViewById<RecyclerView>(R.id.choiceList)
+        val empty = view.findViewById<TextView>(R.id.choiceEmpty)
+
+        val choices = ChoiceAdapter(requireContext()) { packageName ->
+            pickerDialog?.dismiss()
+            openEditor(packageName)
+        }
+
+        list.layoutManager = LinearLayoutManager(requireContext())
+        list.adapter = choices
+
+        pickerDialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.scripts_new_title)
+            .setView(view)
+            .setNegativeButton(R.string.action_cancel, null)
+            .create()
+
+        val context = requireContext().applicationContext
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val candidates = withContext(Dispatchers.IO) { candidates(context) }
+
+            fun show(needle: String) {
+                val trimmed = needle.trim()
+
+                val filtered = if (trimmed.isEmpty()) {
+                    candidates
                 } else {
-                    holder.icon.setImageResource(
-                        if (HookedProviders.handles(script.packageName)) R.drawable.ic_extension
-                        else R.drawable.ic_description
-                    )
+                    candidates.filter {
+                        it.label.contains(trimmed, true) || it.packageName.contains(trimmed, true)
+                    }
                 }
+
+                choices.submitList(filtered)
+                empty.isVisible = filtered.isEmpty()
             }
 
-            val sourceText = sourceLabel(context, script.source)
-            val sizeText = ScriptStore.sizeLabel(script.size)
-            holder.meta.text = if (script.author != null) {
-                " •  • "
-            } else {
-                " • "
-            }
-
-            if (!script.installed) {
-                holder.scope.isVisible = true
-                holder.scope.setText(R.string.scripts_not_installed)
-            } else if (!script.inScope) {
-                holder.scope.isVisible = true
-                holder.scope.setText(R.string.scripts_not_in_scope)
-            } else {
-                holder.scope.isVisible = false
-            }
-
-            holder.enabledSwitch.setOnCheckedChangeListener(null)
-            holder.enabledSwitch.isChecked = script.enabled
-            holder.enabledSwitch.setOnCheckedChangeListener { _, checked ->
-                onEnabledChanged?.invoke(script.packageName, checked)
-            }
-
-            holder.menu.setOnClickListener { onMenu?.invoke(it, script) }
-            holder.itemView.setOnClickListener { onClick(script) }
+            show("")
+            input.doAfterTextChanged { show(it?.toString().orEmpty()) }
         }
 
-        private object DiffCallback : DiffUtil.ItemCallback<ScriptInfo>() {
-            override fun areItemsTheSame(oldItem: ScriptInfo, newItem: ScriptInfo) =
-                oldItem.packageName == newItem.packageName
-
-            override fun areContentsTheSame(oldItem: ScriptInfo, newItem: ScriptInfo) =
-                oldItem == newItem
-        }
+        pickerDialog?.show()
     }
 
-    private class ScriptViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val icon: ImageView = view.findViewById(R.id.scriptIcon)
-        val label: TextView = view.findViewById(R.id.scriptLabel)
-        val packageName: TextView = view.findViewById(R.id.scriptPackage)
-        val meta: TextView = view.findViewById(R.id.scriptMeta)
-        val scope: TextView = view.findViewById(R.id.scriptScope)
-        val enabledSwitch: MaterialSwitch = view.findViewById(R.id.scriptSwitch)
-        val menu: ImageButton = view.findViewById(R.id.scriptMenu)
+    private fun candidates(context: Context): List<AppChoice> {
+        val state = viewModel.state.value
+        val packages = LinkedHashSet<String>()
+
+        // Apps in scope and apps that already have a script come first.
+        state.hookedApps.forEach { packages += it.packageName }
+        state.scripts.forEach { packages += it.packageName }
+        packages += ScriptStore.installedApps(context)
+        packages -= ScriptStore.ALL_APPS
+
+        return packages
+            .map { AppChoice(ScriptStore.appLabel(context, it), it) }
+            .sortedBy { it.label.lowercase() }
     }
+}
 
-    private class ChoiceAdapter(
-        private val context: Context,
-        private val onSelect: (AppChoice) -> Unit
-    ) : ListAdapter<AppChoice, ChoiceViewHolder>(DiffCallback) {
+private class ChoiceAdapter(
+    private val context: Context,
+    private val onClick: (String) -> Unit
+) : ListAdapter<AppChoice, ChoiceAdapter.Holder>(DIFF) {
 
-        private val icons = LruCache<String, Drawable>(64)
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChoiceViewHolder {
-            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_choice, parent, false)
-            return ChoiceViewHolder(view)
-        }
-
-        override fun onBindViewHolder(holder: ChoiceViewHolder, position: Int) {
-            val choice = getItem(position)
-            holder.label.text = choice.label
-            holder.packageName.text = choice.packageName
-
-            val cached = icons.get(choice.packageName)
-            if (cached != null) {
-                holder.icon.setImageDrawable(cached)
-            } else {
-                val icon = ScriptStore.appIcon(context, choice.packageName)
-                if (icon != null) {
-                    icons.put(choice.packageName, icon)
-                    holder.icon.setImageDrawable(icon)
-                } else {
-                    holder.icon.setImageResource(R.drawable.ic_extension)
-                }
-            }
-
-            holder.itemView.setOnClickListener { onSelect(choice) }
-        }
-
-        private object DiffCallback : DiffUtil.ItemCallback<AppChoice>() {
-            override fun areItemsTheSame(oldItem: AppChoice, newItem: AppChoice) =
-                oldItem.packageName == newItem.packageName
-
-            override fun areContentsTheSame(oldItem: AppChoice, newItem: AppChoice) =
-                oldItem == newItem
-        }
-    }
-
-    private class ChoiceViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+    class Holder(view: View) : RecyclerView.ViewHolder(view) {
         val icon: ImageView = view.findViewById(R.id.choiceIcon)
         val label: TextView = view.findViewById(R.id.choiceLabel)
         val packageName: TextView = view.findViewById(R.id.choicePackage)
     }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
+        return Holder(LayoutInflater.from(parent.context).inflate(R.layout.item_choice, parent, false))
+    }
+
+    override fun onBindViewHolder(holder: Holder, position: Int) {
+        val item = getItem(position)
+
+        holder.label.text = item.label
+        holder.packageName.text = item.packageName
+        holder.icon.setImageDrawable(
+            ScriptStore.appIcon(context, item.packageName) ?: context.getDrawable(R.drawable.ic_extension)
+        )
+        holder.itemView.setOnClickListener { onClick(item.packageName) }
+    }
+
+    companion object {
+        private val DIFF = object : DiffUtil.ItemCallback<AppChoice>() {
+            override fun areItemsTheSame(oldItem: AppChoice, newItem: AppChoice) =
+                oldItem.packageName == newItem.packageName
+
+            override fun areContentsTheSame(oldItem: AppChoice, newItem: AppChoice) = oldItem == newItem
+        }
+    }
 }
 
-fun sourceLabel(context: Context, source: ScriptSource): String {
-    return context.getString(
-        if (source == ScriptSource.USER) R.string.source_user else R.string.source_remote
-    )
+private class ScriptAdapter(
+    private val context: Context,
+    private val onClick: (ScriptInfo) -> Unit
+) : ListAdapter<ScriptInfo, ScriptAdapter.Holder>(DIFF) {
+
+    var onEnabledChanged: ((String, Boolean) -> Unit)? = null
+    var onMenu: ((View, ScriptInfo) -> Unit)? = null
+
+    class Holder(view: View) : RecyclerView.ViewHolder(view) {
+        val icon: ImageView = view.findViewById(R.id.scriptIcon)
+        val label: TextView = view.findViewById(R.id.scriptLabel)
+        val packageName: TextView = view.findViewById(R.id.scriptPackage)
+        val meta: TextView = view.findViewById(R.id.scriptMeta)
+        val covers: TextView = view.findViewById(R.id.scriptCovers)
+        val menu: ImageButton = view.findViewById(R.id.scriptMenu)
+        val switch: MaterialSwitch = view.findViewById(R.id.scriptSwitch)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
+        val holder = Holder(LayoutInflater.from(parent.context).inflate(R.layout.item_script, parent, false))
+        holder.switch.setOnCheckedChangeListener { button, isChecked ->
+            val item = button.tag as? ScriptInfo ?: return@setOnCheckedChangeListener
+            if (item.enabled != isChecked) onEnabledChanged?.invoke(item.packageName, isChecked)
+        }
+        return holder
+    }
+
+    override fun onBindViewHolder(holder: Holder, position: Int) {
+        val item = getItem(position)
+
+        holder.menu.setOnClickListener { onMenu?.invoke(holder.menu, item) }
+
+        val isAllApps = item.packageName == ScriptStore.ALL_APPS
+
+        holder.label.text = when {
+            isAllApps -> context.getString(R.string.scripts_all_apps)
+            item.installed -> ScriptStore.appLabel(context, item.packageName)
+            // The store knows what the app is called even where it is not installed.
+            else -> item.name ?: item.packageName
+        }
+
+        // The package name would only repeat the label for an app that is not installed.
+        holder.packageName.text = item.packageName
+        holder.packageName.isVisible = isAllApps || item.installed
+
+        val parts = mutableListOf(sourceLabel(context, item.source))
+
+        if (item.size > 0) parts += ScriptStore.sizeLabel(item.size)
+        item.author?.let { parts += it }
+
+        holder.meta.text = parts.joinToString(" · ")
+        val covers = coverageLabel(
+            context, item.packageName, item.coveredApps, item.inScope, item.installed
+        )
+        holder.covers.text = covers ?: ""
+        holder.covers.isVisible = covers != null
+        holder.icon.setImageDrawable(
+            ScriptStore.appIcon(context, item.packageName) ?: context.getDrawable(R.drawable.ic_description)
+        )
+
+        holder.switch.tag = item
+        holder.switch.isChecked = item.enabled
+
+        holder.itemView.setOnClickListener { onClick(item) }
+    }
+
+    companion object {
+        private val DIFF = object : DiffUtil.ItemCallback<ScriptInfo>() {
+            override fun areItemsTheSame(oldItem: ScriptInfo, newItem: ScriptInfo) =
+                oldItem.packageName == newItem.packageName
+
+            override fun areContentsTheSame(oldItem: ScriptInfo, newItem: ScriptInfo) = oldItem == newItem
+        }
+    }
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Dark mode: light status & navigation bar icons -->
+    <!-- The window background is dark here, so the system bar icons have to be light. -->
     <style name="Theme.F" parent="Base.Theme.F">
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>

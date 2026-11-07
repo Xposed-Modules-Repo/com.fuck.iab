@@ -4,11 +4,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageButton
 import android.widget.ScrollView
 import android.widget.TextView
-import android.widget.Toast
-import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -16,7 +13,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.fuck.iab.R
 import com.google.android.material.materialswitch.MaterialSwitch
-import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
 
 // log fragment: the output only, the actions live in the toolbar
@@ -25,11 +21,8 @@ class f : Fragment() {
     lateinit var logcatScroll: ScrollView
     lateinit var logcatView: TextView
     lateinit var autoScrollSwitch: MaterialSwitch
-    lateinit var pauseResumeButton: ImageButton
-    lateinit var logFilterInput: TextInputEditText
 
     private val viewModel: h by activityViewModels()
-    private var filterQuery: String = ""
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -43,8 +36,6 @@ class f : Fragment() {
         )
         logcatScroll = v.findViewById(R.id.logcatScroll)
         logcatView = v.findViewById(R.id.logcatView)
-        logFilterInput = v.findViewById(R.id.logFilterInput)
-        pauseResumeButton = v.findViewById(R.id.pauseResumeButton)
 
         autoScrollSwitch = v.findViewById(R.id.autoScrollSwitch)
         autoScrollSwitch.isChecked = viewModel.autoScroll
@@ -52,37 +43,18 @@ class f : Fragment() {
             viewModel.autoScroll = checked
         }
 
-        updatePauseButtonState()
-        pauseResumeButton.setOnClickListener {
-            viewModel.isStreamingPaused = !viewModel.isStreamingPaused
-            updatePauseButtonState()
-            Toast.makeText(
-                requireContext(),
-                if (viewModel.isStreamingPaused) R.string.logs_paused else R.string.logs_resumed,
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-
-        logFilterInput.doAfterTextChanged { text ->
-            filterQuery = text?.toString().orEmpty().trim()
-            logcatView.text = viewModel.getFilteredLogs(filterQuery)
-            scrollToBottom()
-        }
-
-        logcatView.text = viewModel.getFilteredLogs(filterQuery)
+        logcatView.text = viewModel.getLogs()
 
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.logs.collect { log ->
-                    if (filterQuery.isEmpty() || log.contains(filterQuery, ignoreCase = true)) {
-                        logcatView.append(log)
+                    logcatView.append(log)
 
-                        if (logcatView.length() > 100000) {
-                            logcatView.text = logcatView.text.takeLast(50000)
-                        }
-
-                        scrollToBottom()
+                    if (logcatView.length() > 100000) {
+                        logcatView.text = logcatView.text.takeLast(50000)
                     }
+
+                    scrollToBottom()
                 }
             }
         }
@@ -96,14 +68,6 @@ class f : Fragment() {
         }
 
         return v
-    }
-
-    private fun updatePauseButtonState() {
-        if (::pauseResumeButton.isInitialized) {
-            pauseResumeButton.setImageResource(
-                if (viewModel.isStreamingPaused) R.drawable.ic_play_arrow else R.drawable.ic_pause
-            )
-        }
     }
 
     fun scrollToBottom() {
@@ -121,6 +85,8 @@ class f : Fragment() {
             scrollToBottom()
         }
 
+        // This page is a tab now, so the stream starts when it becomes visible rather than
+        // when the app opens. The view model ignores a second start while one is running.
         viewModel.startLogcatStreaming()
     }
 }

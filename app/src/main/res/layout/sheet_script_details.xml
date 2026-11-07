@@ -1,21 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:maxHeight="560dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layoutDirection="ltr"
         android:orientation="vertical"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp"
-        android:paddingBottom="32dp">
-
-        <com.google.android.material.bottomsheet.BottomSheetDragHandleView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+        android:padding="24dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -25,10 +19,9 @@
 
             <ImageView
                 android:id="@+id/detailIcon"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:contentDescription="@null"
-                android:src="@drawable/ic_description" />
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:contentDescription="@null" />
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -46,38 +39,34 @@
                     android:maxLines="1"
                     android:textAlignment="viewStart"
                     android:textAppearance="?attr/textAppearanceTitleMedium"
-                    android:textDirection="locale"
-                    android:textStyle="bold" />
+                    android:textDirection="locale" />
 
                 <TextView
                     android:id="@+id/detailPackage"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="start"
                     android:maxLines="1"
                     android:textAlignment="viewStart"
                     android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="?android:attr/textColorSecondary"
                     android:textDirection="locale" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Summary (source, size, author) -->
+        <!-- source, size and author, once -->
         <TextView
             android:id="@+id/detailSummary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="12dp"
             android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="?attr/colorPrimary"
-            android:textStyle="bold" />
+            android:textColor="?attr/colorPrimary" />
 
         <TableLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="8dp"
             android:stretchColumns="1">
 
             <TableRow android:id="@+id/detailCoversRow">
@@ -135,39 +124,19 @@
             </TableRow>
         </TableLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/detail_checksum"
-                android:textAppearance="?attr/textAppearanceLabelLarge" />
-
-            <ImageButton
-                android:id="@+id/detailCopyChecksum"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Copy checksum"
-                android:src="@drawable/ic_copy"
-                app:tint="?attr/colorPrimary" />
-        </LinearLayout>
+            android:text="@string/detail_checksum"
+            android:textAppearance="?attr/textAppearanceLabelLarge" />
 
         <TextView
             android:id="@+id/detailChecksum"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:background="@drawable/ic_launcher_background"
-            android:backgroundTint="@color/my_surface_container"
             android:fontFamily="monospace"
-            android:padding="8dp"
             android:textAppearance="?attr/textAppearanceBodySmall"
             android:textIsSelectable="true" />
 
@@ -176,8 +145,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="@string/action_edit"
-            app:cornerRadius="14dp" />
+            android:text="@string/action_edit" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

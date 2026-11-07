@@ -1,8 +1,5 @@
 package fh
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -23,7 +20,6 @@ import com.fuck.iab.RemoteScripts
 import com.fuck.iab.ScriptStore
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.android.material.color.DynamicColors
 import io.github.libxposed.service.XposedService
 import kotlinx.coroutines.launch
 
@@ -37,9 +33,6 @@ class c : AppCompatActivity(), g.ServiceStateListener {
     private val viewModel: h by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Apply Material You dynamic color where available
-        DynamicColors.applyIfAvailable(this)
-
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -48,6 +41,8 @@ class c : AppCompatActivity(), g.ServiceStateListener {
         root.post {
             val rootWindowInsets = ViewCompat.getRootWindowInsets(root) ?: return@post
             val systemBars = rootWindowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            // The bottom bar sits in the navigation bar area itself, so the root keeps no
+            // bottom padding and the bar's surface fills that strip instead of leaving a gap.
             root.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
         }
 
@@ -57,6 +52,8 @@ class c : AppCompatActivity(), g.ServiceStateListener {
         viewPager = findViewById(R.id.viewPager)
         bottomNav = findViewById(R.id.bottomNav)
 
+        // The bar keeps its own background down to the navigation bar, using that height as
+        // padding for the labels instead of leaving an empty strip below the app.
         ViewCompat.setOnApplyWindowInsetsListener(bottomNav) { view, insets ->
             val bar = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
             view.setPadding(view.paddingLeft, view.paddingTop, view.paddingRight, bar)
@@ -94,19 +91,22 @@ class c : AppCompatActivity(), g.ServiceStateListener {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        // The log actions belong to the logs screen, so the toolbar only offers what the
+        // current page can do.
         val onLogs = viewPager.currentItem == PAGE_LOGS
         val onHome = viewPager.currentItem == PAGE_HOME
         val onScripts = viewPager.currentItem == PAGE_SCRIPTS
 
-        menu.findItem(R.id.action_logs_copy)?.isVisible = onLogs
         menu.findItem(R.id.action_logs_retry)?.isVisible = onLogs
         menu.findItem(R.id.action_logs_clear)?.isVisible = onLogs
 
+        // Updating the store belongs to the scripts screen, and only one update runs at a time.
         menu.findItem(R.id.action_sync_scripts)?.apply {
             isVisible = onScripts
             isEnabled = !syncing
         }
 
+        // The theme button belongs to the home page, and offers the mode the app is not in.
         menu.findItem(R.id.action_theme)?.apply {
             val night = ScriptStore.isNight(this@c)
             isVisible = onHome
@@ -133,11 +133,6 @@ class c : AppCompatActivity(), g.ServiceStateListener {
                 true
             }
 
-            R.id.action_logs_copy -> {
-                copyLogsToClipboard()
-                true
-            }
-
             R.id.action_logs_retry -> {
                 viewModel.retryLogcatStreaming()
                 true
@@ -152,18 +147,12 @@ class c : AppCompatActivity(), g.ServiceStateListener {
         }
     }
 
-    private fun copyLogsToClipboard() {
-        val logs = viewModel.getLogs()
-        if (logs.isNotBlank()) {
-            val clip = ClipData.newPlainText("logs", logs)
-            val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(clip)
-            Toast.makeText(this, R.string.toast_logs_copied, Toast.LENGTH_SHORT).show()
-        }
-    }
-
     private var syncing = false
 
+    /**
+     * Downloads the published scripts. The store is remote, so the outcome is a toast rather
+     * than a dialog, and the list reloads itself once the new copies are in place.
+     */
     private fun updateScripts() {
         if (syncing) return
 
@@ -195,6 +184,7 @@ class c : AppCompatActivity(), g.ServiceStateListener {
         }
     }
 
+    /** "version 1.6.4 (38)", taken from the installed package. */
     private fun versionLabel(): String {
         return try {
             val info = packageManager.getPackageInfo(packageName, 0)
@@ -217,6 +207,7 @@ class c : AppCompatActivity(), g.ServiceStateListener {
             }
         )
 
+        // The build number belongs to the home page, not to every screen.
         supportActionBar?.subtitle = if (position == PAGE_HOME) versionLabel() else null
     }
 

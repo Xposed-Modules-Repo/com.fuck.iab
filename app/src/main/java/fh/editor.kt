@@ -10,7 +10,6 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -37,7 +36,6 @@ class editor : AppCompatActivity() {
 
     /** The script on screen is a user copy, so it can be deleted again. */
     private var hasUserCopy = false
-    private var originalContent: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,7 +43,6 @@ class editor : AppCompatActivity() {
 
         val root = findViewById<View>(R.id.editorRoot)
         applySystemBarIcons(this, root)
-
         // Keep the save button above the keyboard instead of behind it.
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime())
@@ -64,13 +61,7 @@ class editor : AppCompatActivity() {
             ScriptStore.appLabel(this, packageName)
         }
         supportActionBar?.subtitle = packageName
-        toolbar.setNavigationOnClickListener { handleBackPress() }
-
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                handleBackPress()
-            }
-        })
+        toolbar.setNavigationOnClickListener { finish() }
 
         input = findViewById(R.id.editorInput)
         source = findViewById(R.id.editorSource)
@@ -78,14 +69,6 @@ class editor : AppCompatActivity() {
         val wrap = findViewById<MaterialSwitch>(R.id.editorWrap)
         wrap.setOnCheckedChangeListener { _, checked -> applyWrap(checked) }
         applyWrap(wrap.isChecked)
-
-        // Setup Frida Quick Snippet Buttons
-        setupSnippet(R.id.snipJavaUse, "const Target = Java.use(\"\");")
-        setupSnippet(R.id.snipIl2Cpp, "Il2Cpp.perform(() => {\n    \n});")
-        setupSnippet(R.id.snipConsoleLog, "console.log(\"\");")
-        setupSnippet(R.id.snipArrow, "() => {\n    \n}")
-        setupSnippet(R.id.snipReturnTrue, "return true;")
-        setupSnippet(R.id.snipSemicolon, ";")
 
         findViewById<MaterialButton>(R.id.editorSaveButton).apply {
             isEnabled = service != null
@@ -97,34 +80,6 @@ class editor : AppCompatActivity() {
         }
 
         load()
-    }
-
-    private fun setupSnippet(buttonId: Int, snippet: String) {
-        findViewById<MaterialButton?>(buttonId)?.setOnClickListener {
-            insertSnippetAtCursor(snippet)
-        }
-    }
-
-    private fun insertSnippetAtCursor(text: String) {
-        val start = input.selectionStart.coerceAtLeast(0)
-        val end = input.selectionEnd.coerceAtLeast(0)
-        input.text?.replace(Math.min(start, end), Math.max(start, end), text)
-        input.setSelection(start + text.length)
-        input.requestFocus()
-    }
-
-    private fun handleBackPress() {
-        val currentText = input.text?.toString().orEmpty()
-        if (currentText != originalContent) {
-            MaterialAlertDialogBuilder(this)
-                .setTitle(R.string.editor_unsaved_title)
-                .setMessage(R.string.editor_unsaved_message)
-                .setNegativeButton(R.string.editor_keep_editing, null)
-                .setPositiveButton(R.string.editor_discard) { _, _ -> finish() }
-                .show()
-        } else {
-            finish()
-        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -148,6 +103,7 @@ class editor : AppCompatActivity() {
         }
     }
 
+    /** Code scrolls sideways unless wrapping is asked for, so long lines stay on one line. */
     private fun applyWrap(enabled: Boolean) {
         input.setHorizontallyScrolling(!enabled)
         input.requestLayout()
@@ -170,12 +126,10 @@ class editor : AppCompatActivity() {
 
             if (content == null) {
                 source.text = ""
-                originalContent = ""
                 return@launch
             }
 
             val (from, text) = content
-            originalContent = text
             input.setText(text)
             input.setSelection(0)
 
@@ -184,7 +138,7 @@ class editor : AppCompatActivity() {
                 getString(R.string.editor_source, sourceLabel(this@editor, from))
             } else {
                 getString(R.string.editor_source, sourceLabel(this@editor, from)) +
-                        " • " + getString(R.string.editor_author, author)
+                        " · " + getString(R.string.editor_author, author)
             }
         }
     }
@@ -208,7 +162,6 @@ class editor : AppCompatActivity() {
                 return@launch
             }
 
-            originalContent = text
             Toast.makeText(this@editor, R.string.toast_saved, Toast.LENGTH_SHORT).show()
             setResult(Activity.RESULT_OK)
             finish()

@@ -144,15 +144,6 @@ fun onServiceConnected(): String {
     return sb.toString()
 }
 
-fun com_farsitel_bazaar(): String {
-    val sb = StringBuilder()
-    val arr = intArrayOf(140, 128, 130, 193, 137, 142, 157, 156, 134, 155, 138, 131, 193, 141, 142, 149, 142, 142, 157)
-    for (num in arr) {
-        sb.append((num.xor(239)).toChar())
-    }
-    return sb.toString()
-}
-
 fun com_android_vending_billing_IInAppBillingService(): String {
     val sb = StringBuilder()
     val arr = intArrayOf(156, 144, 146, 209, 158, 145, 155, 141, 144, 150, 155, 209, 137, 154, 145, 155, 150, 145, 152, 209, 157, 150, 147, 147, 150, 145, 152, 209, 182, 182, 145, 190, 143, 143, 189, 150, 147, 147, 150, 145, 152, 172, 154, 141, 137, 150, 156, 154)
@@ -167,15 +158,6 @@ fun com_fuck_iab(): String {
     val arr = intArrayOf(88, 84, 86, 21, 93, 78, 88, 80, 21, 82, 90, 89)
     for (num in arr) {
         sb.append((num.xor(59)).toChar())
-    }
-    return sb.toString()
-}
-
-fun com_fuck_iab_FakeBillingActivity(): String {
-    val sb = StringBuilder()
-    val arr = intArrayOf(203, 199, 197, 134, 206, 221, 203, 195, 134, 193, 201, 202, 134, 238, 201, 195, 205, 234, 193, 196, 196, 193, 198, 207, 233, 203, 220, 193, 222, 193, 220, 209)
-    for (num in arr) {
-        sb.append((num.xor(168)).toChar())
     }
     return sb.toString()
 }
@@ -594,7 +576,6 @@ fun zh_CN(): String {
     return sb.toString()
 }
 
-
 fun zh_HK(): String {
     val sb = StringBuilder()
     val arr = intArrayOf(41, 59, 12, 27, 24)
@@ -681,15 +662,6 @@ fun Purchase_Successful(): String {
     val arr = intArrayOf(69, 96, 103, 118, 125, 116, 102, 112, 53, 70, 96, 118, 118, 112, 102, 102, 115, 96, 121, 52)
     for (num in arr) {
         sb.append((num.xor(21)).toChar())
-    }
-    return sb.toString()
-}
-
-fun ir_mservices_market(): String {
-    val sb = StringBuilder()
-    val arr = intArrayOf(87, 76, 16, 83, 77, 91, 76, 72, 87, 93, 91, 77, 16, 83, 95, 76, 85, 91, 74)
-    for (num in arr) {
-        sb.append((num.xor(62)).toChar())
     }
     return sb.toString()
 }
@@ -829,38 +801,11 @@ fun global(): String {
     return sb.toString()
 }
 
-fun Not_connected_to_framework(): String {
-    val sb = StringBuilder()
-    val arr = intArrayOf(121, 88, 67, 23, 84, 88, 89, 89, 82, 84, 67, 82, 83, 23, 67, 88, 23, 81, 69, 86, 90, 82, 64, 88, 69, 92)
-    for (num in arr) {
-        sb.append((num.xor(55)).toChar())
-    }
-    return sb.toString()
-}
-
 fun user_script_js(): String {
     val sb = StringBuilder()
     val arr = intArrayOf(235, 237, 251, 236, 193, 237, 253, 236, 247, 238, 234, 176, 244, 237)
     for (num in arr) {
         sb.append((num.xor(158)).toChar())
-    }
-    return sb.toString()
-}
-
-fun Script_saved(): String {
-    val sb = StringBuilder()
-    val arr = intArrayOf(216, 232, 249, 226, 251, 255, 171, 248, 234, 253, 238, 239)
-    for (num in arr) {
-        sb.append((num.xor(139)).toChar())
-    }
-    return sb.toString()
-}
-
-fun Error__(): String {
-    val sb = StringBuilder()
-    val arr = intArrayOf(38, 17, 17, 12, 17, 89, 67)
-    for (num in arr) {
-        sb.append((num.xor(99)).toChar())
     }
     return sb.toString()
 }
@@ -910,33 +855,6 @@ fun _s_(): String {
     return sb.toString()
 }
 
-fun Script(): String {
-    val sb = StringBuilder()
-    val arr = intArrayOf(137, 185, 168, 179, 170, 174)
-    for (num in arr) {
-        sb.append((num.xor(218)).toChar())
-    }
-    return sb.toString()
-}
-
-fun Log(): String {
-    val sb = StringBuilder()
-    val arr = intArrayOf(111, 76, 68)
-    for (num in arr) {
-        sb.append((num.xor(35)).toChar())
-    }
-    return sb.toString()
-}
-
-fun Error(): String {
-    val sb = StringBuilder()
-    val arr = intArrayOf(186, 141, 141, 144, 141)
-    for (num in arr) {
-        sb.append((num.xor(255)).toChar())
-    }
-    return sb.toString()
-}
-
 fun APP_SCRIPT_GOES_HERE(): String {
     val sb = StringBuilder()
     val arr = intArrayOf(159, 142, 142, 129, 141, 157, 140, 151, 142, 138, 129, 153, 145, 155, 141, 129, 150, 155, 140, 155)
@@ -952,26 +870,6 @@ fun USER_SCRIPT_GOES_HERE(): String {
     for (num in arr) {
         sb.append((num.xor(103)).toChar())
     }
-    return sb.toString()
-}
-
-fun script_hint(): String {
-    val sb = StringBuilder()
-
-    val arr = intArrayOf(
-        31, 48, 118, 47, 57, 35, 118, 50, 57, 56, 113, 34, 118, 61, 56, 57,
-        33, 118, 33, 62, 55, 34, 118, 55, 92, 16, 36, 63, 50, 55, 118, 37,
-        53, 36, 63, 38, 34, 118, 63, 37, 122, 118, 47, 57, 35, 118, 53,
-        55, 56, 92, 63, 49, 56, 57, 36, 51, 118, 34, 62, 63, 37, 118, 37,
-        51, 53, 34, 63, 57, 56, 120, 92, 92, 19, 46, 55, 59, 38, 58, 51,
-        108, 92, 53, 57, 56, 37, 57, 58, 51, 120, 58, 57, 49, 126, 116,
-        62, 51, 58, 58, 57, 118, 33, 57, 36, 58, 50, 119, 116, 127, 109
-    )
-
-    for (num in arr) {
-        sb.append((num.xor(86)).toChar())
-    }
-
     return sb.toString()
 }
 
@@ -1232,24 +1130,6 @@ fun fkiab(): String {
     val arr = intArrayOf(3, 14, 12, 4, 7)
     for (num in arr) {
         sb.append((num.xor(101)).toChar())
-    }
-    return sb.toString()
-}
-
-fun Connected_to_Xposed_service__(): String {
-    val sb = StringBuilder()
-    val arr = intArrayOf(83, 127, 126, 126, 117, 115, 100, 117, 116, 48, 100, 127, 48, 72, 96, 127, 99, 117, 116, 48, 99, 117, 98, 102, 121, 115, 117, 42, 48)
-    for (num in arr) {
-        sb.append((num.xor(16)).toChar())
-    }
-    return sb.toString()
-}
-
-fun Not_connected_to_Xposed_service_(): String {
-    val sb = StringBuilder()
-    val arr = intArrayOf(14, 47, 52, 96, 35, 47, 46, 46, 37, 35, 52, 37, 36, 96, 52, 47, 96, 24, 48, 47, 51, 37, 36, 96, 51, 37, 50, 54, 41, 35, 37, 110)
-    for (num in arr) {
-        sb.append((num.xor(64)).toChar())
     }
     return sb.toString()
 }

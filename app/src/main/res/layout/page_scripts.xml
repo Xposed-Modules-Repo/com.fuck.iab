@@ -3,7 +3,6 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layoutDirection="ltr"
     android:orientation="vertical">
 
     <com.google.android.material.textfield.TextInputLayout
@@ -15,13 +14,8 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="16dp"
         android:hint="@string/scripts_search"
-        app:boxCornerRadiusBottomEnd="24dp"
-        app:boxCornerRadiusBottomStart="24dp"
-        app:boxCornerRadiusTopEnd="24dp"
-        app:boxCornerRadiusTopStart="24dp"
         app:endIconMode="clear_text"
-        app:startIconDrawable="@drawable/ic_search"
-        app:startIconTint="?attr/colorPrimary">
+        app:startIconDrawable="@drawable/ic_search">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/searchInput"
@@ -36,9 +30,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingStart="16dp"
-        android:paddingTop="6dp"
+        android:paddingTop="4dp"
         android:paddingEnd="16dp"
-        android:paddingBottom="4dp"
         android:scrollbars="none">
 
         <com.google.android.material.chip.ChipGroup
@@ -54,21 +47,21 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checked="true"
-                android:text="All" />
+                android:text="@string/filter_all" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/filterSynced"
                 style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Store" />
+                android:text="@string/source_remote" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/filterUser"
                 style="@style/Widget.Material3.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Custom" />
+                android:text="@string/source_user" />
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>
 
@@ -94,7 +87,7 @@
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:paddingStart="16dp"
-            android:paddingTop="6dp"
+            android:paddingTop="4dp"
             android:paddingEnd="16dp"
             android:paddingBottom="96dp" />
 
@@ -103,12 +96,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
-            android:layout_margin="20dp"
+            android:layout_margin="16dp"
             android:text="@string/action_new_script"
-            app:backgroundTint="?attr/colorPrimary"
-            app:icon="@drawable/ic_add"
-            app:iconTint="@color/my_on_primary"
-            android:textColor="@color/my_on_primary" />
+            app:icon="@drawable/ic_add" />
     </FrameLayout>
 
 </LinearLayout>
