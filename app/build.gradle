@@ -2,6 +2,19 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withInputStream { localProperties.load(it) }
+}
+
+def scriptsBaseUrl = project.findProperty('scriptsBaseUrl')
+        ?: localProperties.getProperty('scriptsBaseUrl')
+        ?: System.getenv('GITHUB_REPOSITORY')?.with {
+            "https://raw.githubusercontent.com//HEAD/scripts/dist/"
+        }
+        ?: ''
+
 android {
     namespace 'com.fuck.iab'
     compileSdk 37
@@ -12,6 +25,8 @@ android {
         targetSdk 37
         versionCode 40
         versionName "1.6.6"
+
+        buildConfigField "String", "SCRIPTS_BASE_URL", "\"\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -27,6 +42,10 @@ android {
             }
             proguardFiles 'proguard-rules.pro'
         }
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 
     compileOptions {
@@ -80,49 +99,30 @@ abstract class CompileFridaScriptsTask extends DefaultTask {
 
     @TaskAction
     void run() {
-        def srcDir = scriptsSrcDir.get().asFile
         def workDir = scriptsWorkingDir.get().asFile
         def outDir = outputDir.get().asFile
 
+        if (!new File(workDir, 'node_modules/frida-compile').exists()) {
+            logger.warn("Frida compile not found in node_modules, skipping compilation")
+            return
+        }
+
         outDir.mkdirs()
 
-        def staleFiles = outDir.listFiles { f -> f.isFile() && f.name.endsWith('.js') } ?: []
-        staleFiles.each { f ->
-            logger.lifecycle("Removed stale: ${f.name}")
-            f.delete()
-        }
+        logger.lifecycle("Compiling Frida scripts into ")
 
         def isWindows = org.gradle.internal.os.OperatingSystem.current().isWindows()
-        def npxCommand = isWindows ? 'npx.cmd' : 'npx'
 
-        def scriptFiles = srcDir.listFiles { f ->
-            f.isFile() && f.name.endsWith('.ts')
-        } ?: []
-
-        if (scriptFiles.size() == 0) {
-            logger.warn("No .ts files found under ${srcDir.path}")
-        }
-
-        scriptFiles.each { entry ->
-            def packageName = entry.name - '.ts'
-            def outputFile = new File(outDir, "${packageName}.js")
-
-            logger.lifecycle("Compiling: ${entry.name} -> assets/scripts/${packageName}.js")
-
-            execOperations.exec {
-                workingDir = workDir
-                commandLine npxCommand, 'frida-compile',
-                        entry.absolutePath,
-                        '-o', outputFile.absolutePath,
-                        '-c', '-S', '-B', 'iife'
-            }
+        execOperations.exec {
+            workingDir = workDir
+            commandLine isWindows ? 'node.exe' : 'node', 'build.js', '--all'
         }
     }
 }
 
 tasks.register('compileFridaScripts', CompileFridaScriptsTask) {
     group = 'frida'
-    description = 'Compile each TypeScript script into assets/scripts/<package>.js'
+    description = 'Compile the global script in scripts/src into assets/scripts/global.js'
 
     scriptsSrcDir.set(layout.projectDirectory.dir('../scripts/src'))
     scriptsWorkingDir.set(layout.projectDirectory.dir('../scripts'))
@@ -130,4 +130,8 @@ tasks.register('compileFridaScripts', CompileFridaScriptsTask) {
 
     inputs.dir(scriptsSrcDir)
     outputs.dir(outputDir)
+}
+
+tasks.named('preBuild') {
+    dependsOn 'compileFridaScripts'
 }

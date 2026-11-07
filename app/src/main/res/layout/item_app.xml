@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.F.ListItemCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:clickable="true"
+    android:focusable="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:layoutDirection="ltr"
+        android:orientation="horizontal"
+        android:padding="12dp">
+
+        <ImageView
+            android:id="@+id/appIcon"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:contentDescription="@null" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/appLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:gravity="start"
+                android:maxLines="1"
+                android:textAlignment="viewStart"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                android:textDirection="locale"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/appPackage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:ellipsize="end"
+                android:gravity="start"
+                android:maxLines="1"
+                android:textAlignment="viewStart"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textDirection="locale" />
+
+            <TextView
+                android:id="@+id/appRunning"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/ic_launcher_background"
+                android:backgroundTint="@color/status_green_bg"
+                android:ellipsize="end"
+                android:gravity="center_vertical"
+                android:maxLines="1"
+                android:paddingStart="8dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="2dp"
+                android:textAppearance="?attr/textAppearanceLabelSmall"
+                android:textColor="@color/status_green"
+                android:textDirection="locale"
+                android:textStyle="bold"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/appMenu"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/more_options"
+            android:src="@drawable/ic_more_vert"
+            app:tint="@color/my_icon" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

@@ -1,0 +1,2 @@
+// author: staleroot
+(()=>{var s=Process.attachModuleObserver({onAdded(e){e.name==="libil2cpp.so"&&(console.log("Loaded:",e.name),setImmediate(()=>{s.detach(),t()}))}});function t(){Il2Cpp.perform(()=>{let e=Il2Cpp.domain.assembly("Assembly-Csharp").image.class("StorageManager").method("Decode");e.implementation=function(o,n){return o.content=="co"?Il2Cpp.string("999999"):e.invokeRaw(this,o,n)}})}})();

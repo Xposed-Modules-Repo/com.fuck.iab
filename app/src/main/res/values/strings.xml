@@ -1,7 +1,115 @@
 <resources>
     <string name="app_name">FKIAB</string>
     <string name="description">An Xposed module for hooking and customizing in-app billing functionality.</string>
+
     <string name="save">Save</string>
     <string name="clear_log">Clear Log</string>
     <string name="auto_scroll">Auto scroll</string>
+
+    <string name="app_version">version %1 (%2)</string>
+
+    <!-- navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_scripts">Scripts</string>
+    <string name="nav_logs">Logs</string>
+
+    <!-- actions -->
+    <string name="action_new_script">Create</string>
+    <string name="action_revert">Remove</string>
+    <string name="action_theme">Theme</string>
+    <string name="action_theme_light">Switch to light theme</string>
+    <string name="action_theme_dark">Switch to dark theme</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_update_scripts">Update scripts</string>
+    <string name="action_copy_all">Copy All</string>
+
+    <!-- framework status -->
+    <string name="status_framework_active">Xposed Service Active</string>
+    <string name="status_framework_active_desc">Module is connected and ready to hook applications</string>
+    <string name="status_framework_waiting">Waiting for Xposed Service</string>
+    <string name="status_framework_waiting_desc">Ensure FKIAB is enabled in LSPosed / Xposed manager and reboot</string>
+
+    <!-- home -->
+    <string name="home_hooked">Hooked apps</string>
+    <string name="home_installed">Installed</string>
+    <string name="home_enabled">Enabled</string>
+    <string name="home_processes">Processes</string>
+    <string name="home_hooked_title">Hooked Applications</string>
+    <string name="home_hooked_running">%1 of %2 running</string>
+    <string name="home_running">running</string>
+    <string name="home_running_stale">stale</string>
+    <string name="home_running_reloading">reloading</string>
+    <string name="home_running_failed">reload failed</string>
+    <string name="home_running_pid">pid %1</string>
+    <string name="home_running_processes">%1 processes</string>
+    <string name="home_scope_unconfirmed">Scope unconfirmed</string>
+    <string name="home_scope_unknown">Scope unknown</string>
+    <string name="home_hooked_empty">No apps in the module scope yet.</string>
+    <string name="home_hooked_empty_hint">Enable target apps in LSPosed scope list to activate hooks.</string>
+
+    <!-- scripts -->
+    <string name="scripts_empty">No scripts yet.</string>
+    <string name="scripts_all_apps">Global script</string>
+    <string name="source_user">user</string>
+    <string name="source_remote">remote</string>
+    <string name="scripts_new_title">New Script</string>
+    <string name="scripts_search_hint">Search apps</string>
+    <string name="scripts_search">Search scripts by name or package…</string>
+    <string name="scripts_no_match">No matching app found</string>
+    <string name="scripts_nothing_matches">Nothing matches \"%1\"</string>
+    <string name="filter_all">All (%1)</string>
+    <string name="filter_synced">Store (%1)</string>
+    <string name="filter_user">Custom (%1)</string>
+    <string name="scripts_covers_many">covers %1 apps</string>
+    <string name="scripts_not_in_scope">not in scope</string>
+    <string name="scripts_not_installed">not installed</string>
+    <string name="more_options">More options</string>
+    <string name="menu_app_info">App info</string>
+    <string name="menu_force_stop">Force stop</string>
+    <string name="menu_force_stop_no_su">Force stop needs root access</string>
+    <string name="menu_play_store">Open in Play Store</string>
+    <string name="scripts_hook_handled">handled by module hook</string>
+
+    <!-- details -->
+    <string name="detail_file_local">Module file</string>
+    <string name="detail_covers">Covers</string>
+    <string name="detail_status">Status</string>
+    <string name="detail_checksum">SHA-256 Checksum</string>
+    <string name="status_enabled">enabled</string>
+    <string name="status_disabled">disabled</string>
+    <string name="action_edit">Edit script</string>
+
+    <!-- editor -->
+    <string name="editor_author">Author: %1</string>
+    <string name="editor_source">Source: %1</string>
+    <string name="editor_word_wrap">Word wrap</string>
+    <string name="editor_revert_note">Your custom script will be deleted and reset to default.</string>
+    <string name="editor_unsaved_title">Unsaved Changes</string>
+    <string name="editor_unsaved_message">You have unsaved changes. Do you want to discard them?</string>
+    <string name="editor_discard">Discard</string>
+    <string name="editor_keep_editing">Keep Editing</string>
+    <string name="editor_snippets_label">Snippets</string>
+
+    <!-- logs -->
+    <string name="action_retry">Retry</string>
+    <string name="logs_search_hint">Filter log output…</string>
+    <string name="logs_no_su">Reading the module log needs root. The app runs \"su logcat\", and no su was found on this device, so nothing can be shown here.</string>
+    <string name="logs_root_denied">Root access was denied. Allow root for FKIAB in your root manager, then retry.</string>
+    <string name="logs_no_output">The log stream ended without any output.</string>
+    <string name="logs_stream_failed">Could not read the log: %1</string>
+    <string name="logs_paused">Streaming paused</string>
+    <string name="logs_resumed">Streaming resumed</string>
+
+    <!-- messages -->
+    <string name="toast_saved">Script saved successfully</string>
+    <string name="toast_save_failed">Could not save the script</string>
+    <string name="toast_reverted">Custom script removed</string>
+    <string name="toast_not_connected">Not connected to the Xposed service</string>
+    <string name="toast_package_required">Enter a package name</string>
+    <string name="toast_scripts_updated">%1 scripts updated</string>
+    <string name="toast_scripts_current">Scripts are up to date</string>
+    <string name="toast_scripts_failed">Could not update scripts: %1</string>
+    <string name="toast_scripts_no_store">This build has no script store configured</string>
+    <string name="toast_checksum_copied">Checksum copied to clipboard</string>
+    <string name="toast_logs_copied">Logs copied to clipboard</string>
 </resources>

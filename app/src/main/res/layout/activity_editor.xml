@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/editorRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/editorToolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:elevation="2dp"
+        app:navigationIcon="?attr/homeAsUpIndicator" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="4dp">
+
+        <TextView
+            android:id="@+id/editorSource"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textColor="?attr/colorPrimary" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="@string/editor_word_wrap"
+            android:textAppearance="?attr/textAppearanceBodySmall" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/editorWrap"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+    <!-- Frida Code Snippets Quick Bar -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="12dp"
+        android:paddingTop="2dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="4dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/snippetsContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/snipJavaUse"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="6dp"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:text="Java.use"
+                android:textSize="11sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/snipIl2Cpp"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="6dp"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:text="Il2Cpp"
+                android:textSize="11sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/snipConsoleLog"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="6dp"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:text="console.log"
+                android:textSize="11sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/snipArrow"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="6dp"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:text="() => {}"
+                android:textSize="11sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/snipReturnTrue"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="6dp"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:text="return true;"
+                android:textSize="11sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/snipSemicolon"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="6dp"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:text=";"
+                android:textSize="11sp" />
+
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="8dp"
+        android:layout_weight="1"
+        app:boxStrokeWidth="0dp"
+        app:boxStrokeWidthFocused="0dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editorInput"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/ic_launcher_background"
+            android:backgroundTint="@color/my_surface_container"
+            android:fontFamily="monospace"
+            android:gravity="top|start"
+            android:inputType="textMultiLine|textNoSuggestions|textVisiblePassword"
+            android:padding="12dp"
+            android:scrollHorizontally="true"
+            android:scrollbars="horizontal|vertical"
+            android:textSize="13sp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/editorSaveButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="12dp"
+        android:text="@string/save"
+        app:cornerRadius="14dp" />
+
+</LinearLayout>

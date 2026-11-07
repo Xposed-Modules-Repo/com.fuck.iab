@@ -1,0 +1,2 @@
+// author: staleroot
+(()=>{setTimeout(()=>{Java.perform(()=>{var i=Java.use("com.tfg.libs.billing.google.verifier.ReceiptVerifier");i.verifyReceipt.overload("com.tfg.libs.billing.google.PurchaseCompat","com.tfg.libs.billing.google.verifier.ReceiptVerifier$ReceiptValidatorListener").implementation=function(e,r){this.addVerifiedPurchase(e),this.stopTasksForPurchase(e),this.removeUnverifiedPurchase(e),r.onValidReceipt(e)}})},0);})();

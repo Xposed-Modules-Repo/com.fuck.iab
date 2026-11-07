@@ -1,0 +1,2 @@
+// author: staleroot
+(()=>{var o=Process.attachModuleObserver({onAdded(e){e.name==="libil2cpp.so"&&(console.log("Loaded:",e.name),setImmediate(()=>{o.detach(),t()}))}});function t(){Il2Cpp.perform(()=>{let e=Il2Cpp.domain.assembly("Assembly-Csharp"),a=e.image.class("UIManager").method("Start"),s=e.image.class("UIManager").method("UpdateMoneyText"),n=e.image.class("Bank");a.implementation=function(){a.invokeRaw(this),n.field("Instance").value.field("MyMoney").value=999999,s.invokeRaw(this,999999,!1)}})}})();

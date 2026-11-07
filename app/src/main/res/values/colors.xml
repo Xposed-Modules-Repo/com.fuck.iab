@@ -1,5 +1,27 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="my_primary">#ff9000</color>
+    <color name="my_primary">#FF9000</color>
     <color name="my_on_primary">#FFFFFF</color>
+    <color name="my_primary_container">#FFDDB3</color>
+    <color name="my_on_primary_container">#2B1700</color>
+
+    <color name="my_secondary">#795900</color>
+    <color name="my_on_secondary">#FFFFFF</color>
+    <color name="my_secondary_container">#FFDF9C</color>
+    <color name="my_on_secondary_container">#261A00</color>
+
+    <color name="my_surface_container">#F5EFEA</color>
+    <color name="my_surface_container_high">#EFE8E2</color>
+    <color name="my_surface_container_low">#FAF5F0</color>
+
+    <color name="status_green">#2E7D32</color>
+    <color name="status_green_bg">#E8F5E9</color>
+    <color name="status_amber">#B26A00</color>
+    <color name="status_amber_bg">#FFF3E0</color>
+    <color name="status_red">#C62828</color>
+    <color name="status_red_bg">#FFEBEE</color>
+    <color name="status_blue">#0277BD</color>
+    <color name="status_blue_bg">#E1F5FE</color>
+
+    <color name="my_icon">#49454F</color>
+    <color name="divider_color">#E6DFD8</color>
 </resources>
