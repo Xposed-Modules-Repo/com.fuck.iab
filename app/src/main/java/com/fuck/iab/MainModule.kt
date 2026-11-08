@@ -69,6 +69,7 @@ class MainModule : XposedModule() {
     lateinit var app: Application
     val latch = CountDownLatch(1)
     var customScript = false
+    var authorToast = false
     var scriptAuthor: String? = null
 
     companion object {
@@ -212,7 +213,8 @@ class MainModule : XposedModule() {
                             intent.action == Intent.ACTION_MAIN &&
                             intent.hasCategory(Intent.CATEGORY_LAUNCHER)
 
-                    if (activity != null && isLauncher && customScript) {
+                    if (activity != null && isLauncher && customScript && !authorToast) {
+                        authorToast = true
                         if (scriptAuthor != null && scriptAuthor != "") {
                             Toast.makeText(activity, "${Custom_script_by_()}$scriptAuthor", Toast.LENGTH_SHORT).show()
                         } else {
