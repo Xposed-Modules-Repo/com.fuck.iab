@@ -1,3 +1,5 @@
+// name: Life360
+// url: https://play.google.com/store/apps/details?id=com.life360.android.safetymapd
 // author: Fexture69
 // description: Unlocks all premium features in Life360 including GPS tracking, location history, and circle-based features without a premium subscription.
 

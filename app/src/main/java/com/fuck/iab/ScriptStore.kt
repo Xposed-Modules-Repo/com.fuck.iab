@@ -20,7 +20,9 @@ data class ScriptInfo(
     val source: String,
     val author: String?,
     val size: Int = 0,
-    val enabled: Boolean
+    val enabled: Boolean,
+    val name: String? = null,
+    val url: String? = null
 )
 
 data class ScriptDetails(
@@ -91,7 +93,9 @@ object ScriptStore {
                     source = script,
                     author = authorOf(script),
                     size = script.toByteArray(Charsets.UTF_8).size,
-                    enabled = !disabledUserScripts.contains(packageName)
+                    enabled = !disabledUserScripts.contains(packageName),
+                    name = headerOf(script, "name"),
+                    url = headerOf(script, "url")
                 )
             )
         }
@@ -104,7 +108,9 @@ object ScriptStore {
                     source = script,
                     author = authorOf(script),
                     size = script.toByteArray(Charsets.UTF_8).size,
-                    enabled = !disabledBundleScripts.contains(packageName)
+                    enabled = !disabledBundleScripts.contains(packageName),
+                    name = headerOf(script, "name"),
+                    url = headerOf(script, "url")
                 )
             )
         }
@@ -149,38 +155,24 @@ object ScriptStore {
         }
     }
 
-    fun authorOf(script: String): String? {
-        val firstLine = script.lineSequence().firstOrNull() ?: return null
-        if (!firstLine.startsWith("// author: ")) return null
-        return firstLine.removePrefix("// author: ").trim().ifEmpty { null }
+    fun authorOf(script: String): String? = headerOf(script, "author")
+
+    // reads `// key: value` from the top comment block; header order (name/url/author/description) is free
+    fun headerOf(script: String, key: String): String? {
+        val prefix = "// $key: "
+        return script.lineSequence().take(10).firstNotNullOfOrNull { line ->
+            if (line.startsWith(prefix)) line.removePrefix(prefix).trim().ifEmpty { null } else null
+        }
     }
 
     fun details(context: Context, packageName: String): ScriptDetails {
         val bundled = bundledScripts(context)[packageName]!!
 
-        val lines = bundled.lineSequence().take(3).toList()
-
-        val author = lines.getOrNull(0)?.let {
-            if (it.startsWith("// author: ")) {
-                it.removePrefix("// author: ").trim().ifEmpty { null }
-            } else null
-        }
-//        val version = lines.getOrNull(1)?.let {
-//            if (it.startsWith("// version: ")) {
-//                it.removePrefix("// version: ").trim().ifEmpty { null }
-//            } else null
-//        }?.toInt() ?: 1
-        val description = lines.getOrNull(1)?.let {
-            if (it.startsWith("// description: ")) {
-                it.removePrefix("// description: ").trim().ifEmpty { null }
-            } else null
-        } ?: ""
-
         return ScriptDetails(
             packageName = packageName,
-            author = author,
-//            version = version,
-            description = description
+            author = headerOf(bundled, "author"),
+//            version = headerOf(bundled, "version")?.toIntOrNull() ?: 1,
+            description = headerOf(bundled, "description") ?: ""
         )
     }
 
@@ -234,7 +226,7 @@ object ScriptStore {
         }
     }
 
-    fun appLabel(context: Context, packageName: String): String {
+    fun appLabel(context: Context, packageName: String, name: String? = null): String {
         if (packageName == "global") return context.getString(R.string.scripts_all_apps)
         if(packageName == "user_script") return "user_script.js"
 
@@ -243,7 +235,8 @@ object ScriptStore {
                 context.packageManager.getApplicationInfo(packageName, 0)
             ).toString()
         } catch (e: Exception) {
-            packageName
+            // app not installed: fall back to the script's `// name:` header
+            name ?: packageName
         }
     }
 

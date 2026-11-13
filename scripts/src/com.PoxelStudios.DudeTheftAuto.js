@@ -1,3 +1,5 @@
+// name: Dude Theft Wars
+// url: https://play.google.com/store/apps/details?id=com.PoxelStudios.DudeTheftAuto
 // author: staleroot
 // description: Gives you 999,999 money in Dude Theft Auto.
 

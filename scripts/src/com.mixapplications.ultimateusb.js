@@ -1,3 +1,5 @@
+// name: Ultimate USB
+// url: https://play.google.com/store/apps/details?id=com.mixapplications.ultimateusb
 // author: staleroot
 // description: Unlocks premium features in Ultimate USB by marking purchases as successfully completed.
 

@@ -126,9 +126,11 @@ class ScriptsFragment : Fragment() {
 
         val visible = all.filter { script ->
             val matchesFilter = filter == null || script.type == filter
+            val label = ScriptStore.appLabel(requireContext(), script.packageName, script.name)
             val matchesQuery = needle.isEmpty() ||
                     script.packageName.contains(needle, true) ||
-                    ScriptStore.appLabel(requireContext(), script.packageName).contains(needle, true)
+                    label.contains(needle, true) ||
+                    script.name?.contains(needle, true) == true
 
             matchesFilter && matchesQuery
         }
@@ -168,7 +170,8 @@ class ScriptsFragment : Fragment() {
         view.findViewById<ImageView>(R.id.detailIcon).setImageDrawable(
             ScriptStore.appIcon(context, script.packageName) ?: context.getDrawable(R.drawable.ic_description)
         )
-        view.findViewById<TextView>(R.id.detailLabel).text = ScriptStore.appLabel(context, script.packageName)
+        view.findViewById<TextView>(R.id.detailLabel).text =
+            ScriptStore.appLabel(context, script.packageName, script.name)
         view.findViewById<TextView>(R.id.detailPackage).text = when (script.packageName) {
             "global" -> "shared helpers and environment setup"
             else -> script.packageName
@@ -178,11 +181,17 @@ class ScriptsFragment : Fragment() {
         sheetDialog.setContentView(view)
         sheet = sheetDialog
 
-        view.findViewById<MaterialButton>(R.id.detailViewSource).setOnClickListener {
-            val githubUrl = "https://github.com/Xposed-Modules-Repo/com.fuck.iab/blob/main/scripts/src/${script.packageName}.js"
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(githubUrl))
-            startActivity(intent)
-            sheetDialog.dismiss()
+        val linkButton = view.findViewById<MaterialButton>(R.id.detailViewSource)
+        val url = script.url
+        if (url.isNullOrBlank()) {
+            linkButton.isVisible = false
+        } else {
+            linkButton.isVisible = true
+            linkButton.text = linkLabel(url)
+            linkButton.setOnClickListener {
+                openLink(url)
+                sheetDialog.dismiss()
+            }
         }
 
         sheetDialog.show()
@@ -193,6 +202,60 @@ class ScriptsFragment : Fragment() {
             }
 
             bindDetails(view, details)
+        }
+    }
+
+    /** Button text derived from the `// url:` header: market links name the market, plain sites say "View Website". */
+    private fun linkLabel(url: String): String {
+        val host = Uri.parse(url).host?.removePrefix("www.")?.lowercase() ?: return getString(R.string.action_view_website)
+        return when {
+            host == "play.google.com" -> "View on Google Play"
+            host.endsWith("cafebazaar.ir") -> "View on Cafe Bazaar"
+            host.endsWith("myket.ir") -> "View on Myket"
+            host.endsWith("galaxy.store") -> "View on Galaxy Store"
+            host.endsWith("appgallery.huawei.com") -> "View on AppGallery"
+            host.endsWith("f-droid.org") -> "View on F-Droid"
+            host.endsWith("apkpure.com") -> "View on APKPure"
+            host.endsWith("aptoide.com") -> "View on Aptoide"
+            host.endsWith("amazon.com") -> "View on Amazon Appstore"
+            host.endsWith("apps.apple.com") || host.endsWith("itunes.apple.com") -> "View on Apple App Store"
+            host.endsWith("microsoft.com") -> "View on Microsoft Store"
+            host.endsWith("github.com") -> "View on GitHub"
+            host.endsWith("gitlab.com") -> "View on GitLab"
+            else -> getString(R.string.action_view_website)
+        }
+    }
+
+    // Opens the market app when installed (via its deep link), otherwise the plain web link in a browser.
+    private fun openLink(url: String) {
+        val uri = Uri.parse(url)
+        val host = uri.host?.removePrefix("www.")?.lowercase()
+
+        val marketPkg = when {
+            host == "play.google.com" -> "com.android.vending"
+            host?.endsWith("f-droid.org") == true -> "org.fdroid.fdroid"
+            host?.endsWith("apkpure.com") == true -> "com.apkpure.aegon"
+            host?.endsWith("aptoide.com") == true -> "cm.aptoide.pt"
+            host?.endsWith("myket.ir") == true -> "ir.mservices.market"
+            host?.endsWith("cafebazaar.ir") == true -> "com.farsitel.bazaar"
+            else -> null
+        }
+        if (marketPkg != null) {
+            val marketIntent = Intent(Intent.ACTION_VIEW, uri).setPackage(marketPkg)
+            if (marketIntent.resolveActivity(requireContext().packageManager) != null) {
+                try {
+                    startActivity(marketIntent)
+                    return
+                } catch (e: Exception) {
+                    // fall through to the plain web link
+                }
+            }
+        }
+
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, uri))
+        } catch (e: Exception) {
+            // no browser installed; nothing else to try
         }
     }
 
@@ -356,7 +419,7 @@ private class ScriptAdapter(
         holder.label.text = if (item.packageName == "global") {
             context.getString(R.string.scripts_all_apps)
         } else {
-            ScriptStore.appLabel(context, item.packageName)
+            ScriptStore.appLabel(context, item.packageName, item.name)
         }
 
         holder.packageName.text = when (item.packageName) {

@@ -1,3 +1,5 @@
+// name: 1.1.1.1
+// url: https://play.google.com/store/apps/details?id=com.cloudflare.onedotonedotonedotone
 // author: Fexture69
 // description: Make a vpn profile first (turn on the switch in app) before using the script.
 /*

@@ -77,6 +77,7 @@
     <string name="status_enabled">enabled</string>
     <string name="status_disabled">disabled</string>
     <string name="action_view_source">View on Github</string>
+    <string name="action_view_website">View Website</string>
 
     <!-- editor -->
     <string name="editor_author">Author: %1$s</string>

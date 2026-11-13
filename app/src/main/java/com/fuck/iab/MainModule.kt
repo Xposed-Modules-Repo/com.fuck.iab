@@ -546,16 +546,21 @@ class MainModule : XposedModule() {
 
     fun extractAuthor(content: String): Pair<String, String> {
         val prefix = ___author__()
-        val newlineIndex = content.indexOf('\n')
-        val firstLine = if (newlineIndex == -1) content else content.substring(0, newlineIndex)
-
-        return if (firstLine.startsWith(prefix)) {
-            val author = firstLine.removePrefix(prefix).trimEnd('\r').trim()/*.substringBefore(' ')*/
-            val rest = if (newlineIndex == -1) "" else content.substring(newlineIndex + 1)
-            author to rest
-        } else {
-            "" to content
+        // headers (`// name:`, `// url:`, …) may precede `// author:`; scan the top comment block
+        var start = 0
+        repeat(10) {
+            val newlineIndex = content.indexOf('\n', start)
+            val line = if (newlineIndex == -1) content else content.substring(start, newlineIndex)
+            if (line.startsWith(prefix)) {
+                val author = line.removePrefix(prefix).trimEnd('\r').trim()/*.substringBefore(' ')*/
+                val rest = content.substring(0, start) +
+                        if (newlineIndex == -1) "" else content.substring(newlineIndex + 1)
+                return author to rest
+            }
+            if (newlineIndex == -1) return "" to content
+            start = newlineIndex + 1
         }
+        return "" to content
     }
 
     private fun loadNativeLibrary(name: String) {

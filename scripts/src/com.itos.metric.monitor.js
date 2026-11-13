@@ -1,3 +1,5 @@
+// name: Metric
+// url: https://play.google.com/store/apps/details?id=com.itos.metric.monitor
 // author: staleroot
 // description: Unlocks premium membership in Metric Monitor by forcing the membership state to active.
 

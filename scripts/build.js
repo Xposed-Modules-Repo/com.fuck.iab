@@ -29,10 +29,14 @@ function compile(packageName) {
 
     console.log(`Compiling: ${packageName}`);
 
-    const inputLines = readFileSync(input, "utf8").split("\n", 3);
-    const authorLine = inputLines[0]?.startsWith("// author: ") ? inputLines[0] : "// author: ";
-//    const versionLine = inputLines[1]?.startsWith("// version: ") ? inputLines[1] : "// version: ";
-    const descriptionLine = inputLines[1]?.startsWith("// description: ") ? inputLines[1] : "// description: ";
+    // find headers anywhere in the top comment block so `// name:`/`// url:` can come first
+    const srcLines = readFileSync(input, "utf8").split("\n").slice(0, 10);
+    const findLine = (key) => srcLines.find(l => l.startsWith(`// ${key}: `));
+    const nameLine = findLine("name");
+    const urlLine = findLine("url");
+    const authorLine = findLine("author") ?? "// author: ";
+//    const versionLine = findLine("version");
+    const descriptionLine = findLine("description") ?? "// description: ";
 
     if(packageName == "global") {
         execSync(`npx frida-compile "${input}" -o "${output}" -S -B iife -T none`, { stdio: "inherit" });
@@ -41,8 +45,8 @@ function compile(packageName) {
     }
 
     const compiled = readFileSync(output, "utf8");
-//    writeFileSync(output, `${authorLine}\n${versionLine}\n${descriptionLine}\n${compiled}`);
-    writeFileSync(output, `${authorLine}\n${descriptionLine}\n${compiled}`);
+    const headerLines = [nameLine, urlLine, authorLine, descriptionLine].filter(Boolean);
+    writeFileSync(output, `${headerLines.join("\n")}\n${compiled}`);
 
     console.log(`Built: assets/scripts/${packageName}.js`);
 }
