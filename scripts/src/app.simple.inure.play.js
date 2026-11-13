@@ -1,3 +1,5 @@
+// name:
+// url:
 // author: you1mak
 // description: Unlocks the full version of Inure App Manager by patching license checks to always return true, removing the need for an unlocker app or license key.
 

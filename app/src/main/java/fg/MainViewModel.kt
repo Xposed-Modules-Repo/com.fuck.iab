@@ -130,7 +130,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     arrayOf(
                         su(),
                         _c(),
-                        logcat__v_tag__s_FKIAB_V_FRIDA_V()
+                        "logcat -b all -c && logcat -v tag -s FKIAB:V FRIDA:V"
                     )
                 )
             } catch (e: Exception) {

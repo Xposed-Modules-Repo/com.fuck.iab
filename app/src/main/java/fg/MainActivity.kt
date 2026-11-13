@@ -67,7 +67,7 @@ class MainActivity : AppCompatActivity(), MainApplication.ServiceStateListener {
 
         viewPager.adapter = ScreensAdapter(this)
         viewPager.offscreenPageLimit = 2
-//        viewPager.isUserInputEnabled = false
+        viewPager.isUserInputEnabled = false
 
         bottomNav.setOnItemSelectedListener { item ->
             viewPager.setCurrentItem(pageOf(item.itemId), true)
