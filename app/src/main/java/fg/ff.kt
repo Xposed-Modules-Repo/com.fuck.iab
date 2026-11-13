@@ -1,4 +1,4 @@
-package fh
+package fg
 
 import android.app.Activity
 import android.content.Intent
@@ -12,7 +12,7 @@ import com.fuck.iab.data
 import com.fuck.iab.signature
 
 // fake billing activity
-class FakeBillingActivity : Activity() {
+class ff : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

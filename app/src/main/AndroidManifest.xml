@@ -8,7 +8,7 @@
         tools:ignore="QueryAllPackagesPermission" />
 
     <application
-        android:name="fh.MainApplication"
+        android:name="fg.MainApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:description="@string/description"
@@ -19,7 +19,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.F">
         <activity
-            android:name="fh.MainActivity"
+            android:name="fg.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -27,13 +27,13 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="fh.FakeBillingActivity"
+            android:name="fg.ff"
             android:exported="true"
             android:theme="@style/theme" />
         <activity
-            android:name="fh.ScriptEditorActivity"
+            android:name="fg.ScriptEditorActivity"
             android:exported="false"
-            android:parentActivityName="fh.MainActivity"
+            android:parentActivityName="fg.MainActivity"
             android:windowSoftInputMode="adjustResize" />
     </application>
 

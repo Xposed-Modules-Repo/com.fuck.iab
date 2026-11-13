@@ -81,7 +81,7 @@ class MainModule : XposedModule() {
     var scriptAuthor: String? = null
 
     companion object {
-        const val TAG = "FKIAB"
+//        const val TAG = "FKIAB"
 
 //        init {
 //            System.loadLibrary(dexkit())
@@ -89,14 +89,14 @@ class MainModule : XposedModule() {
     }
 
     private fun log(text: String) {
-        log(Log.INFO, TAG, text)
+//        log(Log.INFO, TAG, text)
     }
 
     override fun onModuleLoaded(param: ModuleLoadedParam) {
 //        log(Log.INFO, TAG, "onModuleLoaded: " + param.processName)
 //        log(Log.INFO, TAG, "framework: $frameworkName($frameworkVersionCode) API $apiVersion")
 
-        val hasProp: (Long) -> Boolean = { prop -> frameworkProperties.and(prop) != 0L }
+//        val hasProp: (Long) -> Boolean = { prop -> frameworkProperties.and(prop) != 0L }
 //        log(Log.INFO, TAG, "system supported: " + hasProp(PROP_CAP_SYSTEM))
 //        log(Log.INFO, TAG, "remote supported: " + hasProp(PROP_CAP_REMOTE))
 //        log(Log.INFO, TAG, "api protection: " + hasProp(PROP_RT_API_PROTECTION))
@@ -154,6 +154,7 @@ class MainModule : XposedModule() {
                 val onCreate = applicationClass.getMethod(onCreate())
 
                 hook(onCreate).intercept { chain ->
+
                     app = chain.thisObject as Application
 
                     val bridge = DexKitBridge.create(applicationInfo.sourceDir)
@@ -178,7 +179,7 @@ class MainModule : XposedModule() {
 
                         val globalUserScript = readUserScript(user_script())
 
-                        Log.d(TAG, "bundleScript = $bundleScript")
+//                        Log.d(TAG, "bundleScript = $bundleScript")
 
                         var combined = global.replace("BUNDLE_SCRIPT_PACKAGE", bundleScript)
                         combined = combined.replace("USER_SCRIPT_GLOBAL", globalUserScript ?: "")
@@ -208,9 +209,9 @@ class MainModule : XposedModule() {
                             }
                         }
 
-//                    log("before start script package name: $packageName")
+//                        log("before start script package name: $packageName")
                         startScript(packageName, script)
-//                    log("after start script")
+//                        log("after start script")
 
                         AppScope.launch {
                             delay(3.seconds)
@@ -508,21 +509,13 @@ class MainModule : XposedModule() {
     }
 
     private fun isScriptDisabled(packageName: String, type: ScriptType): Boolean {
-        log("isScriptDisabled(packageName: $packageName, type: $type)")
         if (frameworkProperties.and(PROP_CAP_REMOTE) == 0L) return false
-        log("after rkProperties.and(")
 
         return try {
             val disabled = getRemotePreferences(fuck_iab())
                 .getStringSet("disabled_${if (type == BUNDLED) "bundled" else "user"}_scripts", emptySet()) ?: return false
 
-            log("disabled: ${disabled.joinToString(", ")}")
-
-            val dis = disabled.contains(packageName)
-
-            log("disabled = $dis")
-
-            dis
+            disabled.contains(packageName)
         } catch (e: Exception) {
             false
         }
@@ -568,20 +561,20 @@ class MainModule : XposedModule() {
     }
 
     private fun loadNativeLibrary(name: String) {
-        val nativeDir = File(moduleApplicationInfo.nativeLibraryDir)
+        // useLegacyPackaging false
+        try {
+            System.loadLibrary(name)
+            return
+        } catch (e: Throwable) {
+//            log(e.message!!)
+//            e.printStackTrace()
+        }
 
-        val library = File(nativeDir, System.mapLibraryName(name))
-
-//        check(library.isFile) {
-//            "Native library not found: ${library.absolutePath}"
-//        }
-
-        System.load(library.absolutePath)
-
-//        log(
-//            Log.INFO,
-//            "NativeLoader",
-//            "Loaded ${library.name} from ${library.absolutePath}"
-//        )
+        // useLegacyPackaging true (does not work in lspatch integrated method)
+//        val nativeDir = File(moduleApplicationInfo.nativeLibraryDir)
+//
+//        val library = File(nativeDir, System.mapLibraryName(name))
+//
+//        System.load(library.absolutePath)
     }
 }

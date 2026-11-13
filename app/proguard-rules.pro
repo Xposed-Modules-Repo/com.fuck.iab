@@ -13,4 +13,4 @@
 -keep class org.luckypray.dexkit.** {
     public <methods>;
 }
--repackageclasses 'fh'
+-repackageclasses 'fg'
