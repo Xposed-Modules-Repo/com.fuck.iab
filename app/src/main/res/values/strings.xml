@@ -78,6 +78,8 @@
     <string name="status_disabled">disabled</string>
     <string name="action_view_source">View on Github</string>
     <string name="action_view_website">View Website</string>
+    <string name="action_github">GitHub</string>
+    <string name="action_telegram">Telegram</string>
 
     <!-- editor -->
     <string name="editor_author">Author: %1$s</string>

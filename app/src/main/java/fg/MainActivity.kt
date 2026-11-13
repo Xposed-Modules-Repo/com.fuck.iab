@@ -1,5 +1,7 @@
 package fg
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -103,6 +105,9 @@ class MainActivity : AppCompatActivity(), MainApplication.ServiceStateListener {
         menu.findItem(R.id.action_logs_retry)?.isVisible = onLogs
         menu.findItem(R.id.action_logs_clear)?.isVisible = onLogs
 
+        menu.findItem(R.id.action_github)?.isVisible = onHome
+        menu.findItem(R.id.action_telegram)?.isVisible = onHome
+
         return super.onPrepareOptionsMenu(menu)
     }
 
@@ -118,7 +123,30 @@ class MainActivity : AppCompatActivity(), MainApplication.ServiceStateListener {
                 true
             }
 
+            R.id.action_github -> {
+                openUrl("https://github.com/Xposed-Modules-Repo/com.fuck.iab/releases")
+                true
+            }
+
+            R.id.action_telegram -> {
+                // the tg:// scheme opens the Telegram app itself; t.me falls back to the browser
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("tg://resolve?domain=fkiab")))
+                } catch (e: Exception) {
+                    openUrl("https://t.me/fkiab")
+                }
+                true
+            }
+
             else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun openUrl(url: String) {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (e: Exception) {
+            // no browser installed; nothing else to try
         }
     }
 

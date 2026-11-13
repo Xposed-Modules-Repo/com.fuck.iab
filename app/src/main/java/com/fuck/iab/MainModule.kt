@@ -545,22 +545,29 @@ class MainModule : XposedModule() {
     }
 
     fun extractAuthor(content: String): Pair<String, String> {
-        val prefix = ___author__()
-        // headers (`// name:`, `// url:`, …) may precede `// author:`; scan the top comment block
+        val authorTag = ___author__().trimEnd()
+        // drop every tagged header line (`// name:`, `// url:`, `// author:`, `// description:`)
+        // from the top comment block so the injected script carries no metadata
+        val tags = listOf(authorTag, "// name:", "// url:", "// description:")
+        val rest = StringBuilder()
+        var author = ""
         var start = 0
         repeat(10) {
             val newlineIndex = content.indexOf('\n', start)
-            val line = if (newlineIndex == -1) content else content.substring(start, newlineIndex)
-            if (line.startsWith(prefix)) {
-                val author = line.removePrefix(prefix).trimEnd('\r').trim()/*.substringBefore(' ')*/
-                val rest = content.substring(0, start) +
-                        if (newlineIndex == -1) "" else content.substring(newlineIndex + 1)
-                return author to rest
+            val lineEnd = if (newlineIndex == -1) content.length else newlineIndex + 1
+            val line = content.substring(start, if (newlineIndex == -1) content.length else newlineIndex)
+            val trimmed = line.trimEnd('\r')
+            val tag = tags.firstOrNull { trimmed.startsWith(it) }
+            if (tag != null) {
+                if (tag == authorTag) author = trimmed.removePrefix(authorTag).trim()
+            } else {
+                rest.append(content, start, lineEnd)
             }
-            if (newlineIndex == -1) return "" to content
-            start = newlineIndex + 1
+            if (newlineIndex == -1) return author to rest.toString()
+            start = lineEnd
         }
-        return "" to content
+        rest.append(content, start, content.length)
+        return author to rest.toString()
     }
 
     private fun loadNativeLibrary(name: String) {

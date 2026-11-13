@@ -11,4 +11,14 @@
         android:icon="@drawable/ic_delete"
         android:title="@string/clear_log"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_telegram"
+        android:icon="@drawable/ic_telegram"
+        android:title="@string/action_telegram"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_github"
+        android:icon="@drawable/ic_github"
+        android:title="@string/action_github"
+        app:showAsAction="ifRoom" />
 </menu>
