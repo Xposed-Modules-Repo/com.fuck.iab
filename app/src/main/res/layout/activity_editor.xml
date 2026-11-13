@@ -27,8 +27,8 @@
             android:fontFamily="monospace"
             android:gravity="top|start"
             android:inputType="textMultiLine|textNoSuggestions|textVisiblePassword"
-            android:scrollHorizontally="true"
             android:scrollbars="horizontal"
+            android:scrollHorizontally="true"
             android:textSize="12sp" />
     </com.google.android.material.textfield.TextInputLayout>
 

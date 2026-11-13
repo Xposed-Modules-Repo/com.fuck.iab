@@ -82,6 +82,20 @@ object ScriptStore {
 
         val ret = arrayListOf<ScriptInfo>()
 
+        userScripts.forEach { (packageName, script) ->
+            if (script == null) return@forEach
+            ret.add(
+                ScriptInfo(
+                    packageName = packageName,
+                    type = USER,
+                    source = script,
+                    author = authorOf(script),
+                    size = script.toByteArray(Charsets.UTF_8).size,
+                    enabled = !disabledUserScripts.contains(packageName)
+                )
+            )
+        }
+
         bundledScripts.forEach { (packageName, script) ->
             ret.add(
                 ScriptInfo(
@@ -95,18 +109,12 @@ object ScriptStore {
             )
         }
 
-        userScripts.forEach { (packageName, script) ->
-            if (script == null) return@forEach
-            ret.add(
-                ScriptInfo(
-                    packageName = packageName,
-                    type = USER,
-                    source = script,
-                    author = authorOf(script),
-                    size = script.toByteArray(Charsets.UTF_8).size,
-                    enabled = !disabledUserScripts.contains(packageName)
-                )
-            )
+        ret.sortWith { info, info1 ->
+            if (info.packageName == "global") 1
+            else if(info1.packageName == "global") -1
+            else if (info.packageName == "user_script") -1
+            else if(info1.packageName == "user_script") 1
+            else info.packageName.compareTo(info1.packageName)
         }
 
         return ret
@@ -236,6 +244,7 @@ object ScriptStore {
 
     fun appLabel(context: Context, packageName: String): String {
         if (packageName == "global") return context.getString(R.string.scripts_all_apps)
+        if(packageName == "user_script") return "user_script.js"
 
         return try {
             context.packageManager.getApplicationLabel(

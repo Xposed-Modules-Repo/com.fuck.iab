@@ -351,7 +351,11 @@ private class ScriptAdapter(
             ScriptStore.appLabel(context, item.packageName)
         }
 
-        holder.packageName.text = item.packageName
+        holder.packageName.text = when(item.packageName) {
+            "global" -> "shared helpers and environment setup"
+            "user_script" -> "custom script running on every app"
+            else -> item.packageName
+        }
 
         val scriptTypeLabel = when (item.type) {
             ScriptType.USER -> context.getString(R.string.source_user)

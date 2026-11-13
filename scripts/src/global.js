@@ -1,5 +1,5 @@
 // author:
-// description: Core runtime required by every app script. Sets up the Frida Java/IL2CPP bridge and provides shared helpers for finding classes, methods, and app context. Disabling this stops all bundled scripts from running.
+// description: Sets up the Frida Java/IL2CPP bridge and provides shared helpers for finding classes, methods, and app context. Disabling this stops all bundled scripts from running.
 
 import "frida-il2cpp-bridge";
 
