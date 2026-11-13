@@ -179,8 +179,6 @@ class MainModule : XposedModule() {
 
                         val globalUserScript = readUserScript(user_script())
 
-//                        Log.d(TAG, "bundleScript = $bundleScript")
-
                         var combined = global.replace("BUNDLE_SCRIPT_PACKAGE", bundleScript)
                         combined = combined.replace("USER_SCRIPT_GLOBAL", globalUserScript ?: "")
                         combined = combined.replace("USER_SCRIPT_PACKAGE", userScriptForPackage ?: "")

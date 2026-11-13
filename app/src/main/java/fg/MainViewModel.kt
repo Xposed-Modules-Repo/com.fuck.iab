@@ -75,93 +75,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private var logcatJob: Job? = null
 
-    fun startLogcatStreaming() {
-        if (logcatJob != null) {
-            return
-        }
-
-        logcatJob = viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val process = Runtime.getRuntime().exec(
-                    arrayOf(
-//                        "su",
-//                        "-c",
-//                        logcat__v_tag__s_FKIAB_V_FRIDA_V()
-                        "logcat"
-                    )
-                )
-                val reader = process.inputStream.bufferedReader()
-                while (isActive) {
-                    val line = reader.readLine() ?: break
-
-                    val index = line.indexOf(": ")
-
-                    val clean = if (index != -1) {
-                        line.substring(0, index)
-                            .replace(Regex(__A_Z__()), "")
-                            .trim() +
-                                _s_() +
-                                line.substring(index + 2)
-                    } else {
-                        line
-                    }
-
-                    withContext(Dispatchers.Main) {
-                        addLog(clean + "\n")
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    addLog("${Error__()}${e.message}\n")
-                }
-            }
-        }
-    }
-
 //    fun startLogcatStreaming() {
 //        if (logcatJob != null) {
 //            return
 //        }
 //
 //        logcatJob = viewModelScope.launch(Dispatchers.IO) {
-//            val app = getApplication<Application>()
-//
-//            val process = try {
-//                Runtime.getRuntime().exec(
+//            try {
+//                val process = Runtime.getRuntime().exec(
 //                    arrayOf(
 //                        su(),
 //                        _c(),
 //                        logcat__v_tag__s_FKIAB_V_FRIDA_V()
 //                    )
 //                )
-//            } catch (e: Exception) {
-//                withContext(Dispatchers.Main) { addLog(app.getString(R.string.logs_no_su) + "\n") }
-//                return@launch
-//            }
-//
-//            try {
 //                val reader = process.inputStream.bufferedReader()
-//                var line = reader.readLine()
-//
-//                if (line == null) {
-//                    val code = try {
-//                        process.waitFor()
-//                    } catch (e: Exception) {
-//                        -1
-//                    }
-//
-//                    withContext(Dispatchers.Main) {
-//                        addLog(
-//                            app.getString(
-//                                if (code != 0) R.string.logs_root_denied else R.string.logs_no_output
-//                            ) + "\n"
-//                        )
-//                    }
-//
-//                    return@launch
-//                }
-//
 //                while (isActive) {
+//                    val line = reader.readLine() ?: break
+//
 //                    val index = line.indexOf(": ")
 //
 //                    val clean = if (index != -1) {
@@ -177,16 +108,84 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 //                    withContext(Dispatchers.Main) {
 //                        addLog(clean + "\n")
 //                    }
-//
-//                    line = reader.readLine() ?: break
 //                }
 //            } catch (e: Exception) {
 //                withContext(Dispatchers.Main) {
-//                    addLog(app.getString(R.string.logs_stream_failed, e.message ?: e.javaClass.simpleName) + "\n")
+//                    addLog("${Error__()}${e.message}\n")
 //                }
 //            }
 //        }
 //    }
+
+    fun startLogcatStreaming() {
+        if (logcatJob != null) {
+            return
+        }
+
+        logcatJob = viewModelScope.launch(Dispatchers.IO) {
+            val app = getApplication<Application>()
+
+            val process = try {
+                Runtime.getRuntime().exec(
+                    arrayOf(
+                        su(),
+                        _c(),
+                        logcat__v_tag__s_FKIAB_V_FRIDA_V()
+                    )
+                )
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { addLog(app.getString(R.string.logs_no_su) + "\n") }
+                return@launch
+            }
+
+            try {
+                val reader = process.inputStream.bufferedReader()
+                var line = reader.readLine()
+
+                if (line == null) {
+                    val code = try {
+                        process.waitFor()
+                    } catch (e: Exception) {
+                        -1
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        addLog(
+                            app.getString(
+                                if (code != 0) R.string.logs_root_denied else R.string.logs_no_output
+                            ) + "\n"
+                        )
+                    }
+
+                    return@launch
+                }
+
+                while (isActive) {
+                    val index = line.indexOf(": ")
+
+                    val clean = if (index != -1) {
+                        line.substring(0, index)
+                            .replace(Regex(__A_Z__()), "")
+                            .trim() +
+                                _s_() +
+                                line.substring(index + 2)
+                    } else {
+                        line
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        addLog(clean + "\n")
+                    }
+
+                    line = reader.readLine() ?: break
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    addLog(app.getString(R.string.logs_stream_failed, e.message ?: e.javaClass.simpleName) + "\n")
+                }
+            }
+        }
+    }
 
     fun retryLogcatStreaming() {
         logcatJob?.cancel()
