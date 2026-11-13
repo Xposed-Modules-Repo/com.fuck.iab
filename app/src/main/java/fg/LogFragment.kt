@@ -1,6 +1,7 @@
 package fg
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,7 +21,7 @@ class LogFragment : Fragment() {
 
     lateinit var logcatScroll: ScrollView
     lateinit var logcatView: TextView
-    lateinit var autoScrollSwitch: MaterialSwitch
+//    lateinit var autoScrollSwitch: MaterialSwitch
 
     private val viewModel: MainViewModel by activityViewModels()
 
@@ -37,11 +38,11 @@ class LogFragment : Fragment() {
         logcatScroll = v.findViewById(R.id.logcatScroll)
         logcatView = v.findViewById(R.id.logcatView)
 
-        autoScrollSwitch = v.findViewById(R.id.autoScrollSwitch)
-        autoScrollSwitch.isChecked = viewModel.autoScroll
-        autoScrollSwitch.setOnCheckedChangeListener { _, checked ->
-            viewModel.autoScroll = checked
-        }
+//        autoScrollSwitch = v.findViewById(R.id.autoScrollSwitch)
+//        autoScrollSwitch.isChecked = viewModel.autoScroll
+//        autoScrollSwitch.setOnCheckedChangeListener { _, checked ->
+//            viewModel.autoScroll = checked
+//        }
 
         logcatView.text = viewModel.getLogs()
 

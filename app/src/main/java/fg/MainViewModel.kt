@@ -1,8 +1,10 @@
 package fg
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.fuck.iab.Error__
 import com.fuck.iab.R
 import com.fuck.iab.ScriptInfo
 import com.fuck.iab.ScriptStore
@@ -79,44 +81,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         logcatJob = viewModelScope.launch(Dispatchers.IO) {
-            val app = getApplication<Application>()
-
-            val process = try {
-                Runtime.getRuntime().exec(
+            try {
+                val process = Runtime.getRuntime().exec(
                     arrayOf(
-                        su(),
-                        _c(),
-                        logcat__v_tag__s_FKIAB_V_FRIDA_V()
+//                        "su",
+//                        "-c",
+//                        logcat__v_tag__s_FKIAB_V_FRIDA_V()
+                        "logcat"
                     )
                 )
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) { addLog(app.getString(R.string.logs_no_su) + "\n") }
-                return@launch
-            }
-
-            try {
                 val reader = process.inputStream.bufferedReader()
-                var line = reader.readLine()
-
-                if (line == null) {
-                    val code = try {
-                        process.waitFor()
-                    } catch (e: Exception) {
-                        -1
-                    }
-
-                    withContext(Dispatchers.Main) {
-                        addLog(
-                            app.getString(
-                                if (code != 0) R.string.logs_root_denied else R.string.logs_no_output
-                            ) + "\n"
-                        )
-                    }
-
-                    return@launch
-                }
-
                 while (isActive) {
+                    val line = reader.readLine() ?: break
+
                     val index = line.indexOf(": ")
 
                     val clean = if (index != -1) {
@@ -132,16 +109,84 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     withContext(Dispatchers.Main) {
                         addLog(clean + "\n")
                     }
-
-                    line = reader.readLine() ?: break
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    addLog(app.getString(R.string.logs_stream_failed, e.message ?: e.javaClass.simpleName) + "\n")
+                    addLog("${Error__()}${e.message}\n")
                 }
             }
         }
     }
+
+//    fun startLogcatStreaming() {
+//        if (logcatJob != null) {
+//            return
+//        }
+//
+//        logcatJob = viewModelScope.launch(Dispatchers.IO) {
+//            val app = getApplication<Application>()
+//
+//            val process = try {
+//                Runtime.getRuntime().exec(
+//                    arrayOf(
+//                        su(),
+//                        _c(),
+//                        logcat__v_tag__s_FKIAB_V_FRIDA_V()
+//                    )
+//                )
+//            } catch (e: Exception) {
+//                withContext(Dispatchers.Main) { addLog(app.getString(R.string.logs_no_su) + "\n") }
+//                return@launch
+//            }
+//
+//            try {
+//                val reader = process.inputStream.bufferedReader()
+//                var line = reader.readLine()
+//
+//                if (line == null) {
+//                    val code = try {
+//                        process.waitFor()
+//                    } catch (e: Exception) {
+//                        -1
+//                    }
+//
+//                    withContext(Dispatchers.Main) {
+//                        addLog(
+//                            app.getString(
+//                                if (code != 0) R.string.logs_root_denied else R.string.logs_no_output
+//                            ) + "\n"
+//                        )
+//                    }
+//
+//                    return@launch
+//                }
+//
+//                while (isActive) {
+//                    val index = line.indexOf(": ")
+//
+//                    val clean = if (index != -1) {
+//                        line.substring(0, index)
+//                            .replace(Regex(__A_Z__()), "")
+//                            .trim() +
+//                                _s_() +
+//                                line.substring(index + 2)
+//                    } else {
+//                        line
+//                    }
+//
+//                    withContext(Dispatchers.Main) {
+//                        addLog(clean + "\n")
+//                    }
+//
+//                    line = reader.readLine() ?: break
+//                }
+//            } catch (e: Exception) {
+//                withContext(Dispatchers.Main) {
+//                    addLog(app.getString(R.string.logs_stream_failed, e.message ?: e.javaClass.simpleName) + "\n")
+//                }
+//            }
+//        }
+//    }
 
     fun retryLogcatStreaming() {
         logcatJob?.cancel()
