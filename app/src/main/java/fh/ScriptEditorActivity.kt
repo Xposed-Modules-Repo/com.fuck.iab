@@ -1,6 +1,5 @@
 package fh
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -26,7 +25,7 @@ import kotlinx.coroutines.withContext
 class ScriptEditorActivity : AppCompatActivity() {
 
     private lateinit var input: TextInputEditText
-    private var packageName: String = ScriptStore.ALL_APPS
+    private var packageName: String = ""
     private var service: XposedService? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,13 +41,13 @@ class ScriptEditorActivity : AppCompatActivity() {
             insets
         }
 
-        packageName = intent.getStringExtra(EXTRA_PACKAGE) ?: ScriptStore.ALL_APPS
+        packageName = intent.getStringExtra(EXTRA_PACKAGE)!!
         service = MainApplication.getService()
 
         val toolbar = findViewById<MaterialToolbar>(R.id.editorToolbar)
         setSupportActionBar(toolbar)
-        supportActionBar?.title = if (packageName == ScriptStore.ALL_APPS) {
-            getString(R.string.scripts_all_apps)
+        supportActionBar?.title = if (packageName == "user_script") {
+            getString(R.string.title_user_script)
         } else {
             ScriptStore.appLabel(this, packageName)
         }
@@ -120,10 +119,10 @@ class ScriptEditorActivity : AppCompatActivity() {
         val current = service ?: return
         val text = input.text?.toString().orEmpty()
 
-        if (text.isBlank()) {
-            Toast.makeText(this, R.string.toast_package_required, Toast.LENGTH_SHORT).show()
-            return
-        }
+//        if (text.isBlank()) {
+//            Toast.makeText(this, R.string.toast_package_required, Toast.LENGTH_SHORT).show()
+//            return
+//        }
 
         lifecycleScope.launch {
             val saved = withContext(Dispatchers.IO) {
@@ -136,17 +135,17 @@ class ScriptEditorActivity : AppCompatActivity() {
             }
 
             Toast.makeText(this@ScriptEditorActivity, R.string.toast_saved, Toast.LENGTH_SHORT).show()
-            setResult(Activity.RESULT_OK)
+            setResult(RESULT_OK)
             finish()
         }
     }
 
     private fun confirmRemove() {
         MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.action_revert)
-            .setMessage(R.string.editor_revert_note)
+            .setTitle(R.string.editor_delete_title)
+            .setMessage(R.string.editor_delete_note)
             .setNegativeButton(R.string.action_cancel, null)
-            .setPositiveButton(R.string.action_revert) { _, _ -> remove() }
+            .setPositiveButton(R.string.action_delete) { _, _ -> remove() }
             .show()
     }
 

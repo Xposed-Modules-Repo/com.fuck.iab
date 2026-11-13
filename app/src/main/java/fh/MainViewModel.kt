@@ -206,7 +206,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             withContext(Dispatchers.IO) { ScriptStore.setEnabled(service, packageName, type, enabled) }
-            refresh()
+//            refresh()
         }
     }
 

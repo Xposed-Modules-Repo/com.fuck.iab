@@ -73,10 +73,6 @@ object RemoteFiles {
 
 object ScriptStore {
 
-    const val ALL_APPS = "global"
-
-    private const val BUNDLED_DIR = "assets/scripts/"
-
     fun inventory(context: Context, service: XposedService?): List<ScriptInfo> {
         val bundledScripts = bundledScripts(context)
         val disabledBundleScripts = if (service != null) disabledApps(service, "bundle") else emptySet()
@@ -133,9 +129,9 @@ object ScriptStore {
         return try {
             ZipFile(context.applicationInfo.sourceDir).use { zip ->
                 zip.entries().asSequence()
-                    .filter { !it.isDirectory && it.name.startsWith(BUNDLED_DIR) && it.name.endsWith(".js") }
+                    .filter { !it.isDirectory && it.name.startsWith("assets/scripts/") && it.name.endsWith(".js") }
                     .associate { entry ->
-                        val packageName = entry.name.removePrefix(BUNDLED_DIR).removeSuffix(".js")
+                        val packageName = entry.name.removePrefix("assets/scripts/").removeSuffix(".js")
                         val text = zip.getInputStream(entry).bufferedReader(Charsets.UTF_8).use { it.readText() }
                         packageName to text
                     }
@@ -181,7 +177,7 @@ object ScriptStore {
     }
 
     fun userFile(packageName: String): String {
-        return if (packageName == ALL_APPS) "${user_script()}.js" else "${packageName}.js"
+        return if (packageName == "global") "${user_script()}.js" else "${packageName}.js"
     }
 
     fun readUserScript(service: XposedService, packageName: String): String? {
@@ -239,7 +235,7 @@ object ScriptStore {
     }
 
     fun appLabel(context: Context, packageName: String): String {
-        if (packageName == ALL_APPS) return context.getString(R.string.scripts_all_apps)
+        if (packageName == "global") return context.getString(R.string.scripts_all_apps)
 
         return try {
             context.packageManager.getApplicationLabel(
@@ -252,7 +248,7 @@ object ScriptStore {
 
     fun appIcon(context: Context, packageName: String): Drawable? {
         // The all-apps entry is not an app, so the caller keeps its own script icon.
-        if (packageName == ALL_APPS) return null
+        if (packageName == "global") return null
 
         return try {
             context.packageManager.getApplicationIcon(packageName)

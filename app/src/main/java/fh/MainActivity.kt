@@ -142,10 +142,8 @@ class MainActivity : AppCompatActivity(), MainApplication.ServiceStateListener {
                 viewModel.state.collect { state ->
                     supportActionBar?.subtitle = if (state.connectionStatus == 1) {
                         "${Connected_to_()}${state.framework}"
-                    } else if(state.connectionStatus == 2) {
-                        Not_connected_to_framework()
                     } else {
-                        "Connecting to framework..."
+                        Not_connected_to_framework()
                     }
                 }
             }

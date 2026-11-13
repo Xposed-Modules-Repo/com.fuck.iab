@@ -16,7 +16,7 @@
     <!-- actions -->
     <string name="action_refresh">Refresh scripts</string>
     <string name="action_new_script">New script</string>
-    <string name="action_revert">Yes</string>
+    <string name="action_delete">Yes, Delete it</string>
     <string name="action_restore">Restore bundled version</string>
     <string name="action_theme">Theme</string>
     <string name="action_theme_light">Switch to light theme</string>
@@ -53,7 +53,7 @@
     <string name="source_user">user</string>
     <string name="source_bundled">bundled</string>
     <string name="scripts_new_title">New script</string>
-    <string name="title_user_script">user_script</string>
+    <string name="title_user_script">user_script.js</string>
     <string name="user_script_desc">user_script</string>
     <string name="scripts_search_hint">Search apps</string>
     <string name="scripts_search">Search scripts</string>
@@ -82,9 +82,8 @@
     <string name="editor_author">Author: %1$s</string>
     <string name="editor_source">Source: %1$s</string>
     <string name="editor_word_wrap">Word wrap</string>
-    <string name="editor_revert_note">Are you sure?</string>
-    <string name="editor_restore_note">Your copy is deleted and the script bundled in the app is used again. Edits that are not saved yet are dropped too.</string>
-
+    <string name="editor_delete_title">Delete</string>
+    <string name="editor_delete_note">Are you sure?</string>
     <!-- logs -->
     <string name="action_retry">Retry</string>
     <string name="logs_no_su">Reading the module log needs root. The app runs \"su logcat\", and no su was found on this device, so nothing can be shown here.</string>

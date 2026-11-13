@@ -263,7 +263,7 @@ class ScriptsFragment : Fragment() {
 
         state.scripts.forEach { packages += it.packageName }
         packages += ScriptStore.installedApps(context)
-        packages -= ScriptStore.ALL_APPS
+        packages -= "global"
 
         val installedChoices = packages
             .map { AppChoice(ScriptStore.appLabel(context, it), it) }
@@ -345,7 +345,7 @@ private class ScriptAdapter(
     override fun onBindViewHolder(holder: Holder, position: Int) {
         val item = getItem(position)
 
-        holder.label.text = if (item.packageName == ScriptStore.ALL_APPS) {
+        holder.label.text = if (item.packageName == "global") {
             context.getString(R.string.scripts_all_apps)
         } else {
             ScriptStore.appLabel(context, item.packageName)
@@ -360,7 +360,7 @@ private class ScriptAdapter(
 
         val parts = mutableListOf(scriptTypeLabel)
 
-        if (item.size > 0) parts += sizeLabel(item.size)
+        parts += sizeLabel(item.size)
 
         item.author?.let { parts += it }
 
