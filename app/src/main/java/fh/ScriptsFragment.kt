@@ -2,6 +2,8 @@ package fh
 
 import android.app.Dialog
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -174,8 +176,10 @@ class ScriptsFragment : Fragment() {
         sheet = sheetDialog
 
         view.findViewById<MaterialButton>(R.id.detailViewSource).setOnClickListener {
+            val githubUrl = "https://github.com/Xposed-Modules-Repo/com.fuck.iab/blob/main/scripts/src/${script.packageName}.js"
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(githubUrl))
+            startActivity(intent)
             sheetDialog.dismiss()
-            openEditor(script.packageName)
         }
 
         sheetDialog.show()
@@ -208,8 +212,13 @@ class ScriptsFragment : Fragment() {
         val empty = view.findViewById<TextView>(R.id.choiceEmpty)
 
         val choices = ChoiceAdapter(requireContext()) { packageName ->
-            pickerDialog?.dismiss()
-            openEditor(packageName)
+            if (packageName == "user_script") {
+                pickerDialog?.dismiss()
+                openEditor("user_script")
+            } else {
+                pickerDialog?.dismiss()
+                openEditor(packageName)
+            }
         }
 
         list.layoutManager = LinearLayoutManager(requireContext())
@@ -256,9 +265,17 @@ class ScriptsFragment : Fragment() {
         packages += ScriptStore.installedApps(context)
         packages -= ScriptStore.ALL_APPS
 
-        return packages
+        val installedChoices = packages
             .map { AppChoice(ScriptStore.appLabel(context, it), it) }
             .sortedBy { it.label.lowercase() }
+
+        // Prepend user script choice that opens the editor
+        val userScriptChoice = AppChoice(
+            context.getString(R.string.title_user_script),
+            "user_script"
+        )
+
+        return listOf(userScriptChoice) + installedChoices
     }
 }
 
@@ -283,7 +300,10 @@ private class ChoiceAdapter(
         holder.label.text = item.label
         holder.packageName.text = item.packageName
         holder.icon.setImageDrawable(
-            ScriptStore.appIcon(context, item.packageName) ?: context.getDrawable(R.drawable.ic_extension)
+            when (item.packageName) {
+                "user_script" -> context.getDrawable(R.drawable.ic_description)
+                else -> ScriptStore.appIcon(context, item.packageName) ?: context.getDrawable(R.drawable.ic_extension)
+            }
         )
         holder.itemView.setOnClickListener { onClick(item.packageName) }
     }

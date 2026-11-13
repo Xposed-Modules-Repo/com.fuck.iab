@@ -22,7 +22,7 @@
     <string name="action_theme_light">Switch to light theme</string>
     <string name="action_theme_dark">Switch to dark theme</string>
     <string name="action_add">Add</string>
-    <string name="action_cancel">No</string>
+    <string name="action_cancel">Cancel</string>
 
     <!-- home -->
     <string name="home_status">Xposed Status</string>
@@ -53,6 +53,8 @@
     <string name="source_user">user</string>
     <string name="source_bundled">bundled</string>
     <string name="scripts_new_title">New script</string>
+    <string name="title_user_script">user_script</string>
+    <string name="user_script_desc">user_script</string>
     <string name="scripts_search_hint">Search apps</string>
     <string name="scripts_search">Search scripts</string>
     <string name="scripts_no_match">No matching app</string>
