@@ -77,7 +77,7 @@
             android:layout_gravity="center"
             android:gravity="center"
             android:padding="32dp"
-            android:text="@string/scripts_empty"
+            android:text="@string/not_connected_to_framework"
             android:textAppearance="?attr/textAppearanceBodyMedium"
             android:visibility="gone" />
 

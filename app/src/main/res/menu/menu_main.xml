@@ -2,11 +2,6 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/action_theme"
-        android:icon="@drawable/ic_dark_mode"
-        android:title="@string/action_theme"
-        app:showAsAction="always" />
-    <item
         android:id="@+id/action_logs_retry"
         android:icon="@drawable/ic_refresh"
         android:title="@string/action_retry"

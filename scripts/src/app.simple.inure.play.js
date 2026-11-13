@@ -1,4 +1,6 @@
 // author: you1mak
+// description: Unlocks the full version of Inure App Manager by patching license checks to always return true, removing the need for an unlocker app or license key.
+
 /*
  * Inure App Manager — Unlock Full Version
  * Frida Script  (converted from morphe patches:

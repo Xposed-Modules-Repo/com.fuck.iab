@@ -1,4 +1,5 @@
 // author: you1mak, staleroot
+// description: Unlocks KeyMapper Pro, removing premium restrictions on keymapping features without needing a paid account.
 
 Java.perform(function () {
 

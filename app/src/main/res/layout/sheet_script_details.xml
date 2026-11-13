@@ -54,141 +54,35 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- source, size and author, once -->
         <TextView
-            android:id="@+id/detailSummary"
+            android:id="@+id/author"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:textAppearance="?attr/textAppearanceBodyMedium"
             android:textColor="?attr/colorPrimary" />
 
-        <TableLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:stretchColumns="1">
-
-            <TableRow android:id="@+id/detailCoversRow">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="6dp"
-                    android:paddingEnd="12dp"
-                    android:paddingBottom="6dp"
-                    android:text="@string/detail_covers"
-                    android:textAppearance="?attr/textAppearanceBodyMedium" />
-
-                <TextView
-                    android:id="@+id/detailCovers"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="end"
-                    android:textAppearance="?attr/textAppearanceBodyMedium" />
-            </TableRow>
-
-            <TableRow>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="6dp"
-                    android:paddingEnd="12dp"
-                    android:paddingBottom="6dp"
-                    android:text="@string/detail_status"
-                    android:textAppearance="?attr/textAppearanceBodyMedium" />
-
-                <TextView
-                    android:id="@+id/detailStatus"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="end"
-                    android:textAppearance="?attr/textAppearanceBodyMedium" />
-            </TableRow>
-
-            <TableRow android:id="@+id/detailPublishedRow">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="6dp"
-                    android:paddingEnd="12dp"
-                    android:paddingBottom="6dp"
-                    android:text="@string/detail_published"
-                    android:textAppearance="?attr/textAppearanceBodyMedium" />
-
-                <TextView
-                    android:id="@+id/detailPublished"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="end"
-                    android:textAppearance="?attr/textAppearanceBodyMedium" />
-            </TableRow>
-
-            <TableRow android:id="@+id/detailSyncedRow">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="6dp"
-                    android:paddingEnd="12dp"
-                    android:paddingBottom="6dp"
-                    android:text="@string/detail_synced"
-                    android:textAppearance="?attr/textAppearanceBodyMedium" />
-
-                <TextView
-                    android:id="@+id/detailSynced"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="end"
-                    android:textAppearance="?attr/textAppearanceBodyMedium" />
-            </TableRow>
-
-            <TableRow android:id="@+id/detailFileRow">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="6dp"
-                    android:paddingEnd="12dp"
-                    android:paddingBottom="6dp"
-                    android:text="@string/detail_file_local"
-                    android:textAppearance="?attr/textAppearanceBodyMedium" />
-
-                <TextView
-                    android:id="@+id/detailFile"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:gravity="end"
-                    android:textAppearance="?attr/textAppearanceBodySmall" />
-            </TableRow>
-        </TableLayout>
-
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="@string/detail_checksum"
+            android:text="@string/detail_description"
             android:textAppearance="?attr/textAppearanceLabelLarge" />
 
         <TextView
-            android:id="@+id/detailChecksum"
+            android:id="@+id/detailDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:fontFamily="monospace"
-            android:textAppearance="?attr/textAppearanceBodySmall"
-            android:textIsSelectable="true" />
-
-        <TextView
-            android:id="@+id/detailChecksumNote"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textAppearance="?attr/textAppearanceLabelSmall" />
+            android:textAppearance="?attr/textAppearanceBodySmall" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/detailEdit"
+            android:id="@+id/detailViewSource"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="@string/action_edit" />
+            android:text="@string/action_view_source" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

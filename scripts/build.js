@@ -28,19 +28,17 @@ function compile(packageName) {
     }
 
     console.log(`Compiling: ${packageName}`);
-    if(packageName == "global") {
-        execSync(`npx frida-compile "${input}" -o "${output}" -S -B iife -T none`, { stdio: "inherit" });
-    } else {
-        const inputFirstLine = readFileSync(input, "utf8").split("\n", 1)[0];
-        const authorLine = inputFirstLine.startsWith("// author: ") ? inputFirstLine : null;
-        
-        execSync(`npx frida-compile "${input}" -o "${output}" -c -S -B iife -T none`, { stdio: "inherit" });
-        
-        if (authorLine !== null) {
-            const compiled = readFileSync(output, "utf8");
-            writeFileSync(output, `${authorLine}\n${compiled}`);
-        }
-    }
+
+    const inputLines = readFileSync(input, "utf8").split("\n", 3);
+    const authorLine = inputLines[0]?.startsWith("// author: ") ? inputLines[0] : "// author: ";
+//    const versionLine = inputLines[1]?.startsWith("// version: ") ? inputLines[1] : "// version: ";
+    const descriptionLine = inputLines[1]?.startsWith("// description: ") ? inputLines[1] : "// description: ";
+
+    execSync(`npx frida-compile "${input}" -o "${output}" -c -S -B iife -T none`, { stdio: "inherit" });
+
+    const compiled = readFileSync(output, "utf8");
+//    writeFileSync(output, `${authorLine}\n${versionLine}\n${descriptionLine}\n${compiled}`);
+    writeFileSync(output, `${authorLine}\n${descriptionLine}\n${compiled}`);
 
     console.log(`Built: assets/scripts/${packageName}.js`);
 }

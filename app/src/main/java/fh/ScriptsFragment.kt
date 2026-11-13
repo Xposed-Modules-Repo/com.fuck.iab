@@ -22,8 +22,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.fuck.iab.R
 import com.fuck.iab.ScriptDetails
 import com.fuck.iab.ScriptInfo
-import com.fuck.iab.ScriptSource
+import com.fuck.iab.ScriptType
 import com.fuck.iab.ScriptStore
+import com.fuck.iab.ScriptStore.sizeLabel
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.ChipGroup
@@ -31,8 +32,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.TextInputEditText
-import java.text.DateFormat
-import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -41,15 +40,15 @@ import kotlinx.coroutines.withContext
 data class AppChoice(val label: String, val packageName: String)
 
 // scripts screen: every known script, with a switch to enable or disable it per app
-class scripts : Fragment() {
+class ScriptsFragment : Fragment() {
 
-    private val viewModel: h by activityViewModels()
+    private val viewModel: MainViewModel by activityViewModels()
     private lateinit var adapter: ScriptAdapter
     private var pickerDialog: Dialog? = null
     private var sheet: BottomSheetDialog? = null
 
     private var query: String = ""
-    private var filter: ScriptSource? = null
+    private var filter: ScriptType? = null
     private var all: List<ScriptInfo> = emptyList()
 
     override fun onCreateView(
@@ -64,8 +63,14 @@ class scripts : Fragment() {
         val newScript = v.findViewById<ExtendedFloatingActionButton>(R.id.newScriptButton)
         val search = v.findViewById<TextInputEditText>(R.id.searchInput)
 
-        adapter = ScriptAdapter(requireContext()) { script -> showDetails(script) }
-        adapter.onEnabledChanged = { packageName, enabled -> viewModel.setEnabled(packageName, enabled) }
+        adapter = ScriptAdapter(requireContext()) { script ->
+            if (script.type == ScriptType.BUNDLED) {
+                showDetails(script)
+            } else {
+                openEditor(script.packageName)
+            }
+        }
+        adapter.onEnabledChanged = { packageName, type, enabled -> viewModel.setEnabled(packageName, type, enabled) }
 
         list.layoutManager = LinearLayoutManager(requireContext())
         list.adapter = adapter
@@ -80,8 +85,8 @@ class scripts : Fragment() {
         v.findViewById<ChipGroup>(R.id.filterGroup)
             .setOnCheckedStateChangeListener { _, checkedIds ->
                 filter = when (checkedIds.firstOrNull()) {
-                    R.id.filterStore -> ScriptSource.BUNDLED
-                    R.id.filterUser -> ScriptSource.USER
+                    R.id.filterStore -> ScriptType.BUNDLED
+                    R.id.filterUser -> ScriptType.USER
                     else -> null
                 }
 
@@ -102,7 +107,7 @@ class scripts : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        // Picks up scripts saved in the editor.
+
         viewModel.refresh()
     }
 
@@ -118,7 +123,7 @@ class scripts : Fragment() {
         val needle = query.trim()
 
         val visible = all.filter { script ->
-            val matchesFilter = filter == null || script.source == filter
+            val matchesFilter = filter == null || script.type == filter
             val matchesQuery = needle.isEmpty() ||
                     script.packageName.contains(needle, true) ||
                     ScriptStore.appLabel(requireContext(), script.packageName).contains(needle, true)
@@ -127,15 +132,32 @@ class scripts : Fragment() {
         }
 
         adapter.submitList(visible)
-        empty.setText(if (all.isEmpty()) R.string.scripts_empty else R.string.scripts_nothing_matches)
-        empty.isVisible = visible.isEmpty()
+
+        if (viewModel.state.value.connectionStatus == 0) { // connecting...
+            empty.isVisible = false
+            empty.text = ""
+        } else if (viewModel.state.value.connectionStatus == 1) { // connected
+            if (!all.isEmpty() && visible.isEmpty()) {
+                empty.isVisible = true
+                empty.text = requireContext().getString(R.string.scripts_nothing_matches)
+            } else {
+                empty.isVisible = false
+                empty.text = ""
+            }
+        } else if (viewModel.state.value.connectionStatus == 2) { // failed to connect
+            if (all.isEmpty()) {
+                empty.isVisible = true
+                empty.text = requireContext().getString(R.string.not_connected_to_framework)
+            } else {
+                empty.isVisible = false
+                empty.text = ""
+            }
+        }
     }
 
     private fun openEditor(packageName: String) {
-        startActivity(editor.intent(requireContext(), packageName))
+        startActivity(ScriptEditorActivity.intent(requireContext(), packageName))
     }
-
-    // ---- detail sheet ----------------------------------------------------------
 
     private fun showDetails(script: ScriptInfo) {
         val view = layoutInflater.inflate(R.layout.sheet_script_details, null)
@@ -151,18 +173,16 @@ class scripts : Fragment() {
         sheetDialog.setContentView(view)
         sheet = sheetDialog
 
-        view.findViewById<MaterialButton>(R.id.detailEdit).setOnClickListener {
+        view.findViewById<MaterialButton>(R.id.detailViewSource).setOnClickListener {
             sheetDialog.dismiss()
             openEditor(script.packageName)
         }
 
         sheetDialog.show()
 
-        val service = g.getService()
-
         viewLifecycleOwner.lifecycleScope.launch {
             val details = withContext(Dispatchers.IO) {
-                ScriptStore.details(context, service, script.packageName)
+                ScriptStore.details(context, script.packageName)
             }
 
             bindDetails(view, details)
@@ -170,46 +190,12 @@ class scripts : Fragment() {
     }
 
     private fun bindDetails(view: View, details: ScriptDetails) {
-        val context = requireContext()
-        val dateFormat = DateFormat.getDateTimeInstance()
+        view.findViewById<TextView>(R.id.author).text = details.author ?: ""
 
-        // Source, size and author, once each, on one line.
-        val summary = buildList {
-            add(sourceLabel(context, details.source))
-            add(ScriptStore.sizeLabel(details.size))
-            details.author?.let { add(it) }
-            if (details.hasUserScript) add(getString(R.string.source_user))
-        }
-        view.findViewById<TextView>(R.id.detailSummary).text = summary.joinToString(" · ")
+        view.findViewById<TextView>(R.id.author).isVisible = details.author != null
 
-        val covers = coverageLabel(context, details.packageName, details.coveredApps, details.inScope)
-        view.findViewById<TextView>(R.id.detailCovers).text = covers ?: ""
-        view.findViewById<View>(R.id.detailCoversRow).isVisible = covers != null
+        view.findViewById<TextView>(R.id.detailDescription).text = details.description
 
-        view.findViewById<TextView>(R.id.detailStatus).text =
-            getString(if (details.enabled) R.string.status_enabled else R.string.status_disabled)
-
-        view.findViewById<TextView>(R.id.detailFile).text = details.file ?: "-"
-        view.findViewById<View>(R.id.detailFileRow).isVisible = details.file != null
-
-        view.findViewById<TextView>(R.id.detailPublished).text = details.publishedAt?.let {
-            dateFormat.format(Date(it))
-        } ?: "-"
-        view.findViewById<View>(R.id.detailPublishedRow).isVisible = details.publishedAt != null
-
-        view.findViewById<TextView>(R.id.detailSynced).text = details.syncedAt?.let {
-            dateFormat.format(Date(it))
-        } ?: "-"
-        view.findViewById<View>(R.id.detailSyncedRow).isVisible = details.syncedAt != null
-
-        // One checksum, with the verdict for remote copies only.
-        view.findViewById<TextView>(R.id.detailChecksum).text = details.sha256 ?: "-"
-
-        val checksumNote = view.findViewById<TextView>(R.id.detailChecksumNote)
-        checksumNote.isVisible = details.matchesManifest != null
-        checksumNote.setText(
-            if (details.matchesManifest == true) R.string.detail_matches else R.string.detail_differs
-        )
     }
 
     // ---- new script picker -----------------------------------------------------
@@ -266,8 +252,6 @@ class scripts : Fragment() {
         val state = viewModel.state.value
         val packages = LinkedHashSet<String>()
 
-        // Apps in scope and apps that already have a script come first.
-        state.hookedApps.forEach { packages += it.packageName }
         state.scripts.forEach { packages += it.packageName }
         packages += ScriptStore.installedApps(context)
         packages -= ScriptStore.ALL_APPS
@@ -319,14 +303,13 @@ private class ScriptAdapter(
     private val onClick: (ScriptInfo) -> Unit
 ) : ListAdapter<ScriptInfo, ScriptAdapter.Holder>(DIFF) {
 
-    var onEnabledChanged: ((String, Boolean) -> Unit)? = null
+    var onEnabledChanged: ((String, ScriptType, Boolean) -> Unit)? = null
 
     class Holder(view: View) : RecyclerView.ViewHolder(view) {
         val icon: ImageView = view.findViewById(R.id.scriptIcon)
         val label: TextView = view.findViewById(R.id.scriptLabel)
         val packageName: TextView = view.findViewById(R.id.scriptPackage)
         val meta: TextView = view.findViewById(R.id.scriptMeta)
-        val covers: TextView = view.findViewById(R.id.scriptCovers)
         val switch: MaterialSwitch = view.findViewById(R.id.scriptSwitch)
     }
 
@@ -334,7 +317,7 @@ private class ScriptAdapter(
         val holder = Holder(LayoutInflater.from(parent.context).inflate(R.layout.item_script, parent, false))
         holder.switch.setOnCheckedChangeListener { button, isChecked ->
             val item = button.tag as? ScriptInfo ?: return@setOnCheckedChangeListener
-            if (item.enabled != isChecked) onEnabledChanged?.invoke(item.packageName, isChecked)
+            if (item.enabled != isChecked) onEnabledChanged?.invoke(item.packageName, item.type, isChecked)
         }
         return holder
     }
@@ -350,15 +333,19 @@ private class ScriptAdapter(
 
         holder.packageName.text = item.packageName
 
-        val parts = mutableListOf(sourceLabel(context, item.source))
+        val scriptTypeLabel = when (item.type) {
+            ScriptType.USER -> context.getString(R.string.source_user)
+            ScriptType.BUNDLED -> context.getString(R.string.source_bundled)
+        }
 
-        if (item.size > 0) parts += ScriptStore.sizeLabel(item.size)
+        val parts = mutableListOf(scriptTypeLabel)
+
+        if (item.size > 0) parts += sizeLabel(item.size)
+
         item.author?.let { parts += it }
 
         holder.meta.text = parts.joinToString(" · ")
-        val covers = coverageLabel(context, item.packageName, item.coveredApps, item.inScope)
-        holder.covers.text = covers ?: ""
-        holder.covers.isVisible = covers != null
+
         holder.icon.setImageDrawable(
             ScriptStore.appIcon(context, item.packageName) ?: context.getDrawable(R.drawable.ic_description)
         )

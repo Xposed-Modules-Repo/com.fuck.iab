@@ -11,7 +11,7 @@ import android.os.IBinder
 import android.os.IInterface
 import android.os.Parcel
 import androidx.core.content.edit
-import fh.d
+import fh.FakeBillingActivity
 import org.json.JSONObject
 import kotlin.collections.component1
 import kotlin.collections.component2
@@ -141,7 +141,7 @@ class FakeBinder(
                     val intent = Intent().apply {
                         component = ComponentName(
                             com_fuck_iab(),
-                            d::class.java.name
+                            FakeBillingActivity::class.java.name
                         )
                     }
 

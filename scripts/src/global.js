@@ -1,3 +1,6 @@
+// author:
+// description: Core runtime required by every app script. Sets up the Frida Java/IL2CPP bridge and provides shared helpers for finding classes, methods, and app context. Disabling this stops all bundled scripts from running.
+
 import "frida-il2cpp-bridge";
 
 import JavaBridge from "../libs/frida-java-bridge.js";
@@ -6,9 +9,11 @@ export const Java = JavaBridge
 
 globalThis.FRIDA_JAVA_BRIDGE_DISABLE_JVMTI = true;
 
-try { APP_SCRIPT_GOES_HERE } catch(e) { console.log(e) }
+try { BUNDLE_SCRIPT_PACKAGE } catch(e) { console.log(e) }
 
-try { USER_SCRIPT_GOES_HERE } catch(e) { console.log(e) }
+try { USER_SCRIPT_GLOBAL } catch(e) { console.log(e) }
+
+try { USER_SCRIPT_PACKAGE } catch(e) { console.log(e) }
 
 if(globalThis["DONT_SEND_READY"] === undefined) {
     send("ready")

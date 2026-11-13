@@ -838,9 +838,9 @@ fun Not_connected_to_framework(): String {
     return sb.toString()
 }
 
-fun user_script_js(): String {
+fun user_script(): String {
     val sb = StringBuilder()
-    val arr = intArrayOf(235, 237, 251, 236, 193, 237, 253, 236, 247, 238, 234, 176, 244, 237)
+    val arr = intArrayOf(235, 237, 251, 236, 193, 237, 253, 236, 247, 238, 234)
     for (num in arr) {
         sb.append((num.xor(158)).toChar())
     }
@@ -1239,6 +1239,15 @@ fun fkiab(): String {
 fun Connected_to_Xposed_service__(): String {
     val sb = StringBuilder()
     val arr = intArrayOf(83, 127, 126, 126, 117, 115, 100, 117, 116, 48, 100, 127, 48, 72, 96, 127, 99, 117, 116, 48, 99, 117, 98, 102, 121, 115, 117, 42, 48)
+    for (num in arr) {
+        sb.append((num.xor(16)).toChar())
+    }
+    return sb.toString()
+}
+
+fun Connected_to_(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(83, 127, 126, 126, 117, 115, 100, 117, 116, 48, 100, 127, 48, 42, 48)
     for (num in arr) {
         sb.append((num.xor(16)).toChar())
     }

@@ -10,8 +10,8 @@ android {
         applicationId "com.fuck.iab"
         minSdk 26
         targetSdk 37
-        versionCode 39
-        versionName "1.6.5"
+        versionCode 43
+        versionName "1.7.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -50,6 +50,12 @@ android {
     }
 
     ndkVersion = "30.0.16248370"
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging true
+        }
+    }
 }
 
 dependencies {
@@ -62,60 +68,60 @@ dependencies {
     implementation libs.dexkit
 }
 
-import javax.inject.Inject
-
-abstract class CompileFridaScriptsTask extends DefaultTask {
-
-    @Inject
-    abstract ExecOperations getExecOperations()
-
-    @Internal
-    abstract DirectoryProperty getScriptsSrcDir()
-
-    @Internal
-    abstract DirectoryProperty getScriptsWorkingDir()
-
-    @Internal
-    abstract DirectoryProperty getOutputDir()
-
-    @TaskAction
-    void run() {
-        def workDir = scriptsWorkingDir.get().asFile
-        def outDir = outputDir.get().asFile
-
-        // build.js compiles every script in scripts/src, including the global one that
-        // needs different flags, and clears the files of removed scripts first.
-        if (!new File(workDir, 'node_modules/frida-compile').exists()) {
-            throw new GradleException(
-                    "Frida scripts cannot be compiled: run `npm install` in ${workDir.path} first.")
-        }
-
-        outDir.mkdirs()
-
-        logger.lifecycle("Compiling Frida scripts into ${outDir.path}")
-
-        def isWindows = org.gradle.internal.os.OperatingSystem.current().isWindows()
-
-        execOperations.exec {
-            workingDir = workDir
-            commandLine isWindows ? 'node.exe' : 'node', 'build.js', '--all'
-        }
-    }
-}
-
-tasks.register('compileFridaScripts', CompileFridaScriptsTask) {
-    group = 'frida'
-    description = 'Compile the scripts in scripts/src into assets/scripts/<package>.js'
-
-    scriptsSrcDir.set(layout.projectDirectory.dir('../scripts/src'))
-    scriptsWorkingDir.set(layout.projectDirectory.dir('../scripts'))
-    outputDir.set(layout.projectDirectory.dir('src/main/assets/scripts'))
-
-    inputs.dir(scriptsSrcDir)
-    outputs.dir(outputDir)
-}
-
-// The assets have to exist before they are merged, so every build compiles them.
-tasks.named('preBuild') {
-    dependsOn 'compileFridaScripts'
-}
+//import javax.inject.Inject
+//
+//abstract class CompileFridaScriptsTask extends DefaultTask {
+//
+//    @Inject
+//    abstract ExecOperations getExecOperations()
+//
+//    @Internal
+//    abstract DirectoryProperty getScriptsSrcDir()
+//
+//    @Internal
+//    abstract DirectoryProperty getScriptsWorkingDir()
+//
+//    @Internal
+//    abstract DirectoryProperty getOutputDir()
+//
+//    @TaskAction
+//    void run() {
+//        def workDir = scriptsWorkingDir.get().asFile
+//        def outDir = outputDir.get().asFile
+//
+//        // build.js compiles every script in scripts/src, including the global one that
+//        // needs different flags, and clears the files of removed scripts first.
+//        if (!new File(workDir, 'node_modules/frida-compile').exists()) {
+//            throw new GradleException(
+//                    "Frida scripts cannot be compiled: run `npm install` in ${workDir.path} first.")
+//        }
+//
+//        outDir.mkdirs()
+//
+//        logger.lifecycle("Compiling Frida scripts into ${outDir.path}")
+//
+//        def isWindows = org.gradle.internal.os.OperatingSystem.current().isWindows()
+//
+//        execOperations.exec {
+//            workingDir = workDir
+//            commandLine isWindows ? 'node.exe' : 'node', 'build.js', '--all'
+//        }
+//    }
+//}
+//
+//tasks.register('compileFridaScripts', CompileFridaScriptsTask) {
+//    group = 'frida'
+//    description = 'Compile the scripts in scripts/src into assets/scripts/<package>.js'
+//
+//    scriptsSrcDir.set(layout.projectDirectory.dir('../scripts/src'))
+//    scriptsWorkingDir.set(layout.projectDirectory.dir('../scripts'))
+//    outputDir.set(layout.projectDirectory.dir('src/main/assets/scripts'))
+//
+//    inputs.dir(scriptsSrcDir)
+//    outputs.dir(outputDir)
+//}
+//
+//// The assets have to exist before they are merged, so every build compiles them.
+//tasks.named('preBuild') {
+//    dependsOn 'compileFridaScripts'
+//}

@@ -1,7 +1,7 @@
 [versions]
 agp = "9.4.0"
 libxposed = "102.0.0"
-dexkit = "2.2.0"
+dexkit = "2.3.0"
 appcompat = "1.8.0"
 
 [libraries]

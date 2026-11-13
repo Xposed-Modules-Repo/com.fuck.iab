@@ -1,4 +1,6 @@
 // author: staleroot
+// description: Unlocks all paid features in Bike Race: Free World by bypassing receipt verification, making purchases appear valid.
+
 setTimeout(() => {
     Java.perform(() => {
         var ReceiptVerifier = Java.use("com.tfg.libs.billing.google.verifier.ReceiptVerifier");

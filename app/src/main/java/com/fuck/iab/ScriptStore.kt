@@ -1,70 +1,35 @@
 package com.fuck.iab
 
 import android.content.Context
-import android.content.res.Configuration
+import android.content.Intent
 import android.graphics.drawable.Drawable
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
+import com.fuck.iab.ScriptType.BUNDLED
+import com.fuck.iab.ScriptType.USER
 import io.github.libxposed.service.XposedService
-import org.json.JSONObject
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.Locale
+import java.util.zip.ZipFile
 
-/** Where the script that is currently used for a package comes from. */
-enum class ScriptSource { USER, BUNDLED }
+enum class ScriptType { BUNDLED, USER }
 
 data class ScriptInfo(
     val packageName: String,
-    val source: ScriptSource,
+    val type: ScriptType,
+    val source: String,
     val author: String?,
-    val size: Int,
-    val enabled: Boolean,
-    val hasUserScript: Boolean,
-    /** Apps this script runs in: every app in scope for the all-apps script, one for a package. */
-    val coveredApps: Int,
-    /** Whether the module hooks this package at all, which is what makes the script run. */
-    val inScope: Boolean
+    val size: Int = 0,
+    val enabled: Boolean
 )
 
-/** Everything the detail sheet can say about one script. */
 data class ScriptDetails(
     val packageName: String,
-    val source: ScriptSource,
-    val size: Int,
     val author: String?,
-    val sha256: String?,
-    val file: String?,
-    val matchesManifest: Boolean?,
-    val publishedAt: Long?,
-    val syncedAt: Long?,
-    val hasUserScript: Boolean,
-    val enabled: Boolean,
-    val coveredApps: Int,
-    val inScope: Boolean
+//    val version: Int = 0,
+    val description: String
 )
 
-/** How the module code inside a running process relates to the installed module. */
-enum class RunningState { CURRENT, STALE, RELOADING, FAILED }
-
-/** One process of a hooked app in which the module is loaded right now. */
-data class RunningProcess(
-    val processName: String,
-    val pid: Int,
-    val state: RunningState
-)
-
-/** A package the module is scoped to, with the state of its script if it has one. */
-data class HookedApp(
-    val packageName: String,
-    val label: String,
-    val script: ScriptInfo?,
-    val running: List<RunningProcess> = emptyList()
-) {
-    val isRunning: Boolean get() = running.isNotEmpty()
-}
-
-/** Files in the module's shared data directory, which is how the module and this app talk. */
 object RemoteFiles {
 
     fun list(service: XposedService): Set<String> {
@@ -84,7 +49,6 @@ object RemoteFiles {
         }
     }
 
-    /** @return true when the file was stored, so callers never claim a write that failed. */
     fun write(service: XposedService, name: String, text: String): Boolean {
         return try {
             val pfd = service.openRemoteFile(name)
@@ -107,119 +71,78 @@ object RemoteFiles {
     }
 }
 
-/** App side knowledge about scripts: what exists, what is enabled and what an editor shows. */
 object ScriptStore {
 
-    /** The all-apps script, the entry the store publishes as global. */
     const val ALL_APPS = "global"
 
-    /** Where the scripts compiled into the APK live. */
     private const val BUNDLED_DIR = "assets/scripts/"
 
-    private const val SETTINGS_GROUP = "ui"
-    private const val THEME_KEY = "theme"
-    private const val USER_INDEX_KEY = "user_scripts"
-    private const val SCOPE_KEY = "known_scope"
+    fun inventory(context: Context, service: XposedService?): List<ScriptInfo> {
+        val bundledScripts = bundledScripts(context)
+        val disabledBundleScripts = if (service != null) disabledApps(service, "bundle") else emptySet()
 
-    const val THEME_SYSTEM = 0
-    const val THEME_LIGHT = 1
-    const val THEME_DARK = 2
+        val userScripts = userScripts(service)
+        val disabledUserScripts = if (service != null) disabledApps(service, "user") else emptySet()
 
-    // ---- theme -----------------------------------------------------------------
+        val ret = arrayListOf<ScriptInfo>()
 
-    /** The theme the user picked with the toolbar button, system until then. */
-    fun theme(context: Context): Int {
-        return context.getSharedPreferences(SETTINGS_GROUP, Context.MODE_PRIVATE).getInt(THEME_KEY, THEME_SYSTEM)
-    }
-
-    fun setTheme(context: Context, mode: Int) {
-        context.getSharedPreferences(SETTINGS_GROUP, Context.MODE_PRIVATE).edit { putInt(THEME_KEY, mode) }
-        applyTheme(context)
-    }
-
-    @JvmStatic
-    fun applyTheme(context: Context) {
-        AppCompatDelegate.setDefaultNightMode(
-            when (theme(context)) {
-                THEME_LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
-                THEME_DARK -> AppCompatDelegate.MODE_NIGHT_YES
-                else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-            }
-        )
-    }
-
-    /** What the app is showing right now, whether from the system or from the pick. */
-    fun isNight(context: Context): Boolean {
-        return (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-                Configuration.UI_MODE_NIGHT_YES
-    }
-
-    // ---- inventory -------------------------------------------------------------
-
-    fun inventory(context: Context, service: XposedService?, scope: Set<String> = emptySet()): List<ScriptInfo> {
-        val files = if (service != null) RemoteFiles.list(service) else emptySet()
-        val bundled = bundledScripts(context)
-        val disabled = if (service != null) disabledApps(service) else emptySet()
-        val users = userEntries(context, files)
-
-        val names = sortedSetOf<String>()
-        names += users.keys
-        names += bundled.keys
-
-        return names.map { packageName ->
-            val user = users[packageName]
-            val builtIn = bundled[packageName]
-
-            val source: ScriptSource
-            val size: Int
-            val author: String?
-
-            if (user != null) {
-                val text = if (service != null) RemoteFiles.read(service, user) else null
-                source = ScriptSource.USER
-                size = text?.toByteArray(Charsets.UTF_8)?.size ?: 0
-                author = text?.let { authorOf(it) }
-            } else {
-                source = ScriptSource.BUNDLED
-                size = builtIn?.second ?: 0
-                author = builtIn?.first?.let { authorOf(it) }
-            }
-
-            val inScope = packageName == ALL_APPS || scope.contains(packageName)
-
-            ScriptInfo(
-                packageName = packageName,
-                source = source,
-                author = author,
-                size = size,
-                enabled = !disabled.contains(packageName),
-                hasUserScript = user != null,
-                coveredApps = if (packageName == ALL_APPS) scope.size else if (inScope) 1 else 0,
-                inScope = inScope
+        bundledScripts.forEach { (packageName, script) ->
+            ret.add(
+                ScriptInfo(
+                    packageName = packageName,
+                    type = BUNDLED,
+                    source = script,
+                    author = authorOf(script),
+                    size = script.toByteArray(Charsets.UTF_8).size,
+                    enabled = !disabledBundleScripts.contains(packageName)
+                )
             )
         }
+
+        userScripts.forEach { (packageName, script) ->
+            if (script == null) return@forEach
+            ret.add(
+                ScriptInfo(
+                    packageName = packageName,
+                    type = USER,
+                    source = script,
+                    author = authorOf(script),
+                    size = script.toByteArray(Charsets.UTF_8).size,
+                    enabled = !disabledUserScripts.contains(packageName)
+                )
+            )
+        }
+
+        return ret
     }
 
-    /** Package name -> (script text, size) for the scripts compiled into this APK. */
-    private fun bundledScripts(context: Context): Map<String, Pair<String, Int>> {
-        return try {
-            java.util.zip.ZipFile(context.applicationInfo.sourceDir).use { zip ->
-                zip.entries().asSequence()
-                    .filter { !it.isDirectory && it.name.startsWith(BUNDLED_DIR) && it.name.endsWith(".js") }
-                    .associate { entry ->
-                        val packageName = entry.name.removePrefix(BUNDLED_DIR).removeSuffix(".js")
-                        val text = zip.getInputStream(entry).bufferedReader(Charsets.UTF_8).use { it.readText() }
-                        packageName to (text to text.toByteArray(Charsets.UTF_8).size)
-                    }
-            }
+    private fun userScripts(service: XposedService?): Map<String, String?> {
+        return if (service == null) emptyMap()
+        else try {
+            RemoteFiles.list(service)
+                .filter { it.endsWith(".js") }
+                .associate {
+                    it.removeSuffix(".js") to RemoteFiles.read(service, it)
+                }
         } catch (e: Exception) {
             emptyMap()
         }
     }
 
-    /** Whether this APK ships a script for [packageName]. */
-    fun hasBundledScript(context: Context, packageName: String): Boolean {
-        return bundledScripts(context).containsKey(packageName)
+    private fun bundledScripts(context: Context): Map<String, String> {
+        return try {
+            ZipFile(context.applicationInfo.sourceDir).use { zip ->
+                zip.entries().asSequence()
+                    .filter { !it.isDirectory && it.name.startsWith(BUNDLED_DIR) && it.name.endsWith(".js") }
+                    .associate { entry ->
+                        val packageName = entry.name.removePrefix(BUNDLED_DIR).removeSuffix(".js")
+                        val text = zip.getInputStream(entry).bufferedReader(Charsets.UTF_8).use { it.readText() }
+                        packageName to text
+                    }
+            }
+        } catch (e: Exception) {
+            emptyMap()
+        }
     }
 
     fun authorOf(script: String): String? {
@@ -228,184 +151,70 @@ object ScriptStore {
         return firstLine.removePrefix("// author: ").trim().ifEmpty { null }
     }
 
-    // ---- details ---------------------------------------------------------------
+    fun details(context: Context, packageName: String): ScriptDetails {
+        val bundled = bundledScripts(context)[packageName]!!
 
-    /** Reads the script that would run for [packageName] and describes where it came from. */
-    fun details(context: Context, service: XposedService?, packageName: String): ScriptDetails {
-        val files = if (service != null) RemoteFiles.list(service) else emptySet()
-        val scoped = if (service != null) scope(service) else emptyList()
+        val lines = bundled.lineSequence().take(3).toList()
 
-        val userFile = userFile(packageName)
-        val bundled = bundledScripts(context)[packageName]?.first
-
-        val source: ScriptSource
-        val text: String?
-        var file: String? = null
-
-        when {
-            service != null && files.contains(userFile) -> {
-                source = ScriptSource.USER
-                file = userFile
-                text = RemoteFiles.read(service, userFile)
-            }
-
-            else -> {
-                source = ScriptSource.BUNDLED
-                text = bundled
-            }
+        val author = lines.getOrNull(0)?.let {
+            if (it.startsWith("// author: ")) {
+                it.removePrefix("// author: ").trim().ifEmpty { null }
+            } else null
         }
-
-        val checksum = text?.let { sha256(it) }
+//        val version = lines.getOrNull(1)?.let {
+//            if (it.startsWith("// version: ")) {
+//                it.removePrefix("// version: ").trim().ifEmpty { null }
+//            } else null
+//        }?.toInt() ?: 1
+        val description = lines.getOrNull(1)?.let {
+            if (it.startsWith("// description: ")) {
+                it.removePrefix("// description: ").trim().ifEmpty { null }
+            } else null
+        } ?: ""
 
         return ScriptDetails(
             packageName = packageName,
-            source = source,
-            size = text?.toByteArray(Charsets.UTF_8)?.size ?: 0,
-            author = text?.let { authorOf(it) },
-            sha256 = checksum,
-            file = file,
-            matchesManifest = null,
-            publishedAt = null,
-            syncedAt = null,
-            hasUserScript = files.contains(userFile),
-            enabled = service == null || packageName !in disabledApps(service),
-            coveredApps = if (packageName == ALL_APPS) scoped.size else 1,
-            inScope = packageName == ALL_APPS || scoped.contains(packageName)
+            author = author,
+//            version = version,
+            description = description
         )
     }
 
-    fun sha256(text: String): String {
-        return java.security.MessageDigest.getInstance("SHA-256")
-            .digest(text.toByteArray(Charsets.UTF_8))
-            .joinToString("") { String.format(Locale.US, "%02x", it) }
-    }
-
-    // ---- content ---------------------------------------------------------------
-
-    /** The script the module would run for [packageName]: the user copy, else the remote one. */
-    fun readScript(context: Context, service: XposedService?, packageName: String): Pair<ScriptSource, String>? {
-        if (service == null) return null
-
-        val user = readUserScript(context, service, packageName)
-        if (!user.isNullOrBlank()) return ScriptSource.USER to user
-
-        val bundled = bundledScripts(context)[packageName]?.first
-        if (!bundled.isNullOrBlank()) return ScriptSource.BUNDLED to bundled
-
-        return null
-    }
-
-    // ---- user scripts ----------------------------------------------------------
-
-    /** The file that holds the user copy of [packageName] in the shared directory. */
     fun userFile(packageName: String): String {
-        return if (packageName == ALL_APPS) userScriptName() else RemoteScripts.userFileName(packageName)
+        return if (packageName == ALL_APPS) "${user_script()}.js" else "${packageName}.js"
     }
 
-    /** File the module reads as the all-apps user script. */
-    fun userScriptName(): String = user_script_js()
-
-    fun readUserScript(context: Context, service: XposedService, packageName: String): String? {
+    fun readUserScript(service: XposedService, packageName: String): String? {
         val file = userFile(packageName)
         if (!RemoteFiles.list(service).contains(file)) return null
         return RemoteFiles.read(service, file)
     }
 
-    /** @return false when the script could not be stored in the shared directory. */
-    fun saveUserScript(context: Context, service: XposedService, packageName: String, text: String): Boolean {
-        if (!RemoteFiles.write(service, userFile(packageName), text)) return false
-
-        if (packageName != ALL_APPS) {
-            val index = readUserIndex(context).toMutableMap()
-            index[packageName] = userFile(packageName)
-            writeUserIndex(context, index)
-        }
-
-        return true
+    fun saveUserScript(service: XposedService, packageName: String, text: String): Boolean {
+        return RemoteFiles.write(service, userFile(packageName), text)
     }
 
-    fun revertUserScript(context: Context, service: XposedService, packageName: String) {
+    fun removeUserScript(service: XposedService, packageName: String) {
         RemoteFiles.delete(service, userFile(packageName))
-        if (packageName != ALL_APPS) {
-            val index = readUserIndex(context).toMutableMap()
-            index.remove(packageName)
-            writeUserIndex(context, index)
-        }
     }
 
-    private fun readUserIndex(context: Context): Map<String, String> {
-        val text = context.getSharedPreferences(SETTINGS_GROUP, Context.MODE_PRIVATE)
-            .getString(USER_INDEX_KEY, null) ?: return emptyMap()
-
+    fun disabledApps(service: XposedService, type: String): Set<String> {
         return try {
-            val json = JSONObject(text)
-            json.keys().asSequence().associateWith { json.optString(it) }
-        } catch (e: Exception) {
-            emptyMap()
-        }
-    }
-
-    private fun writeUserIndex(context: Context, index: Map<String, String>) {
-        val json = JSONObject()
-        index.forEach { (packageName, file) -> json.put(packageName, file) }
-        context.getSharedPreferences(SETTINGS_GROUP, Context.MODE_PRIVATE)
-            .edit { putString(USER_INDEX_KEY, json.toString()) }
-    }
-
-    /** User scripts whose package is not in any other list, so they stay visible. */
-    private fun userEntries(context: Context, files: Set<String>): Map<String, String> {
-        val result = sortedMapOf<String, String>()
-
-        for ((packageName, file) in readUserIndex(context)) {
-            if (!files.contains(file)) continue
-            result[packageName] = file
-        }
-
-        // The all-apps user script has a fixed name and is not part of the index.
-        if (files.contains(userScriptName())) {
-            result[ALL_APPS] = userScriptName()
-        }
-
-        return result
-    }
-
-    // ---- enable or disable -----------------------------------------------------
-
-    fun disabledApps(service: XposedService): Set<String> {
-        return try {
-            service.getRemotePreferences(fuck_iab()).getStringSet(RemoteScripts.DISABLED_SCRIPTS_KEY, emptySet())
+            service.getRemotePreferences(fuck_iab()).getStringSet("disabled_${type}_scripts", emptySet())
                 ?.toSet() ?: emptySet()
         } catch (e: Exception) {
             emptySet()
         }
     }
 
-    fun setEnabled(service: XposedService, packageName: String, enabled: Boolean) {
+    fun setEnabled(service: XposedService, packageName: String, type: ScriptType, enabled: Boolean) {
         val prefs = service.getRemotePreferences(fuck_iab())
-        val disabled = prefs.getStringSet(RemoteScripts.DISABLED_SCRIPTS_KEY, emptySet())?.toMutableSet()
+        val disabled = prefs.getStringSet("disabled_${if (type == BUNDLED) "bundled" else "user"}_scripts", emptySet())?.toMutableSet()
             ?: mutableSetOf()
 
         if (enabled) disabled.remove(packageName) else disabled.add(packageName)
 
-        // Committed, because the module reads this from the hooked app's process.
-        prefs.edit(commit = true) { putStringSet(RemoteScripts.DISABLED_SCRIPTS_KEY, disabled) }
-    }
-
-    // ---- hooked apps -----------------------------------------------------------
-
-    /**
-     * The scope of the last successful read. The framework can answer with an empty scope,
-     * and claiming that no app is hooked when the module is demonstrably loaded would be
-     * wrong, so the last known list is kept as a fallback.
-     */
-    fun savedScope(context: Context): List<String> {
-        return context.getSharedPreferences(SETTINGS_GROUP, Context.MODE_PRIVATE)
-            .getStringSet(SCOPE_KEY, emptySet())?.toList() ?: emptyList()
-    }
-
-    fun saveScope(context: Context, scope: List<String>) {
-        context.getSharedPreferences(SETTINGS_GROUP, Context.MODE_PRIVATE)
-            .edit { putStringSet(SCOPE_KEY, scope.toSet()) }
+        prefs.edit(commit = true) { putStringSet("disabled_${if (type == BUNDLED) "bundled" else "user"}_scripts", disabled) }
     }
 
     fun scope(service: XposedService): List<String> {
@@ -416,84 +225,16 @@ object ScriptStore {
         }
     }
 
-    fun hookedApps(
-        context: Context,
-        service: XposedService,
-        scripts: List<ScriptInfo>,
-        scope: List<String> = scope(service)
-    ): List<HookedApp> {
-        val byPackage = scripts.associateBy { it.packageName }
-        val running = runningProcesses(service)
-
-        return scope
-            .map { packageName ->
-                HookedApp(
-                    packageName = packageName,
-                    label = appLabel(context, packageName),
-                    script = byPackage[packageName],
-                    running = running[packageName].orEmpty()
-                )
-            }
-            .sortedBy { it.label.lowercase(Locale.US) }
-    }
-
-    /**
-     * Processes the framework currently has the module loaded in, keyed by package name.
-     * A target only exposes its process name, so the part before ":" is the package.
-     */
-    fun runningProcesses(service: XposedService): Map<String, List<RunningProcess>> {
-        val targets = try {
-            service.runningTargets
-        } catch (e: Exception) {
-            return emptyMap()
-        }
-
-        val result = mutableMapOf<String, MutableList<RunningProcess>>()
-
-        for (target in targets) {
-            val processName = target.processName ?: continue
-            val packageName = processName.substringBefore(':')
-
-            result.getOrPut(packageName) { mutableListOf() }
-                .add(RunningProcess(processName, target.pid, stateOf(target.state)))
-        }
-
-        // Processes with a fresher state first, then by pid, so the list is stable.
-        return result.mapValues { (_, processes) -> processes.sortedBy { it.pid } }
-    }
-
-    private fun stateOf(state: io.github.libxposed.service.HookedTarget.State?): RunningState {
-        return when (state) {
-            io.github.libxposed.service.HookedTarget.State.STALE -> RunningState.STALE
-            io.github.libxposed.service.HookedTarget.State.RELOADING -> RunningState.RELOADING
-            io.github.libxposed.service.HookedTarget.State.FAILED -> RunningState.FAILED
-            else -> RunningState.CURRENT
-        }
-    }
-
-    // ---- app info --------------------------------------------------------------
-
-    /** Packages with a launcher entry, so the new script dialog can offer them. */
     fun installedApps(context: Context): List<String> {
         return try {
-            val intent = android.content.Intent(android.content.Intent.ACTION_MAIN)
-                .addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+            val intent = Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_LAUNCHER)
 
             context.packageManager.queryIntentActivities(intent, 0)
                 .mapNotNull { it.activityInfo?.packageName }
                 .distinct()
         } catch (e: Exception) {
             emptyList()
-        }
-    }
-
-    fun isInstalled(context: Context, packageName: String): Boolean {
-        if (packageName == ALL_APPS) return true
-        return try {
-            context.packageManager.getApplicationInfo(packageName, 0)
-            true
-        } catch (e: Exception) {
-            false
         }
     }
 

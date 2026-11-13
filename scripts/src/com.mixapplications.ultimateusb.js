@@ -1,4 +1,6 @@
 // author: staleroot
+// description: Unlocks premium features in Ultimate USB by marking purchases as successfully completed.
+
 setTimeout(() => {
     
     Java.perform(() => {

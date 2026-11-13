@@ -1,44 +1,100 @@
 // author: Fexture69
-setTimeout(function () {
-    console.log("[*] Starting Ultimate Logic Bypass...");
-    Java.perform(function () {
+// description: Removes premium restrictions in AdGuard, unlocking all premium features without a paid license.
+
+Java.perform(function () {
+    const FKIAB = findFactoryByClassName("com.fuck.iab.NativeBridge");
+    if (!FKIAB) return;
+    const bridge = FKIAB.use("com.fuck.iab.NativeBridge").dexKitBridge.value;
+
+    // --- helpers ---
+    const FindClass = FKIAB.use("org.luckypray.dexkit.query.FindClass");
+    const ClassMatcher = FKIAB.use("org.luckypray.dexkit.query.matchers.ClassMatcher");
+    const ClassData = FKIAB.use("org.luckypray.dexkit.result.ClassData");
+    const FindMethod = FKIAB.use("org.luckypray.dexkit.query.FindMethod");
+    const MethodMatcher = FKIAB.use("org.luckypray.dexkit.query.matchers.MethodMatcher");
+    const MethodData = FKIAB.use("org.luckypray.dexkit.result.MethodData");
+
+    function findClasses(strings) {
+        const m = ClassMatcher.create().usingStrings(Java.array("java.lang.String", strings));
+        const r = bridge.findClass(FindClass.create().matcher(m));
+        const o = [];
+        for (let i = 0; i < r.size(); i++) o.push(Java.cast(r.get(i), ClassData));
+        return o;
+    }
+    function findMethods(param, ret) {
+        const m = MethodMatcher.create()
+            .paramTypes(Java.array("java.lang.String", [param]))
+            .returnType(ret);
+        const r = bridge.findMethod(FindMethod.create().matcher(m));
+        const o = [];
+        for (let i = 0; i < r.size(); i++) o.push(Java.cast(r.get(i), MethodData));
+        return o;
+    }
+    function baseName(name) {
+        let n = name.replace(/^L|;$/g, "").replace(/\//g, ".");
+        const d = n.indexOf("$");
+        return d > 0 ? n.slice(0, d) : n;
+    }
+
+    // --- locate license state class ---
+    let stateClass = null;
+    try {
+        const cs = findClasses(["BlockedLicense(licenseKey="]);
+        for (const c of cs) {
+            if (c.getName().indexOf("$b") !== -1) { stateClass = c; break; }
+        }
+        if (!stateClass && cs.length) stateClass = cs[0];
+    } catch (e) {}
+    if (!stateClass) return;
+
+    const stateBase = baseName(stateClass.getName());
+
+    // --- hook boolean state checks ---
+    let hooked = 0;
+    try {
+        for (const md of findMethods(stateBase, "boolean")) {
+            try {
+                getMethodOverloadFromMethodData(md).implementation = function () { return true; };
+                hooked++;
+            } catch (e) {}
+        }
+    } catch (e) {}
+
+    // --- neutralise PlusManager setters ---
+    try {
+        const pcs = findClasses([
+            "null cannot be cast to non-null type com.adguard.android.management.plus.support.PlusState.BlockedLicense"
+        ]);
+        if (pcs.length) {
+            const plusName = pcs[0].getName();
+            for (const md of findMethods(stateBase, "void")) {
+                if (md.getDeclaredClass().getName() !== plusName || md.getName() === "<init>") continue;
+                try {
+                    getMethodOverloadFromMethodData(md).implementation = function () {};
+                } catch (e) {}
+            }
+        }
+    } catch (e) {}
+
+    // --- fallback if DexKit found nothing ---
+    if (hooked === 0) {
         try {
-            // 1. Hook the ultimate premium checker class
-            var LicenseChecker = Java.use("J0.a");
-            var methods = LicenseChecker.class.getDeclaredMethods();
-            var hookCount = 0;
-
-            for (var i = 0; i < methods.length; i++) {
-                var m = methods[i];
-                var params = m.getParameterTypes();
-                var ret = m.getReturnType();
-
-                // Hook any method that returns a boolean and takes 1 argument (the license state)
-                if (ret.getName() === "boolean" && params.length === 1) {
+            const checker = Java.use("J0.a");
+            const methods = checker.class.getDeclaredMethods();
+            for (let i = 0; i < methods.length; i++) {
+                const m = methods[i];
+                const p = m.getParameterTypes();
+                if (m.getReturnType().getName() === "boolean" && p.length === 1) {
                     try {
-                        LicenseChecker[m.getName()].overload(params[0].getName()).implementation = function (state) {
-                            console.log("[+] Forced J0.a." + m.getName() + "() -> true");
-                            return true;
-                        };
-                        hookCount++;
-                    } catch (e) {
-                        // Ignore if overload fails
-                    }
+                        checker[m.getName()].overload(p[0].getName()).implementation =
+                            function () { return true; };
+                        hooked++;
+                    } catch (e) {}
                 }
             }
-            console.log("[+] Hooked " + hookCount + " license checker methods.");
+        } catch (e) {}
+    }
 
-            // 2. Stop the app from overwriting the state (just in case)
-            try {
-                var PlusManager = Java.use("H0.b");
-                PlusManager.rb.overload('K0.i').implementation = function (state) {
-                    console.log("[*] Blocked network state update (rb)");
-                };
-            } catch (e) {}
-
-            console.log("[+] Injection complete! Force Stop AdGuard and reopen it.");
-        } catch (e) {
-            console.log("[-] Fatal Error: " + e.message);
-        }
-    });
-}, 1500);
+    // one status line at the end — no per-hook spam
+    console.log("[+] AdGuard bypass: " + hooked + " state methods hooked");
+});

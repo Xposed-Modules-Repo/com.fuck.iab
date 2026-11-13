@@ -16,13 +16,13 @@
     <!-- actions -->
     <string name="action_refresh">Refresh scripts</string>
     <string name="action_new_script">New script</string>
-    <string name="action_revert">Remove user script</string>
+    <string name="action_revert">Yes</string>
     <string name="action_restore">Restore bundled version</string>
     <string name="action_theme">Theme</string>
     <string name="action_theme_light">Switch to light theme</string>
     <string name="action_theme_dark">Switch to dark theme</string>
     <string name="action_add">Add</string>
-    <string name="action_cancel">Cancel</string>
+    <string name="action_cancel">No</string>
 
     <!-- home -->
     <string name="home_status">Xposed Status</string>
@@ -48,8 +48,8 @@
     <string name="home_script_disabled">disabled</string>
 
     <!-- scripts -->
-    <string name="scripts_empty">No scripts yet. Pull to refresh or create one.</string>
-    <string name="scripts_all_apps">Global script</string>
+    <string name="not_connected_to_framework">Not connected to your Xposed framework. Try force stopping FKIAB and re-launching it or adding an App to FKIAB\'s scope in your Xposed Framework.</string>
+    <string name="scripts_all_apps">global.js</string>
     <string name="source_user">user</string>
     <string name="source_bundled">bundled</string>
     <string name="scripts_new_title">New script</string>
@@ -59,27 +59,28 @@
     <string name="scripts_nothing_matches">Nothing matches that search</string>
     <string name="filter_all">All</string>
     <string name="scripts_covers_many">covers %1$d apps</string>
+    <string name="scripts_in_scope">in scope</string>
     <string name="scripts_not_in_scope">not in scope</string>
     <string name="scripts_hook_handled">handled by the module hook</string>
 
     <!-- details -->
     <string name="detail_file_local">Module file</string>
-    <string name="detail_covers">Covers</string>
+    <string name="detail_version">Version</string>
     <string name="detail_published">Published</string>
     <string name="detail_synced">Downloaded</string>
     <string name="detail_status">Status</string>
-    <string name="detail_checksum">SHA-256</string>
+    <string name="detail_description">Description</string>
     <string name="detail_matches">matches the published manifest</string>
     <string name="detail_differs">does not match the published manifest</string>
     <string name="status_enabled">enabled</string>
     <string name="status_disabled">disabled</string>
-    <string name="action_edit">Edit script</string>
+    <string name="action_view_source">View on Github</string>
 
     <!-- editor -->
     <string name="editor_author">Author: %1$s</string>
     <string name="editor_source">Source: %1$s</string>
     <string name="editor_word_wrap">Word wrap</string>
-    <string name="editor_revert_note">The user copy of this script is deleted, so the remote copy is used again.</string>
+    <string name="editor_revert_note">Are you sure?</string>
     <string name="editor_restore_note">Your copy is deleted and the script bundled in the app is used again. Edits that are not saved yet are dropped too.</string>
 
     <!-- logs -->

@@ -1,4 +1,6 @@
 // author: you1mak
+// description: Unlocks Pro features in Parallel Space without needing a paid license.
+
 /*
  * Parallel Space Pro v4.0.9162 — Force Pro (Frida)
  * Converted from morphe patch `parallelSpaceForceProPatch`.

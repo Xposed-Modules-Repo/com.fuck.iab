@@ -1,3 +1,5 @@
+// author: Fexture69
+// description: Make a vpn profile first (turn on the switch in app) before using the script.
 /*
  * Cloudflare WARP (1.1.1.1) Frida Patches
  * Replicates:

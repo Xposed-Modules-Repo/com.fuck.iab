@@ -1,18 +1,17 @@
 package fh;
 
+import static androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES;
+
 import android.app.Application;
 
-import com.fuck.iab.ScriptStore;
-
-import org.jetbrains.annotations.NotNull;
+import androidx.appcompat.app.AppCompatDelegate;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import io.github.libxposed.service.XposedService;
 import io.github.libxposed.service.XposedServiceHelper;
 
-// main application
-public class g extends Application {
+public class MainApplication extends Application {
 
     public interface ServiceStateListener {
         void onServiceStateChanged(XposedService service);
@@ -25,7 +24,7 @@ public class g extends Application {
     public void onCreate() {
         super.onCreate();
 
-        ScriptStore.applyTheme(this);
+        AppCompatDelegate.setDefaultNightMode(MODE_NIGHT_YES);
 
         XposedServiceHelper.registerListener(new XposedServiceHelper.OnServiceListener() {
             @Override

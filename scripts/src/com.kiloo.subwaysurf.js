@@ -1,4 +1,6 @@
 // author: staleroot
+// description: Makes all purchases in Subway Surfers appear valid so paid coins and items are unlocked.
+
 const observer = Process.attachModuleObserver({
     onAdded(module) {
         if (module.name === "libil2cpp.so") {

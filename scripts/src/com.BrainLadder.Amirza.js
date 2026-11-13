@@ -1,4 +1,6 @@
 // author: staleroot
+// description: Gives you 999,999 coins in Amirza.
+
 const observer = Process.attachModuleObserver({
     onAdded(module) {
         if (module.name === "libil2cpp.so") {

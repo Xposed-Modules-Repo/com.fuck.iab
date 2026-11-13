@@ -16,13 +16,13 @@ import com.google.android.material.materialswitch.MaterialSwitch
 import kotlinx.coroutines.launch
 
 // log fragment: the output only, the actions live in the toolbar
-class f : Fragment() {
+class LogFragment : Fragment() {
 
     lateinit var logcatScroll: ScrollView
     lateinit var logcatView: TextView
     lateinit var autoScrollSwitch: MaterialSwitch
 
-    private val viewModel: h by activityViewModels()
+    private val viewModel: MainViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,

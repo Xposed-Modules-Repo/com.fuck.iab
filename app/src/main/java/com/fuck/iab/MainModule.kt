@@ -13,7 +13,8 @@ import android.os.Bundle
 import android.os.IBinder
 import android.widget.Toast
 import com.fuck.iab.NativeBridge.startScript
-import io.github.libxposed.api.XposedInterface
+import com.fuck.iab.ScriptType.BUNDLED
+import com.fuck.iab.ScriptType.USER
 import io.github.libxposed.api.XposedModule
 import io.github.libxposed.api.XposedModuleInterface
 import io.github.libxposed.api.XposedModuleInterface.ModuleLoadedParam
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.luckypray.dexkit.DexKitBridge
+import java.io.File
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.util.zip.ZipFile
@@ -38,9 +40,9 @@ object NativeBridge {
 
     lateinit var dexKitBridge: DexKitBridge
 
-    init {
-        System.loadLibrary(nativehook())
-    }
+//    init {
+//        System.loadLibrary(nativehook())
+//    }
 
     @JvmStatic
     external fun startScript(packageName: String, scriptSource: String)
@@ -66,22 +68,23 @@ class MainModule : XposedModule() {
      * manager app has to label these apps as hooked instead of scripted.
      */
     val iabProviders = mapOf(
-        HookedProviders.PLAY_STORE to com_google_android_finsky_billing_iab_InAppBillingService(),
-        HookedProviders.BAZAAR to com_farsitel_bazaar_inappbilling_service_InAppBillingService(),
-        HookedProviders.MYKET to ir_mservices_market_service_InAppBillingService()
+        com_android_vending() to com_google_android_finsky_billing_iab_InAppBillingService(),
+        com_farsitel_bazaar() to com_farsitel_bazaar_inappbilling_service_InAppBillingService(),
+        ir_mservices_market() to ir_mservices_market_service_InAppBillingService()
     )
 
     lateinit var app: Application
     val latch = CountDownLatch(1)
     var customScript = false
+    var authorToast = false
     var scriptAuthor: String? = null
 
     companion object {
 //        const val TAG = "FKIAB"
 
-        init {
-            System.loadLibrary(dexkit())
-        }
+//        init {
+//            System.loadLibrary(dexkit())
+//        }
     }
 
     private fun log(text: String) {
@@ -96,6 +99,9 @@ class MainModule : XposedModule() {
 //        log(Log.INFO, TAG, "system supported: " + hasProp(PROP_CAP_SYSTEM))
 //        log(Log.INFO, TAG, "remote supported: " + hasProp(PROP_CAP_REMOTE))
 //        log(Log.INFO, TAG, "api protection: " + hasProp(PROP_RT_API_PROTECTION))
+
+        loadNativeLibrary(dexkit())
+        loadNativeLibrary(nativehook())
     }
 
     override fun onPackageLoaded(param: PackageLoadedParam) {
@@ -155,22 +161,38 @@ class MainModule : XposedModule() {
                     hookOnServiceConnected(classLoader, bridge)
                     hookPurchaseVerificationMethods(classLoader, bridge)
 
-                    val global = readScriptForPackage(global())
+                    val global = readBundledScript(global())
 
                     val script = if (global != null) {
-                        val apps = readScriptForPackage(packageName)
-                        val (author, appScript) = if (apps == null || apps == "") {
+                        val bs = readBundledScript(packageName)
+                        val (author, bundleScript) = if (bs == null || bs == "") {
                             null to ""
                         } else {
                             customScript = true
-                            extractAuthor(apps)
+                            extractAuthor(bs)
                         }
                         scriptAuthor = author
-                        val userScript = readUserScript()
-                        var combined = global.replace(APP_SCRIPT_GOES_HERE(), userScript ?: "")
-                        combined = combined.replace(USER_SCRIPT_GOES_HERE(), appScript)
+
+                        val userScriptForPackage = readUserScript(packageName)
+
+                        val globalUserScript = readUserScript(user_script())
+                        var combined = global.replace("BUNDLE_SCRIPT_PACKAGE", bundleScript)
+                        combined = combined.replace("USER_SCRIPT_GLOBAL", globalUserScript ?: "")
+                        combined = combined.replace("USER_SCRIPT_PACKAGE", userScriptForPackage ?: "")
                         combined.ifEmpty { null }
-                    } else null
+                    } else {
+                        val globalUserScript = readUserScript(user_script()) ?: ""
+                        val userScriptForPackage = readUserScript(packageName) ?: ""
+
+                        if (globalUserScript.isEmpty() && userScriptForPackage.isEmpty()) {
+                            null
+                        } else {
+                            """
+                                try { $globalUserScript } catch(e) { console.log(e) }
+                                try { $userScriptForPackage } catch(e) { console.log(e) }
+                            """.trimIndent()
+                        }
+                    }
 
                     if (script != null) {
                         AppScope.launch {
@@ -218,7 +240,8 @@ class MainModule : XposedModule() {
                             intent.action == Intent.ACTION_MAIN &&
                             intent.hasCategory(Intent.CATEGORY_LAUNCHER)
 
-                    if (activity != null && isLauncher && customScript) {
+                    if (activity != null && isLauncher && customScript && !authorToast) {
+                        authorToast = true
                         if (scriptAuthor != null && scriptAuthor != "") {
                             Toast.makeText(activity, "${Custom_script_by_()}$scriptAuthor", Toast.LENGTH_SHORT).show()
                         } else {
@@ -480,15 +503,22 @@ class MainModule : XposedModule() {
         }
     }
 
-    private fun readScriptForPackage(packageName: String): String? {
-        // A script switched off in the manager app must not run for that app.
-        if (isScriptDisabled(packageName)) return null
+    private fun isScriptDisabled(packageName: String, type: ScriptType): Boolean {
+        if (frameworkProperties.and(PROP_CAP_REMOTE) == 0L) return false
 
-        return readUserScriptForPackage(packageName) ?: readBundledScript(packageName)
+        return try {
+            val disabled = getRemotePreferences(fuck_iab())
+                .getStringSet("disabled_${if (type == BUNDLED) "bundled" else "user"}_scripts", emptySet()) ?: return false
+
+            disabled.contains(packageName) || disabled.contains(global())
+        } catch (e: Exception) {
+            false
+        }
     }
 
-    // The scripts compiled into the APK are what runs when the manager has no user copy.
     private fun readBundledScript(packageName: String): String? {
+        if (isScriptDisabled(packageName, BUNDLED)) return null
+
         return try {
             ZipFile(this.moduleApplicationInfo.sourceDir).use { zip ->
                 val entry = zip.getEntry("${assets_scripts_()}$packageName${_js()}") ?: return null
@@ -499,47 +529,16 @@ class MainModule : XposedModule() {
         }
     }
 
-    private fun isScriptDisabled(packageName: String): Boolean {
-        if (frameworkProperties.and(XposedInterface.PROP_CAP_REMOTE) == 0L) return false
-
+    private fun readUserScript(packageName: String): String? {
+        if (isScriptDisabled(packageName, USER)) return null
         return try {
-            val disabled = getRemotePreferences(fuck_iab())
-                .getStringSet(RemoteScripts.DISABLED_SCRIPTS_KEY, emptySet()) ?: return false
-
-            disabled.contains(packageName) || disabled.contains(global())
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    // A script written in the manager app wins over the script bundled in the APK.
-    private fun readUserScriptForPackage(packageName: String): String? {
-        if (frameworkProperties.and(XposedInterface.PROP_CAP_REMOTE) == 0L) return null
-
-        val name = RemoteScripts.userFileName(packageName)
-
-        return try {
-            if (listRemoteFiles().none { it == name }) return null
-
-            val pfd = openRemoteFile(name)
-            FileInputStream(pfd.fileDescriptor).use { it.readBytes().toString(Charsets.UTF_8) }
-                .takeIf { it.isNotBlank() }
-        } catch (e: Exception) {
-//            log("Failed to read the user script for $packageName: ${e.message}")
-            null
-        }
-    }
-
-    private fun readUserScript(): String? {
-        return try {
-            val pfd = openRemoteFile(user_script_js())
+            val pfd = openRemoteFile("${packageName}.js")
             FileInputStream(pfd.fileDescriptor).use { it.readBytes().toString(Charsets.UTF_8) }
         } catch (e: FileNotFoundException) {
             null
         } catch (e: Exception) {
             null
         }
-//        return getRemotePreferences(fkiab()).getString(user_script_js(), "")
     }
 
     fun extractAuthor(content: String): Pair<String, String> {
@@ -554,5 +553,23 @@ class MainModule : XposedModule() {
         } else {
             "" to content
         }
+    }
+
+    private fun loadNativeLibrary(name: String) {
+        val nativeDir = File(moduleApplicationInfo.nativeLibraryDir)
+
+        val library = File(nativeDir, System.mapLibraryName(name))
+
+//        check(library.isFile) {
+//            "Native library not found: ${library.absolutePath}"
+//        }
+
+        System.load(library.absolutePath)
+
+//        log(
+//            Log.INFO,
+//            "NativeLoader",
+//            "Loaded ${library.name} from ${library.absolutePath}"
+//        )
     }
 }

@@ -56,15 +56,6 @@
             android:textColor="?attr/colorPrimary"
             android:textDirection="locale" />
 
-        <TextView
-            android:id="@+id/scriptCovers"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="start"
-            android:textAlignment="viewStart"
-            android:textAppearance="?attr/textAppearanceLabelSmall"
-            android:textColor="?attr/colorPrimary"
-            android:textDirection="locale" />
     </LinearLayout>
 
     <com.google.android.material.materialswitch.MaterialSwitch

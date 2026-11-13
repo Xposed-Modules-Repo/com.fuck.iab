@@ -1,9 +1,12 @@
 package fh
 
 import android.app.Activity
+import android.content.Context
 import android.view.View
 import androidx.core.view.WindowCompat
-import com.fuck.iab.ScriptStore
+import com.fuck.iab.R
+import com.fuck.iab.ScriptType
+import com.fuck.iab.ThemeHelper
 
 /**
  * The window background follows the theme, and the system bar icons sit on top of it, so light
@@ -11,10 +14,11 @@ import com.fuck.iab.ScriptStore
  * light icons in the dark one.
  */
 fun applySystemBarIcons(activity: Activity, root: View) {
-    val darkIcons = !ScriptStore.isNight(activity)
+    val darkIcons = !ThemeHelper.isNight(activity)
 
     WindowCompat.getInsetsController(activity.window, root).apply {
         isAppearanceLightStatusBars = darkIcons
         isAppearanceLightNavigationBars = darkIcons
     }
 }
+
