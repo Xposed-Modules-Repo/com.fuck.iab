@@ -169,7 +169,10 @@ class ScriptsFragment : Fragment() {
             ScriptStore.appIcon(context, script.packageName) ?: context.getDrawable(R.drawable.ic_description)
         )
         view.findViewById<TextView>(R.id.detailLabel).text = ScriptStore.appLabel(context, script.packageName)
-        view.findViewById<TextView>(R.id.detailPackage).text = script.packageName
+        view.findViewById<TextView>(R.id.detailPackage).text = when (script.packageName) {
+            "global" -> "shared helpers and environment setup"
+            else -> script.packageName
+        }
 
         val sheetDialog = BottomSheetDialog(context)
         sheetDialog.setContentView(view)
@@ -298,7 +301,10 @@ private class ChoiceAdapter(
         val item = getItem(position)
 
         holder.label.text = item.label
-        holder.packageName.text = item.packageName
+        holder.packageName.text = when (item.packageName) {
+            "user_script" -> "custom script"
+            else -> item.packageName
+        }
         holder.icon.setImageDrawable(
             when (item.packageName) {
                 "user_script" -> context.getDrawable(R.drawable.ic_description)
@@ -351,7 +357,7 @@ private class ScriptAdapter(
             ScriptStore.appLabel(context, item.packageName)
         }
 
-        holder.packageName.text = when(item.packageName) {
+        holder.packageName.text = when (item.packageName) {
             "global" -> "shared helpers and environment setup"
             "user_script" -> "custom script running on every app"
             else -> item.packageName

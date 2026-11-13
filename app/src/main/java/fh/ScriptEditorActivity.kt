@@ -51,7 +51,10 @@ class ScriptEditorActivity : AppCompatActivity() {
         } else {
             ScriptStore.appLabel(this, packageName)
         }
-        supportActionBar?.subtitle = packageName
+        supportActionBar?.subtitle = when (packageName) {
+            "user_script" -> "custom script"
+            else -> packageName
+        }
         toolbar.setNavigationOnClickListener { finish() }
 
         input = findViewById(R.id.editorInput)
