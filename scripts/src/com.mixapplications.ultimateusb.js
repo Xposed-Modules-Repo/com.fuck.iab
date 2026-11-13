@@ -2,6 +2,8 @@
 // description: Unlocks premium features in Ultimate USB by marking purchases as successfully completed.
 
 setTimeout(() => {
+
+    console.log("hello from bundle script for mixxxx")
     
     Java.perform(() => {
 

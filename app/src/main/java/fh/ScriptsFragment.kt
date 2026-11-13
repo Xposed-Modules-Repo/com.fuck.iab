@@ -337,13 +337,15 @@ private class ScriptAdapter(
         val packageName: TextView = view.findViewById(R.id.scriptPackage)
         val meta: TextView = view.findViewById(R.id.scriptMeta)
         val switch: MaterialSwitch = view.findViewById(R.id.scriptSwitch)
+        var isBinding = false
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
         val holder = Holder(LayoutInflater.from(parent.context).inflate(R.layout.item_script, parent, false))
         holder.switch.setOnCheckedChangeListener { button, isChecked ->
+            if (holder.isBinding) return@setOnCheckedChangeListener
             val item = button.tag as? ScriptInfo ?: return@setOnCheckedChangeListener
-            if (item.enabled != isChecked) onEnabledChanged?.invoke(item.packageName, item.type, isChecked)
+            onEnabledChanged?.invoke(item.packageName, item.type, isChecked)
         }
         return holder
     }
@@ -381,7 +383,13 @@ private class ScriptAdapter(
         )
 
         holder.switch.tag = item
-        holder.switch.isChecked = item.enabled
+
+        holder.isBinding = true
+        try {
+            holder.switch.isChecked = item.enabled
+        } finally {
+            holder.isBinding = false
+        }
 
         holder.itemView.setOnClickListener { onClick(item) }
     }

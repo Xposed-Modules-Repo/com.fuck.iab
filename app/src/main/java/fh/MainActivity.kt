@@ -8,6 +8,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
@@ -38,7 +39,10 @@ class MainActivity : AppCompatActivity(), MainApplication.ServiceStateListener {
         setContentView(R.layout.activity_main)
 
         val root = findViewById<View>(R.id.root)
-        applySystemBarIcons(this, root)
+        WindowCompat.getInsetsController(window, root).apply {
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
+        }
         root.post {
             val rootWindowInsets = ViewCompat.getRootWindowInsets(root) ?: return@post
             val systemBars = rootWindowInsets.getInsets(WindowInsetsCompat.Type.systemBars())

@@ -34,7 +34,11 @@ function compile(packageName) {
 //    const versionLine = inputLines[1]?.startsWith("// version: ") ? inputLines[1] : "// version: ";
     const descriptionLine = inputLines[1]?.startsWith("// description: ") ? inputLines[1] : "// description: ";
 
-    execSync(`npx frida-compile "${input}" -o "${output}" -c -S -B iife -T none`, { stdio: "inherit" });
+    if(packageName == "global") {
+        execSync(`npx frida-compile "${input}" -o "${output}" -S -B iife -T none`, { stdio: "inherit" });
+    } else {
+        execSync(`npx frida-compile "${input}" -o "${output}" -c -S -B iife -T none`, { stdio: "inherit" });
+    }
 
     const compiled = readFileSync(output, "utf8");
 //    writeFileSync(output, `${authorLine}\n${versionLine}\n${descriptionLine}\n${compiled}`);

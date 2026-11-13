@@ -9,6 +9,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.fuck.iab.R
@@ -33,7 +34,10 @@ class ScriptEditorActivity : AppCompatActivity() {
         setContentView(R.layout.activity_editor)
 
         val root = findViewById<View>(R.id.editorRoot)
-        applySystemBarIcons(this, root)
+        WindowCompat.getInsetsController(window, root).apply {
+            isAppearanceLightStatusBars = false
+            isAppearanceLightNavigationBars = false
+        }
         // Keep the save button above the keyboard instead of behind it.
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime())

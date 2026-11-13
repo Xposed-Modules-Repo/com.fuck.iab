@@ -11,6 +11,7 @@ import android.content.pm.ApplicationInfo
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.util.Log
 import android.widget.Toast
 import com.fuck.iab.NativeBridge.startScript
 import com.fuck.iab.ScriptType.BUNDLED
@@ -80,7 +81,7 @@ class MainModule : XposedModule() {
     var scriptAuthor: String? = null
 
     companion object {
-//        const val TAG = "FKIAB"
+        const val TAG = "FKIAB"
 
 //        init {
 //            System.loadLibrary(dexkit())
@@ -88,7 +89,7 @@ class MainModule : XposedModule() {
     }
 
     private fun log(text: String) {
-//        log(Log.INFO, TAG, text)
+        log(Log.INFO, TAG, text)
     }
 
     override fun onModuleLoaded(param: ModuleLoadedParam) {
@@ -176,6 +177,9 @@ class MainModule : XposedModule() {
                         val userScriptForPackage = readUserScript(packageName)
 
                         val globalUserScript = readUserScript(user_script())
+
+                        Log.d(TAG, "bundleScript = $bundleScript")
+
                         var combined = global.replace("BUNDLE_SCRIPT_PACKAGE", bundleScript)
                         combined = combined.replace("USER_SCRIPT_GLOBAL", globalUserScript ?: "")
                         combined = combined.replace("USER_SCRIPT_PACKAGE", userScriptForPackage ?: "")
@@ -504,13 +508,21 @@ class MainModule : XposedModule() {
     }
 
     private fun isScriptDisabled(packageName: String, type: ScriptType): Boolean {
+        log("isScriptDisabled(packageName: $packageName, type: $type)")
         if (frameworkProperties.and(PROP_CAP_REMOTE) == 0L) return false
+        log("after rkProperties.and(")
 
         return try {
             val disabled = getRemotePreferences(fuck_iab())
                 .getStringSet("disabled_${if (type == BUNDLED) "bundled" else "user"}_scripts", emptySet()) ?: return false
 
-            disabled.contains(packageName) || disabled.contains(global())
+            log("disabled: ${disabled.joinToString(", ")}")
+
+            val dis = disabled.contains(packageName)
+
+            log("disabled = $dis")
+
+            dis
         } catch (e: Exception) {
             false
         }

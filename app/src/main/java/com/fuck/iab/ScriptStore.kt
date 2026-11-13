@@ -75,7 +75,7 @@ object ScriptStore {
 
     fun inventory(context: Context, service: XposedService?): List<ScriptInfo> {
         val bundledScripts = bundledScripts(context)
-        val disabledBundleScripts = if (service != null) disabledApps(service, "bundle") else emptySet()
+        val disabledBundleScripts = if (service != null) disabledApps(service, "bundled") else emptySet()
 
         val userScripts = userScripts(service)
         val disabledUserScripts = if (service != null) disabledApps(service, "user") else emptySet()
@@ -219,14 +219,6 @@ object ScriptStore {
         if (enabled) disabled.remove(packageName) else disabled.add(packageName)
 
         prefs.edit(commit = true) { putStringSet("disabled_${if (type == BUNDLED) "bundled" else "user"}_scripts", disabled) }
-    }
-
-    fun scope(service: XposedService): List<String> {
-        return try {
-            service.scope
-        } catch (e: Exception) {
-            emptyList()
-        }
     }
 
     fun installedApps(context: Context): List<String> {
