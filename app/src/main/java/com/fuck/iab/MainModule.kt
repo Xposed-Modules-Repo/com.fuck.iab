@@ -543,9 +543,9 @@ class MainModule : XposedModule() {
 
     fun extractAuthor(content: String): Pair<String, String> {
         val authorTag = ___author__().trimEnd()
-        // drop every tagged header line (`// name:`, `// url:`, `// author:`, `// description:`)
-        // from the top comment block so the injected script carries no metadata
-        val tags = listOf(authorTag, name_(), url_(), description_())
+        // drop every tagged header line (`// name:`, `// url:`, `// author:`, `// description:`,
+        // `// added-in:`) from the top comment block so the injected script carries no metadata
+        val tags = listOf(authorTag, name_(), url_(), description_(), added_in_())
         val rest = StringBuilder()
         var author = ""
         var start = 0

@@ -1956,6 +1956,14 @@ fun description_(): String {
     }
     return sb.toString()
 }
+fun added_in_(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(231, 231, 232, 169, 172, 172, 173, 172, 229, 161, 166, 242)
+    for (num in arr) {
+        sb.append((num.xor(200)).toChar())
+    }
+    return sb.toString()
+}
 
 fun ViewAppPage(): String {
     val sb = StringBuilder()
