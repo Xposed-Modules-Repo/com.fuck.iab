@@ -74,6 +74,10 @@ class ScriptEditorActivity : AppCompatActivity() {
         toolbar.setNavigationOnClickListener { finish() }
 
         input = findViewById(R.id.editorInput)
+        // TextView applies the multi-line input type at the very end of its constructor, after the
+        // XML attrs were read, and that forces wrapping back on - so android:scrollHorizontally
+        // can never win from XML and has to be re-applied from code.
+        input.setHorizontallyScrolling(true)
 
         findViewById<MaterialButton>(R.id.editorSaveButton).apply {
             isEnabled = service != null
@@ -107,12 +111,6 @@ class ScriptEditorActivity : AppCompatActivity() {
 
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    /** Code scrolls sideways unless wrapping is asked for, so long lines stay on one line. */
-    private fun applyWrap(enabled: Boolean) {
-        input.setHorizontallyScrolling(!enabled)
-        input.requestLayout()
     }
 
     private fun load() {
