@@ -35,8 +35,8 @@ function compile(packageName) {
     const nameLine = findLine("name");
     const urlLine = findLine("url");
     const authorLine = findLine("author") ?? "// author: ";
-//    const versionLine = findLine("version");
     const descriptionLine = findLine("description") ?? "// description: ";
+    const addedInLine = findLine("added-in");
 
     if(packageName == "global") {
         execSync(`npx frida-compile "${input}" -o "${output}" -S -B iife -T none`, { stdio: "inherit" });
@@ -45,7 +45,7 @@ function compile(packageName) {
     }
 
     const compiled = readFileSync(output, "utf8");
-    const headerLines = [nameLine, urlLine, authorLine, descriptionLine].filter(Boolean);
+    const headerLines = [nameLine, urlLine, authorLine, descriptionLine, addedInLine].filter(Boolean);
     writeFileSync(output, `${headerLines.join("\n")}\n${compiled}`);
 
     console.log(`Built: assets/scripts/${packageName}.js`);

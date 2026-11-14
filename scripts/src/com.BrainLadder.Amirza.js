@@ -2,6 +2,7 @@
 // url: https://cafebazaar.ir/app/com.BrainLadder.Amirza
 // author: staleroot
 // description: Gives you 999,999 coins in Amirza.
+// added-in: 1.4.5
 
 const observer = Process.attachModuleObserver({
     onAdded(module) {

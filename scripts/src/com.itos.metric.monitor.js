@@ -2,6 +2,7 @@
 // url: https://t.me/metric_official/10/3298
 // author: staleroot
 // description: Unlocks premium membership in Metric Monitor by forcing the membership state to active.
+// added-in: 1.6.6
 
 Java.perform(() => {
 

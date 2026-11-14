@@ -2,6 +2,8 @@
 // url: https://play.google.com/store/apps/details?id=com.cloudflare.onedotonedotonedotone
 // author: Fexture69
 // description: Make a vpn profile first (turn on the switch in app) before using the script.
+// added-in: 1.6.5
+
 /*
  * Cloudflare WARP (1.1.1.1) Frida Patches
  * Replicates:
