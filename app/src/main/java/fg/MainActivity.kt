@@ -3,12 +3,14 @@ package fg
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.RelativeSizeSpan
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -25,8 +27,8 @@ import com.fuck.iab.R
 import com.fuck.iab.httpsGithubComXposedModulesRepoComFuckIabReleases
 import com.fuck.iab.httpsTMeFkiab
 import com.fuck.iab.question
+import com.fuck.iab.space
 import com.fuck.iab.tgResolveDomainFkiab
-import com.fuck.iab.version1S2D
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import io.github.libxposed.service.XposedService
@@ -155,24 +157,28 @@ class MainActivity : AppCompatActivity(), MainApplication.ServiceStateListener {
         }
     }
 
-    /** "version 1.6.4 (38)", taken from the installed package. */
-    private fun versionLabel(): String {
+    private fun versionName(): String {
         return try {
-            val info = packageManager.getPackageInfo(packageName, 0)
-            String.format(
-                version1S2D(),
-                info.versionName ?: question(),
-                PackageInfoCompat.getLongVersionCode(info)
-            )
+            packageManager.getPackageInfo(packageName, 0).versionName ?: question()
         } catch (e: Exception) {
-            ""
+            question()
         }
     }
 
-    private fun titleFor(position: Int) {
-        supportActionBar?.setTitle(R.string.app_name)
+    private fun titleText(): CharSequence {
+        val name = getString(R.string.app_name)
+        val version = versionName()
+        val text = SpannableString(name + space() + version)
+        val from = name.length + 1
 
-        // The build number belongs to the home page, not to every screen.
+        text.setSpan(RelativeSizeSpan(VERSION_SCALE), from, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+        return text
+    }
+
+    private fun titleFor(position: Int) {
+
+        supportActionBar?.title = titleText()
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -230,6 +236,8 @@ class MainActivity : AppCompatActivity(), MainApplication.ServiceStateListener {
     companion object {
         const val PAGE_SCRIPTS = 0
         const val PAGE_LOGS = 1
+
+        private const val VERSION_SCALE = 0.6f
 
         private const val PAGE_COUNT = 2
     }
