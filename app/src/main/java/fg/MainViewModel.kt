@@ -4,15 +4,22 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.fuck.iab.CouldNotReadTheLog1S
 import com.fuck.iab.Error__
-import com.fuck.iab.R
+import com.fuck.iab.ReadingTheModuleLogNeedsRootTheAppRunsSuLogcatAndNoSuWasFoun944dea
+import com.fuck.iab.RootAccessWasDeniedAllowRootForFkiabInYourRootManagerThenRetd6a4d0
 import com.fuck.iab.ScriptInfo
 import com.fuck.iab.ScriptStore
 import com.fuck.iab.ScriptType
+import com.fuck.iab.TheLogStreamEndedWithoutAnyOutput
 import com.fuck.iab.__A_Z__
 import com.fuck.iab._c
 import com.fuck.iab._s_
+import com.fuck.iab.logcatBAllCLogcatVTagSFkiabVFridaV
 import com.fuck.iab.logcat__v_tag__s_FKIAB_V_FRIDA_V
+import com.fuck.iab.newline
+import com.fuck.iab.se26549
+import com.fuck.iab.space
 import com.fuck.iab.su
 import io.github.libxposed.service.XposedService
 import kotlinx.coroutines.Dispatchers
@@ -123,18 +130,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         logcatJob = viewModelScope.launch(Dispatchers.IO) {
-            val app = getApplication<Application>()
-
             val process = try {
                 Runtime.getRuntime().exec(
                     arrayOf(
                         su(),
                         _c(),
-                        "logcat -b all -c && logcat -v tag -s FKIAB:V FRIDA:V"
+                        logcatBAllCLogcatVTagSFkiabVFridaV()
                     )
                 )
             } catch (e: Exception) {
-                withContext(Dispatchers.Main) { addLog(app.getString(R.string.logs_no_su) + "\n") }
+                withContext(Dispatchers.Main) { addLog(ReadingTheModuleLogNeedsRootTheAppRunsSuLogcatAndNoSuWasFoun944dea() + newline()) }
                 return@launch
             }
 
@@ -151,9 +156,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                     withContext(Dispatchers.Main) {
                         addLog(
-                            app.getString(
-                                if (code != 0) R.string.logs_root_denied else R.string.logs_no_output
-                            ) + "\n"
+                            (if (code != 0) RootAccessWasDeniedAllowRootForFkiabInYourRootManagerThenRetd6a4d0()
+                            else TheLogStreamEndedWithoutAnyOutput()) + newline()
                         )
                     }
 
@@ -161,7 +165,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 while (isActive) {
-                    val index = line.indexOf(": ")
+                    val index = line.indexOf(se26549())
 
                     val clean = if (index != -1) {
                         line.substring(0, index)
@@ -174,14 +178,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     }
 
                     withContext(Dispatchers.Main) {
-                        addLog(clean + "\n")
+                        addLog(clean + newline())
                     }
 
                     line = reader.readLine() ?: break
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    addLog(app.getString(R.string.logs_stream_failed, e.message ?: e.javaClass.simpleName) + "\n")
+                    addLog(String.format(CouldNotReadTheLog1S(), e.message ?: e.javaClass.simpleName) + newline())
                 }
             }
         }
@@ -205,7 +209,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _state.update {
             it.copy(
                 connectionStatus = if(service != null) 1 else 2,
-                framework = service?.let { s -> "${s.frameworkName} ${s.frameworkVersionCode}" } ?: ""
+                framework = service?.let { s -> s.frameworkName + space() + s.frameworkVersionCode } ?: ""
             )
         }
 

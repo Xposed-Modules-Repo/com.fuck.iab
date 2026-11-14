@@ -179,9 +179,9 @@ class MainModule : XposedModule() {
 
                         val globalUserScript = readUserScript(user_script())
 
-                        var combined = global.replace("BUNDLE_SCRIPT_PACKAGE", bundleScript)
-                        combined = combined.replace("USER_SCRIPT_GLOBAL", globalUserScript ?: "")
-                        combined = combined.replace("USER_SCRIPT_PACKAGE", userScriptForPackage ?: "")
+                        var combined = global.replace(BundleScriptPackage(), bundleScript)
+                        combined = combined.replace(UserScriptGlobal(), globalUserScript ?: "")
+                        combined = combined.replace(UserScriptPackage(), userScriptForPackage ?: "")
                         combined.ifEmpty { null }
                     } else {
                         val globalUserScript = readUserScript(user_script()) ?: ""
@@ -190,10 +190,7 @@ class MainModule : XposedModule() {
                         if (globalUserScript.isEmpty() && userScriptForPackage.isEmpty()) {
                             null
                         } else {
-                            """
-                                try { $globalUserScript } catch(e) { console.log(e) }
-                                try { $userScriptForPackage } catch(e) { console.log(e) }
-                            """.trimIndent()
+                            try_() + globalUserScript + catchEConsoleLogETry() + userScriptForPackage + catchEConsoleLogE()
                         }
                     }
 
@@ -246,7 +243,7 @@ class MainModule : XposedModule() {
                     if (activity != null && isLauncher && customScript && !authorToast) {
                         authorToast = true
                         if (scriptAuthor != null && scriptAuthor != "") {
-                            Toast.makeText(activity, "${Custom_script_by_()}$scriptAuthor", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(activity, Custom_script_by_() + scriptAuthor, Toast.LENGTH_SHORT).show()
                         } else {
                             Toast.makeText(activity, Custom_script_loaded(), Toast.LENGTH_SHORT).show()
                         }
@@ -511,7 +508,7 @@ class MainModule : XposedModule() {
 
         return try {
             val disabled = getRemotePreferences(fuck_iab())
-                .getStringSet("disabled_${if (type == BUNDLED) "bundled" else "user"}_scripts", emptySet()) ?: return false
+                .getStringSet(disabled_() + (if (type == BUNDLED) bundled() else user()) + _scripts(), emptySet()) ?: return false
 
             disabled.contains(packageName)
         } catch (e: Exception) {
@@ -524,7 +521,7 @@ class MainModule : XposedModule() {
 
         return try {
             ZipFile(this.moduleApplicationInfo.sourceDir).use { zip ->
-                val entry = zip.getEntry("${assets_scripts_()}$packageName${_js()}") ?: return null
+                val entry = zip.getEntry(assets_scripts_() + packageName + _js()) ?: return null
                 zip.getInputStream(entry).bufferedReader(Charsets.UTF_8).use { it.readText() }
             }
         } catch (e: Exception) {
@@ -535,7 +532,7 @@ class MainModule : XposedModule() {
     private fun readUserScript(packageName: String): String? {
         if (isScriptDisabled(packageName, USER)) return null
         return try {
-            val pfd = openRemoteFile("${packageName}.js")
+            val pfd = openRemoteFile(packageName + _js())
             FileInputStream(pfd.fileDescriptor).use { it.readBytes().toString(Charsets.UTF_8) }
         } catch (e: FileNotFoundException) {
             null
@@ -548,7 +545,7 @@ class MainModule : XposedModule() {
         val authorTag = ___author__().trimEnd()
         // drop every tagged header line (`// name:`, `// url:`, `// author:`, `// description:`)
         // from the top comment block so the injected script carries no metadata
-        val tags = listOf(authorTag, "// name:", "// url:", "// description:")
+        val tags = listOf(authorTag, name_(), url_(), description_())
         val rest = StringBuilder()
         var author = ""
         var start = 0

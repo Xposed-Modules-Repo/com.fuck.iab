@@ -66,7 +66,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="@string/detail_description"
+            android:text="Description"
             android:textAppearance="?attr/textAppearanceLabelLarge" />
 
         <TextView
@@ -82,7 +82,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="@string/action_view_website" />
+            android:text="View Website" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

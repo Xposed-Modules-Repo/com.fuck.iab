@@ -12,8 +12,20 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import com.fuck.iab.AreYouSure
+import com.fuck.iab.Cancel
+import com.fuck.iab.CouldNotSaveTheScript
+import com.fuck.iab.Delete
+import com.fuck.iab.NotConnectedToTheXposedService
 import com.fuck.iab.R
+import com.fuck.iab.Script_saved
 import com.fuck.iab.ScriptStore
+import com.fuck.iab.UserScriptRemoved
+import com.fuck.iab.YesDeleteIt
+import com.fuck.iab.customScript
+import com.fuck.iab.package_
+import com.fuck.iab.userScriptJs
+import com.fuck.iab.user_script
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -50,13 +62,13 @@ class ScriptEditorActivity : AppCompatActivity() {
 
         val toolbar = findViewById<MaterialToolbar>(R.id.editorToolbar)
         setSupportActionBar(toolbar)
-        supportActionBar?.title = if (packageName == "user_script") {
-            getString(R.string.title_user_script)
+        supportActionBar?.title = if (packageName == user_script()) {
+            userScriptJs()
         } else {
             ScriptStore.appLabel(this, packageName)
         }
         supportActionBar?.subtitle = when (packageName) {
-            "user_script" -> "custom script"
+            user_script() -> customScript()
             else -> packageName
         }
         toolbar.setNavigationOnClickListener { finish() }
@@ -69,7 +81,7 @@ class ScriptEditorActivity : AppCompatActivity() {
         }
 
         if (service == null) {
-            Toast.makeText(this, R.string.toast_not_connected, Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, NotConnectedToTheXposedService(), Toast.LENGTH_SHORT).show()
         }
 
         load()
@@ -137,11 +149,11 @@ class ScriptEditorActivity : AppCompatActivity() {
             }
 
             if (!saved) {
-                Toast.makeText(this@ScriptEditorActivity, R.string.toast_save_failed, Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@ScriptEditorActivity, CouldNotSaveTheScript(), Toast.LENGTH_SHORT).show()
                 return@launch
             }
 
-            Toast.makeText(this@ScriptEditorActivity, R.string.toast_saved, Toast.LENGTH_SHORT).show()
+            Toast.makeText(this@ScriptEditorActivity, Script_saved(), Toast.LENGTH_SHORT).show()
             setResult(RESULT_OK)
             finish()
         }
@@ -149,10 +161,10 @@ class ScriptEditorActivity : AppCompatActivity() {
 
     private fun confirmRemove() {
         MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.editor_delete_title)
-            .setMessage(R.string.editor_delete_note)
-            .setNegativeButton(R.string.action_cancel, null)
-            .setPositiveButton(R.string.action_delete) { _, _ -> remove() }
+            .setTitle(Delete())
+            .setMessage(AreYouSure())
+            .setNegativeButton(Cancel(), null)
+            .setPositiveButton(YesDeleteIt()) { _, _ -> remove() }
             .show()
     }
 
@@ -164,13 +176,13 @@ class ScriptEditorActivity : AppCompatActivity() {
                 ScriptStore.removeUserScript(current, packageName)
             }
 
-            Toast.makeText(this@ScriptEditorActivity, R.string.toast_reverted, Toast.LENGTH_SHORT).show()
+            Toast.makeText(this@ScriptEditorActivity, UserScriptRemoved(), Toast.LENGTH_SHORT).show()
             finish()
         }
     }
 
     companion object {
-        private const val EXTRA_PACKAGE = "package"
+        private val EXTRA_PACKAGE = package_()
 
         fun intent(context: Context, packageName: String): Intent {
             return Intent(context, ScriptEditorActivity::class.java).putExtra(EXTRA_PACKAGE, packageName)

@@ -66,6 +66,8 @@ dependencies {
     implementation libs.appcompat
     compileOnly(libs.libxposed)
     implementation libs.dexkit
+
+    testImplementation "junit:junit:4.13.2"
 }
 
 //import javax.inject.Inject

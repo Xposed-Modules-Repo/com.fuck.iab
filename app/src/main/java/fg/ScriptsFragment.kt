@@ -21,12 +21,61 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.fuck.iab.Cancel
+import com.fuck.iab.NewScript
+import com.fuck.iab.NotConnectedToYourXposedFrameworkTryForceStoppingFkiabAndReLaf289e
+import com.fuck.iab.NothingMatchesThatSearch
 import com.fuck.iab.R
 import com.fuck.iab.ScriptDetails
 import com.fuck.iab.ScriptInfo
 import com.fuck.iab.ScriptType
 import com.fuck.iab.ScriptStore
 import com.fuck.iab.ScriptStore.sizeLabel
+import com.fuck.iab.ViewOnAmazonAppstore
+import com.fuck.iab.ViewOnAppgallery
+import com.fuck.iab.ViewOnAppleAppStore
+import com.fuck.iab.ViewOnApkpure
+import com.fuck.iab.ViewOnAptoide
+import com.fuck.iab.ViewOnCafeBazaar
+import com.fuck.iab.ViewOnFDroid
+import com.fuck.iab.ViewOnGalaxyStore
+import com.fuck.iab.ViewOnGithub
+import com.fuck.iab.ViewOnGitlab
+import com.fuck.iab.ViewOnGooglePlay
+import com.fuck.iab.ViewOnMicrosoftStore
+import com.fuck.iab.ViewOnMyket
+import com.fuck.iab.ViewWebsite
+import com.fuck.iab.amazonCom
+import com.fuck.iab.apkpureCom
+import com.fuck.iab.aptoideCom
+import com.fuck.iab.appsAppleCom
+import com.fuck.iab.appgalleryHuaweiCom
+import com.fuck.iab.bundled
+import com.fuck.iab.cafebazaarIr
+import com.fuck.iab.cmAptoidePt
+import com.fuck.iab.comApkpureAegon
+import com.fuck.iab.com_android_vending
+import com.fuck.iab.com_farsitel_bazaar
+import com.fuck.iab.customScript
+import com.fuck.iab.customScriptRunningOnEveryApp
+import com.fuck.iab.fDroidOrg
+import com.fuck.iab.galaxyStore
+import com.fuck.iab.githubCom
+import com.fuck.iab.gitlabCom
+import com.fuck.iab.global
+import com.fuck.iab.globalJs
+import com.fuck.iab.ir_mservices_market
+import com.fuck.iab.itunesAppleCom
+import com.fuck.iab.microsoftCom
+import com.fuck.iab.myketIr
+import com.fuck.iab.orgFdroidFdroid
+import com.fuck.iab.playGoogleCom
+import com.fuck.iab.s4a9f2e
+import com.fuck.iab.sharedHelpersAndEnvironmentSetup
+import com.fuck.iab.user
+import com.fuck.iab.userScriptJs
+import com.fuck.iab.user_script
+import com.fuck.iab.www
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.ChipGroup
@@ -143,7 +192,7 @@ class ScriptsFragment : Fragment() {
         } else if (viewModel.state.value.connectionStatus == 1) { // connected
             if (!all.isEmpty() && visible.isEmpty()) {
                 empty.isVisible = true
-                empty.text = requireContext().getString(R.string.scripts_nothing_matches)
+                empty.text = NothingMatchesThatSearch()
             } else {
                 empty.isVisible = false
                 empty.text = ""
@@ -151,7 +200,7 @@ class ScriptsFragment : Fragment() {
         } else if (viewModel.state.value.connectionStatus == 2) { // failed to connect
             if (all.isEmpty()) {
                 empty.isVisible = true
-                empty.text = requireContext().getString(R.string.not_connected_to_framework)
+                empty.text = NotConnectedToYourXposedFrameworkTryForceStoppingFkiabAndReLaf289e()
             } else {
                 empty.isVisible = false
                 empty.text = ""
@@ -173,7 +222,7 @@ class ScriptsFragment : Fragment() {
         view.findViewById<TextView>(R.id.detailLabel).text =
             ScriptStore.appLabel(context, script.packageName, script.name)
         view.findViewById<TextView>(R.id.detailPackage).text = when (script.packageName) {
-            "global" -> "shared helpers and environment setup"
+            global() -> sharedHelpersAndEnvironmentSetup()
             else -> script.packageName
         }
 
@@ -207,37 +256,37 @@ class ScriptsFragment : Fragment() {
 
     /** Button text derived from the `// url:` header: market links name the market, plain sites say "View Website". */
     private fun linkLabel(url: String): String {
-        val host = Uri.parse(url).host?.removePrefix("www.")?.lowercase() ?: return getString(R.string.action_view_website)
+        val host = Uri.parse(url).host?.removePrefix(www())?.lowercase() ?: return ViewWebsite()
         return when {
-            host == "play.google.com" -> "View on Google Play"
-            host.endsWith("cafebazaar.ir") -> "View on Cafe Bazaar"
-            host.endsWith("myket.ir") -> "View on Myket"
-            host.endsWith("galaxy.store") -> "View on Galaxy Store"
-            host.endsWith("appgallery.huawei.com") -> "View on AppGallery"
-            host.endsWith("f-droid.org") -> "View on F-Droid"
-            host.endsWith("apkpure.com") -> "View on APKPure"
-            host.endsWith("aptoide.com") -> "View on Aptoide"
-            host.endsWith("amazon.com") -> "View on Amazon Appstore"
-            host.endsWith("apps.apple.com") || host.endsWith("itunes.apple.com") -> "View on Apple App Store"
-            host.endsWith("microsoft.com") -> "View on Microsoft Store"
-            host.endsWith("github.com") -> "View on GitHub"
-            host.endsWith("gitlab.com") -> "View on GitLab"
-            else -> getString(R.string.action_view_website)
+            host == playGoogleCom() -> ViewOnGooglePlay()
+            host.endsWith(cafebazaarIr()) -> ViewOnCafeBazaar()
+            host.endsWith(myketIr()) -> ViewOnMyket()
+            host.endsWith(galaxyStore()) -> ViewOnGalaxyStore()
+            host.endsWith(appgalleryHuaweiCom()) -> ViewOnAppgallery()
+            host.endsWith(fDroidOrg()) -> ViewOnFDroid()
+            host.endsWith(apkpureCom()) -> ViewOnApkpure()
+            host.endsWith(aptoideCom()) -> ViewOnAptoide()
+            host.endsWith(amazonCom()) -> ViewOnAmazonAppstore()
+            host.endsWith(appsAppleCom()) || host.endsWith(itunesAppleCom()) -> ViewOnAppleAppStore()
+            host.endsWith(microsoftCom()) -> ViewOnMicrosoftStore()
+            host.endsWith(githubCom()) -> ViewOnGithub()
+            host.endsWith(gitlabCom()) -> ViewOnGitlab()
+            else -> ViewWebsite()
         }
     }
 
     // Opens the market app when installed (via its deep link), otherwise the plain web link in a browser.
     private fun openLink(url: String) {
         val uri = Uri.parse(url)
-        val host = uri.host?.removePrefix("www.")?.lowercase()
+        val host = uri.host?.removePrefix(www())?.lowercase()
 
         val marketPkg = when {
-            host == "play.google.com" -> "com.android.vending"
-            host?.endsWith("f-droid.org") == true -> "org.fdroid.fdroid"
-            host?.endsWith("apkpure.com") == true -> "com.apkpure.aegon"
-            host?.endsWith("aptoide.com") == true -> "cm.aptoide.pt"
-            host?.endsWith("myket.ir") == true -> "ir.mservices.market"
-            host?.endsWith("cafebazaar.ir") == true -> "com.farsitel.bazaar"
+            host == playGoogleCom() -> com_android_vending()
+            host?.endsWith(fDroidOrg()) == true -> orgFdroidFdroid()
+            host?.endsWith(apkpureCom()) == true -> comApkpureAegon()
+            host?.endsWith(aptoideCom()) == true -> cmAptoidePt()
+            host?.endsWith(myketIr()) == true -> ir_mservices_market()
+            host?.endsWith(cafebazaarIr()) == true -> com_farsitel_bazaar()
             else -> null
         }
         if (marketPkg != null) {
@@ -278,9 +327,9 @@ class ScriptsFragment : Fragment() {
         val empty = view.findViewById<TextView>(R.id.choiceEmpty)
 
         val choices = ChoiceAdapter(requireContext()) { packageName ->
-            if (packageName == "user_script") {
+            if (packageName == user_script()) {
                 pickerDialog?.dismiss()
-                openEditor("user_script")
+                openEditor(user_script())
             } else {
                 pickerDialog?.dismiss()
                 openEditor(packageName)
@@ -291,9 +340,9 @@ class ScriptsFragment : Fragment() {
         list.adapter = choices
 
         pickerDialog = MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.scripts_new_title)
+            .setTitle(NewScript())
             .setView(view)
-            .setNegativeButton(R.string.action_cancel, null)
+            .setNegativeButton(Cancel(), null)
             .create()
 
         val context = requireContext().applicationContext
@@ -329,7 +378,7 @@ class ScriptsFragment : Fragment() {
 
         state.scripts.forEach { packages += it.packageName }
         packages += ScriptStore.installedApps(context)
-        packages -= "global"
+        packages -= global()
 
         val installedChoices = packages
             .map { AppChoice(ScriptStore.appLabel(context, it), it) }
@@ -337,8 +386,8 @@ class ScriptsFragment : Fragment() {
 
         // Prepend user script choice that opens the editor
         val userScriptChoice = AppChoice(
-            context.getString(R.string.title_user_script),
-            "user_script"
+            userScriptJs(),
+            user_script()
         )
 
         return listOf(userScriptChoice) + installedChoices
@@ -365,12 +414,12 @@ private class ChoiceAdapter(
 
         holder.label.text = item.label
         holder.packageName.text = when (item.packageName) {
-            "user_script" -> "custom script"
+            user_script() -> customScript()
             else -> item.packageName
         }
         holder.icon.setImageDrawable(
             when (item.packageName) {
-                "user_script" -> context.getDrawable(R.drawable.ic_description)
+                user_script() -> context.getDrawable(R.drawable.ic_description)
                 else -> ScriptStore.appIcon(context, item.packageName) ?: context.getDrawable(R.drawable.ic_extension)
             }
         )
@@ -416,21 +465,21 @@ private class ScriptAdapter(
     override fun onBindViewHolder(holder: Holder, position: Int) {
         val item = getItem(position)
 
-        holder.label.text = if (item.packageName == "global") {
-            context.getString(R.string.scripts_all_apps)
+        holder.label.text = if (item.packageName == global()) {
+            globalJs()
         } else {
             ScriptStore.appLabel(context, item.packageName, item.name)
         }
 
         holder.packageName.text = when (item.packageName) {
-            "global" -> "shared helpers and environment setup"
-            "user_script" -> "custom script running on every app"
+            global() -> sharedHelpersAndEnvironmentSetup()
+            user_script() -> customScriptRunningOnEveryApp()
             else -> item.packageName
         }
 
         val scriptTypeLabel = when (item.type) {
-            ScriptType.USER -> context.getString(R.string.source_user)
-            ScriptType.BUNDLED -> context.getString(R.string.source_bundled)
+            ScriptType.USER -> user()
+            ScriptType.BUNDLED -> bundled()
         }
 
         val parts = mutableListOf(scriptTypeLabel)
@@ -439,7 +488,7 @@ private class ScriptAdapter(
 
         item.author?.let { parts += it }
 
-        holder.meta.text = parts.joinToString(" · ")
+        holder.meta.text = parts.joinToString(s4a9f2e())
 
         holder.icon.setImageDrawable(
             ScriptStore.appIcon(context, item.packageName) ?: context.getDrawable(R.drawable.ic_description)

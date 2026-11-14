@@ -24,7 +24,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/home_status"
+                    android:text="Xposed Status"
                     android:textAppearance="?attr/textAppearanceLabelLarge" />
 
                 <TextView
@@ -69,7 +69,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:lines="2"
-                        android:text="@string/home_hooked"
+                        android:text="Hooked apps"
                         android:textAppearance="?attr/textAppearanceLabelMedium" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -100,7 +100,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:lines="2"
-                        android:text="@string/home_installed"
+                        android:text="Installed scripts"
                         android:textAppearance="?attr/textAppearanceLabelMedium" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -131,7 +131,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:lines="2"
-                        android:text="@string/home_enabled"
+                        android:text="Enabled scripts"
                         android:textAppearance="?attr/textAppearanceLabelMedium" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -141,7 +141,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:text="@string/home_hooked_title"
+            android:text="Hooked apps"
             android:textAppearance="?attr/textAppearanceTitleMedium" />
 
         <TextView
@@ -149,7 +149,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="@string/home_scope_unconfirmed"
+            android:text="The framework is not reporting the scope right now, so this is the last list it gave."
             android:textAppearance="?attr/textAppearanceLabelSmall"
             android:visibility="gone" />
 
@@ -158,7 +158,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="@string/home_hooked_empty"
+            android:text="No apps in the module scope yet."
             android:textAppearance="?attr/textAppearanceBodyMedium"
             android:visibility="gone" />
 

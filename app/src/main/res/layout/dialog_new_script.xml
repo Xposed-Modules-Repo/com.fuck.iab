@@ -13,7 +13,7 @@
         style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/scripts_search_hint"
+        android:hint="Search apps"
         app:endIconMode="clear_text"
         app:startIconDrawable="@drawable/ic_search">
 
@@ -32,7 +32,7 @@
         android:layout_height="wrap_content"
         android:paddingTop="16dp"
         android:paddingBottom="16dp"
-        android:text="@string/scripts_no_match"
+        android:text="No matching app"
         android:textAppearance="?attr/textAppearanceBodyMedium"
         android:visibility="gone" />
 

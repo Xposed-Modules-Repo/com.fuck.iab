@@ -4,21 +4,21 @@
     <item
         android:id="@+id/action_logs_retry"
         android:icon="@drawable/ic_refresh"
-        android:title="@string/action_retry"
+        android:title="Retry"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_logs_clear"
         android:icon="@drawable/ic_delete"
-        android:title="@string/clear_log"
+        android:title="Clear Log"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_telegram"
         android:icon="@drawable/ic_telegram"
-        android:title="@string/action_telegram"
+        android:title="Telegram"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_github"
         android:icon="@drawable/ic_github"
-        android:title="@string/action_github"
+        android:title="GitHub"
         app:showAsAction="ifRoom" />
 </menu>

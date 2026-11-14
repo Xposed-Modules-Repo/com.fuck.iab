@@ -18,7 +18,7 @@ fun randomOrderId(): String {
             }
         }
 
-    return "${GPA_()}${digits(4)}-${digits(4)}-${digits(4)}-${digits(4)}-${digits(5)}"
+    return GPA_() + digits(4) + dash() + digits(4) + dash() + digits(4) + dash() + digits(4) + dash() + digits(5)
 }
 
 fun randomPurchaseToken(): String {

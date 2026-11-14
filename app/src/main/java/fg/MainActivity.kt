@@ -22,6 +22,11 @@ import androidx.viewpager2.widget.ViewPager2
 import com.fuck.iab.Connected_to_
 import com.fuck.iab.Not_connected_to_framework
 import com.fuck.iab.R
+import com.fuck.iab.httpsGithubComXposedModulesRepoComFuckIabReleases
+import com.fuck.iab.httpsTMeFkiab
+import com.fuck.iab.question
+import com.fuck.iab.tgResolveDomainFkiab
+import com.fuck.iab.version1S2D
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import io.github.libxposed.service.XposedService
@@ -124,16 +129,16 @@ class MainActivity : AppCompatActivity(), MainApplication.ServiceStateListener {
             }
 
             R.id.action_github -> {
-                openUrl("https://github.com/Xposed-Modules-Repo/com.fuck.iab/releases")
+                openUrl(httpsGithubComXposedModulesRepoComFuckIabReleases())
                 true
             }
 
             R.id.action_telegram -> {
                 // the tg:// scheme opens the Telegram app itself; t.me falls back to the browser
                 try {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("tg://resolve?domain=fkiab")))
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(tgResolveDomainFkiab())))
                 } catch (e: Exception) {
-                    openUrl("https://t.me/fkiab")
+                    openUrl(httpsTMeFkiab())
                 }
                 true
             }
@@ -154,9 +159,9 @@ class MainActivity : AppCompatActivity(), MainApplication.ServiceStateListener {
     private fun versionLabel(): String {
         return try {
             val info = packageManager.getPackageInfo(packageName, 0)
-            getString(
-                R.string.app_version,
-                info.versionName ?: "?",
+            String.format(
+                version1S2D(),
+                info.versionName ?: question(),
                 PackageInfoCompat.getLongVersionCode(info)
             )
         } catch (e: Exception) {
@@ -173,7 +178,7 @@ class MainActivity : AppCompatActivity(), MainApplication.ServiceStateListener {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.state.collect { state ->
                     supportActionBar?.subtitle = if (state.connectionStatus == 1) {
-                        "${Connected_to_()}${state.framework}"
+                        Connected_to_() + state.framework
                     } else {
                         Not_connected_to_framework()
                     }

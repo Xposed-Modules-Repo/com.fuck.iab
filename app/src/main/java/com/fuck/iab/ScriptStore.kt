@@ -77,10 +77,10 @@ object ScriptStore {
 
     fun inventory(context: Context, service: XposedService?): List<ScriptInfo> {
         val bundledScripts = bundledScripts(context)
-        val disabledBundleScripts = if (service != null) disabledApps(service, "bundled") else emptySet()
+        val disabledBundleScripts = if (service != null) disabledApps(service, bundled()) else emptySet()
 
         val userScripts = userScripts(service)
-        val disabledUserScripts = if (service != null) disabledApps(service, "user") else emptySet()
+        val disabledUserScripts = if (service != null) disabledApps(service, user()) else emptySet()
 
         val ret = arrayListOf<ScriptInfo>()
 
@@ -94,8 +94,8 @@ object ScriptStore {
                     author = authorOf(script),
                     size = script.toByteArray(Charsets.UTF_8).size,
                     enabled = !disabledUserScripts.contains(packageName),
-                    name = headerOf(script, "name"),
-                    url = headerOf(script, "url")
+                    name = headerOf(script, name()),
+                    url = headerOf(script, url())
                 )
             )
         }
@@ -109,17 +109,17 @@ object ScriptStore {
                     author = authorOf(script),
                     size = script.toByteArray(Charsets.UTF_8).size,
                     enabled = !disabledBundleScripts.contains(packageName),
-                    name = headerOf(script, "name"),
-                    url = headerOf(script, "url")
+                    name = headerOf(script, name()),
+                    url = headerOf(script, url())
                 )
             )
         }
 
         ret.sortWith { info, info1 ->
-            if (info.packageName == "global") 1
-            else if(info1.packageName == "global") -1
-            else if (info.packageName == "user_script") -1
-            else if(info1.packageName == "user_script") 1
+            if (info.packageName == global()) 1
+            else if(info1.packageName == global()) -1
+            else if (info.packageName == user_script()) -1
+            else if(info1.packageName == user_script()) 1
             else info.packageName.compareTo(info1.packageName)
         }
 
@@ -130,9 +130,9 @@ object ScriptStore {
         return if (service == null) emptyMap()
         else try {
             RemoteFiles.list(service)
-                .filter { it.endsWith(".js") }
+                .filter { it.endsWith(_js()) }
                 .associate {
-                    it.removeSuffix(".js") to RemoteFiles.read(service, it)
+                    it.removeSuffix(_js()) to RemoteFiles.read(service, it)
                 }
         } catch (e: Exception) {
             emptyMap()
@@ -143,9 +143,9 @@ object ScriptStore {
         return try {
             ZipFile(context.applicationInfo.sourceDir).use { zip ->
                 zip.entries().asSequence()
-                    .filter { !it.isDirectory && it.name.startsWith("assets/scripts/") && it.name.endsWith(".js") }
+                    .filter { !it.isDirectory && it.name.startsWith(assets_scripts_()) && it.name.endsWith(_js()) }
                     .associate { entry ->
-                        val packageName = entry.name.removePrefix("assets/scripts/").removeSuffix(".js")
+                        val packageName = entry.name.removePrefix(assets_scripts_()).removeSuffix(_js())
                         val text = zip.getInputStream(entry).bufferedReader(Charsets.UTF_8).use { it.readText() }
                         packageName to text
                     }
@@ -155,11 +155,11 @@ object ScriptStore {
         }
     }
 
-    fun authorOf(script: String): String? = headerOf(script, "author")
+    fun authorOf(script: String): String? = headerOf(script, author())
 
     // reads `// key: value` from the top comment block; header order (name/url/author/description) is free
     fun headerOf(script: String, key: String): String? {
-        val prefix = "// $key: "
+        val prefix = scf64b8() + key + se26549()
         return script.lineSequence().take(10).firstNotNullOfOrNull { line ->
             if (line.startsWith(prefix)) line.removePrefix(prefix).trim().ifEmpty { null } else null
         }
@@ -170,14 +170,14 @@ object ScriptStore {
 
         return ScriptDetails(
             packageName = packageName,
-            author = headerOf(bundled, "author"),
+            author = headerOf(bundled, author()),
 //            version = headerOf(bundled, "version")?.toIntOrNull() ?: 1,
-            description = headerOf(bundled, "description") ?: ""
+            description = headerOf(bundled, description()) ?: ""
         )
     }
 
     fun userFile(packageName: String): String {
-        return if (packageName == "global") "${user_script()}.js" else "${packageName}.js"
+        return if (packageName == global()) user_script() + _js() else packageName + _js()
     }
 
     fun readUserScript(service: XposedService, packageName: String): String? {
@@ -196,7 +196,7 @@ object ScriptStore {
 
     fun disabledApps(service: XposedService, type: String): Set<String> {
         return try {
-            service.getRemotePreferences(fuck_iab()).getStringSet("disabled_${type}_scripts", emptySet())
+            service.getRemotePreferences(fuck_iab()).getStringSet(disabled_() + type + _scripts(), emptySet())
                 ?.toSet() ?: emptySet()
         } catch (e: Exception) {
             emptySet()
@@ -205,12 +205,12 @@ object ScriptStore {
 
     fun setEnabled(service: XposedService, packageName: String, type: ScriptType, enabled: Boolean) {
         val prefs = service.getRemotePreferences(fuck_iab())
-        val disabled = prefs.getStringSet("disabled_${if (type == BUNDLED) "bundled" else "user"}_scripts", emptySet())?.toMutableSet()
+        val disabled = prefs.getStringSet(disabled_() + (if (type == BUNDLED) bundled() else user()) + _scripts(), emptySet())?.toMutableSet()
             ?: mutableSetOf()
 
         if (enabled) disabled.remove(packageName) else disabled.add(packageName)
 
-        prefs.edit(commit = true) { putStringSet("disabled_${if (type == BUNDLED) "bundled" else "user"}_scripts", disabled) }
+        prefs.edit(commit = true) { putStringSet(disabled_() + (if (type == BUNDLED) bundled() else user()) + _scripts(), disabled) }
     }
 
     fun installedApps(context: Context): List<String> {
@@ -227,8 +227,8 @@ object ScriptStore {
     }
 
     fun appLabel(context: Context, packageName: String, name: String? = null): String {
-        if (packageName == "global") return context.getString(R.string.scripts_all_apps)
-        if(packageName == "user_script") return "user_script.js"
+        if (packageName == global()) return globalJs()
+        if(packageName == user_script()) return userScriptJs()
 
         return try {
             context.packageManager.getApplicationLabel(
@@ -242,7 +242,7 @@ object ScriptStore {
 
     fun appIcon(context: Context, packageName: String): Drawable? {
         // The all-apps entry is not an app, so the caller keeps its own script icon.
-        if (packageName == "global") return null
+        if (packageName == global()) return null
 
         return try {
             context.packageManager.getApplicationIcon(packageName)
@@ -254,9 +254,9 @@ object ScriptStore {
 
     fun sizeLabel(bytes: Int): String {
         return if (bytes >= 1024) {
-            String.format(Locale.US, "%.0f KB", bytes / 1024f)
+            String.format(Locale.US, _0fKb(), bytes / 1024f)
         } else {
-            "$bytes B"
+            bytes.toString() + b()
         }
     }
 }
