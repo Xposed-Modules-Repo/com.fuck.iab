@@ -850,6 +850,10 @@ class StrFunctionsTest {
         assertEquals("author", author())
     }
     @Test
+    fun fn_added_in() {
+        assertEquals("added-in", added_in())
+    }
+    @Test
     fun fn_disabled_() {
         assertEquals("disabled_", disabled_())
     }

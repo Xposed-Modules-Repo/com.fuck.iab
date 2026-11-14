@@ -3,6 +3,8 @@ package com.fuck.iab
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
+import android.system.Os
+import android.system.OsConstants
 import androidx.core.content.edit
 import com.fuck.iab.ScriptType.BUNDLED
 import com.fuck.iab.ScriptType.USER
@@ -71,6 +73,24 @@ object RemoteFiles {
             false
         }
     }
+
+    /** The file's last modification time in epoch millis, or `0` when it is unknown. */
+    fun lastModifiedAt(service: XposedService, name: String): Long {
+        return try {
+            service.openRemoteFile(name).use { pfd ->
+                // the framework hands over the descriptor of the real file, so its inode
+                // time is readable even though the path itself lives in another process
+                val stat = Os.fstat(pfd.fileDescriptor)
+                if (OsConstants.S_ISREG(stat.st_mode)) {
+                    stat.st_mtime * 1000L + stat.st_mtim.tv_nsec / 1_000_000L
+                } else {
+                    0L
+                }
+            }
+        } catch (e: Exception) {
+            0L
+        }
+    }
 }
 
 object ScriptStore {
@@ -83,9 +103,12 @@ object ScriptStore {
         val disabledUserScripts = if (service != null) disabledApps(service, user()) else emptySet()
 
         val ret = arrayListOf<ScriptInfo>()
+        val modifiedAt = hashMapOf<String, Long>()
 
         userScripts.forEach { (packageName, script) ->
             if (script == null) return@forEach
+            modifiedAt[packageName] =
+                if (service != null) RemoteFiles.lastModifiedAt(service, packageName + _js()) else 0L
             ret.add(
                 ScriptInfo(
                     packageName = packageName,
@@ -100,7 +123,9 @@ object ScriptStore {
             )
         }
 
+        val addedIn = hashMapOf<String, String>()
         bundledScripts.forEach { (packageName, script) ->
+            headerOf(script, added_in())?.let { addedIn[packageName] = it }
             ret.add(
                 ScriptInfo(
                     packageName = packageName,
@@ -115,16 +140,57 @@ object ScriptStore {
             )
         }
 
-        ret.sortWith { info, info1 ->
-            if (info.packageName == global()) 1
-            else if(info1.packageName == global()) -1
-            else if (info.packageName == user_script()) -1
-            else if(info1.packageName == user_script()) 1
-            else info.packageName.compareTo(info1.packageName)
-        }
+        ret.sortWith { info, info1 -> compareScripts(info, info1, addedIn, modifiedAt) }
 
         return ret
     }
+
+    /**
+     * Priority, highest first: `user_script` is always on top, `global` is always at the bottom,
+     * bundled scripts come before user scripts, bundled ones are ordered by `added-in` (highest
+     * first) and user ones by the modified date of their file (latest first).
+     */
+    internal fun compareScripts(
+        info: ScriptInfo,
+        other: ScriptInfo,
+        addedIn: Map<String, String>,
+        modifiedAt: Map<String, Long>
+    ): Int {
+        if (info.packageName == user_script()) return if (other.packageName == user_script()) 0 else -1
+        if (other.packageName == user_script()) return 1
+        if (info.packageName == global()) return if (other.packageName == global()) 0 else 1
+        if (other.packageName == global()) return -1
+
+        if (info.type != other.type) return if (info.type == BUNDLED) -1 else 1
+
+        val byName = info.packageName.compareTo(other.packageName)
+
+        if (info.type == BUNDLED) {
+            val byAddedIn = compareVersions(addedIn[info.packageName], addedIn[other.packageName])
+            return if (byAddedIn != 0) byAddedIn else byName
+        }
+
+        val byModified =
+            (modifiedAt[other.packageName] ?: 0L).compareTo(modifiedAt[info.packageName] ?: 0L)
+        return if (byModified != 0) byModified else byName
+    }
+
+    /** Numeric `x.y.z` compare where the highest version wins, e.g. `1.7.1` beats `1.6.12`. */
+    private fun compareVersions(first: String?, second: String?): Int {
+        val a = versionParts(first)
+        val b = versionParts(second)
+
+        for (i in 0 until maxOf(a.size, b.size)) {
+            val left = a.getOrElse(i) { 0 }
+            val right = b.getOrElse(i) { 0 }
+            if (left != right) return right.compareTo(left)
+        }
+
+        return 0
+    }
+
+    private fun versionParts(version: String?): List<Int> =
+        version?.split('.')?.map { it.trim().toIntOrNull() ?: 0 } ?: emptyList()
 
     private fun userScripts(service: XposedService?): Map<String, String?> {
         return if (service == null) emptyMap()

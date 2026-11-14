@@ -1844,6 +1844,14 @@ fun author(): String {
     }
     return sb.toString()
 }
+fun added_in(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(169, 172, 172, 173, 172, 229, 161, 166)
+    for (num in arr) {
+        sb.append((num.xor(200)).toChar())
+    }
+    return sb.toString()
+}
 fun disabled_(): String {
     val sb = StringBuilder()
     val arr = intArrayOf(228, 233, 243, 225, 226, 236, 229, 228, 223)
