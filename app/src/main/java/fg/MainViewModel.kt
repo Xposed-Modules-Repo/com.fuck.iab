@@ -124,7 +124,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 //        }
 //    }
 
-    fun startLogcatStreaming() {
+    fun startLogcatStreaming(clearLogs: Boolean) {
         if (logcatJob != null) {
             return
         }
@@ -135,7 +135,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     arrayOf(
                         su(),
                         _c(),
-                        logcatBAllCLogcatVTagSFkiabVFridaV()
+                        if (clearLogs) logcatBAllCLogcatVTagSFkiabVFridaV() else logcat__v_tag__s_FKIAB_V_FRIDA_V()
                     )
                 )
             } catch (e: Exception) {
@@ -195,7 +195,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         logcatJob?.cancel()
         logcatJob = null
         clearLogView()
-        startLogcatStreaming()
+        startLogcatStreaming(true)
     }
 
     private val _state = MutableStateFlow(UiState())
@@ -208,7 +208,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         _state.update {
             it.copy(
-                connectionStatus = if(service != null) 1 else 2,
+                connectionStatus = if (service != null) 1 else 2,
                 framework = service?.let { s -> s.frameworkName + space() + s.frameworkVersionCode } ?: ""
             )
         }

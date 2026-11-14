@@ -590,10 +590,6 @@ class StrFunctionsTest {
         assertEquals("Not connected to your Xposed framework. Try force stopping FKIAB and re-launching it or adding an App to FKIAB's scope in your Xposed Framework.", NotConnectedToYourXposedFrameworkTryForceStoppingFkiabAndReLaf289e())
     }
     @Test
-    fun fn_ViewWebsite() {
-        assertEquals("View Website", ViewWebsite())
-    }
-    @Test
     fun fn_NewScript() {
         assertEquals("New script", NewScript())
     }
@@ -904,5 +900,17 @@ class StrFunctionsTest {
     @Test
     fun fn_description_() {
         assertEquals("// description:", description_())
+    }
+    @Test
+    fun fn_ViewAppPage() {
+        assertEquals("View app page", ViewAppPage())
+    }
+    @Test
+    fun fn_ViewOnTelegram() {
+        assertEquals("View on Telegram", ViewOnTelegram())
+    }
+    @Test
+    fun fn_tMe() {
+        assertEquals("t.me", tMe())
     }
 }

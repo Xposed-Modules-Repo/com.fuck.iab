@@ -88,6 +88,6 @@ class LogFragment : Fragment() {
 
         // This page is a tab now, so the stream starts when it becomes visible rather than
         // when the app opens. The view model ignores a second start while one is running.
-        viewModel.startLogcatStreaming()
+        viewModel.startLogcatStreaming(false)
     }
 }

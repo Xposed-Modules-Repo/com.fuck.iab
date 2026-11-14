@@ -1324,14 +1324,6 @@ fun NotConnectedToYourXposedFrameworkTryForceStoppingFkiabAndReLaf289e(): String
     }
     return sb.toString()
 }
-fun ViewWebsite(): String {
-    val sb = StringBuilder()
-    val arr = intArrayOf(31, 32, 44, 62, 105, 30, 44, 43, 58, 32, 61, 44)
-    for (num in arr) {
-        sb.append((num.xor(73)).toChar())
-    }
-    return sb.toString()
-}
 fun NewScript(): String {
     val sb = StringBuilder()
     val arr = intArrayOf(189, 150, 132, 211, 128, 144, 129, 154, 131, 135)
@@ -1953,6 +1945,32 @@ fun description_(): String {
     val arr = intArrayOf(245, 245, 250, 190, 191, 169, 185, 168, 179, 170, 174, 179, 181, 180, 224)
     for (num in arr) {
         sb.append((num.xor(218)).toChar())
+    }
+    return sb.toString()
+}
+
+fun ViewAppPage(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(89, 102, 106, 120, 47, 110, 127, 127, 47, 127, 110, 104, 106)
+    for (num in arr) {
+        sb.append((num.xor(15)).toChar())
+    }
+    return sb.toString()
+}
+
+fun ViewOnTelegram(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(85, 106, 102, 116, 35, 108, 109, 35, 87, 102, 111, 102, 100, 113, 98, 110)
+    for (num in arr) {
+        sb.append((num.xor(3)).toChar())
+    }
+    return sb.toString()
+}
+fun tMe(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(136, 210, 145, 153)
+    for (num in arr) {
+        sb.append((num.xor(252)).toChar())
     }
     return sb.toString()
 }

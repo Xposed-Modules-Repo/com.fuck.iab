@@ -31,6 +31,7 @@ import com.fuck.iab.ScriptInfo
 import com.fuck.iab.ScriptType
 import com.fuck.iab.ScriptStore
 import com.fuck.iab.ScriptStore.sizeLabel
+import com.fuck.iab.ViewAppPage
 import com.fuck.iab.ViewOnAmazonAppstore
 import com.fuck.iab.ViewOnAppgallery
 import com.fuck.iab.ViewOnAppleAppStore
@@ -44,7 +45,7 @@ import com.fuck.iab.ViewOnGitlab
 import com.fuck.iab.ViewOnGooglePlay
 import com.fuck.iab.ViewOnMicrosoftStore
 import com.fuck.iab.ViewOnMyket
-import com.fuck.iab.ViewWebsite
+import com.fuck.iab.ViewOnTelegram
 import com.fuck.iab.amazonCom
 import com.fuck.iab.apkpureCom
 import com.fuck.iab.aptoideCom
@@ -72,6 +73,7 @@ import com.fuck.iab.orgFdroidFdroid
 import com.fuck.iab.playGoogleCom
 import com.fuck.iab.s4a9f2e
 import com.fuck.iab.sharedHelpersAndEnvironmentSetup
+import com.fuck.iab.tMe
 import com.fuck.iab.user
 import com.fuck.iab.userScriptJs
 import com.fuck.iab.user_script
@@ -254,9 +256,9 @@ class ScriptsFragment : Fragment() {
         }
     }
 
-    /** Button text derived from the `// url:` header: market links name the market, plain sites say "View Website". */
+    /** Button text derived from the `// url:` header: market links name the market, plain sites say "View app page". */
     private fun linkLabel(url: String): String {
-        val host = Uri.parse(url).host?.removePrefix(www())?.lowercase() ?: return ViewWebsite()
+        val host = Uri.parse(url).host?.removePrefix(www())?.lowercase() ?: return ViewAppPage()
         return when {
             host == playGoogleCom() -> ViewOnGooglePlay()
             host.endsWith(cafebazaarIr()) -> ViewOnCafeBazaar()
@@ -271,7 +273,8 @@ class ScriptsFragment : Fragment() {
             host.endsWith(microsoftCom()) -> ViewOnMicrosoftStore()
             host.endsWith(githubCom()) -> ViewOnGithub()
             host.endsWith(gitlabCom()) -> ViewOnGitlab()
-            else -> ViewWebsite()
+            host == tMe() -> ViewOnTelegram()
+            else -> ViewAppPage()
         }
     }
 
