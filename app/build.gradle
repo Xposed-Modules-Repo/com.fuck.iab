@@ -10,8 +10,8 @@ android {
         applicationId "com.fuck.iab"
         minSdk 26
         targetSdk 37
-        versionCode 50
-        versionName "1.7.0"
+        versionCode 51
+        versionName "1.7.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
