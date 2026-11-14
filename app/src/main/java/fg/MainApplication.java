@@ -29,6 +29,7 @@ public class MainApplication extends Application {
         XposedServiceHelper.registerListener(new XposedServiceHelper.OnServiceListener() {
             @Override
             public void onServiceBind(XposedService bound) {
+                if (service != null && !service.getFrameworkName().equals(bound.getFrameworkName())) return;
                 service = bound;
                 for (ServiceStateListener l : listeners) l.onServiceStateChanged(bound);
             }
@@ -45,7 +46,9 @@ public class MainApplication extends Application {
         return service;
     }
 
-    /** @param sticky if true and a service is already bound, fires immediately with it. */
+    /**
+     * @param sticky if true and a service is already bound, fires immediately with it.
+     */
     public static void addServiceStateListener(ServiceStateListener listener, boolean sticky) {
         listeners.add(listener);
         if (sticky && service != null) listener.onServiceStateChanged(service);

@@ -1982,11 +1982,30 @@ fun ViewOnTelegram(): String {
     }
     return sb.toString()
 }
+
 fun tMe(): String {
     val sb = StringBuilder()
     val arr = intArrayOf(136, 210, 145, 153)
     for (num in arr) {
         sb.append((num.xor(252)).toChar())
+    }
+    return sb.toString()
+}
+
+fun enabled(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(243, 248, 247, 244, 250, 243, 242)
+    for (num in arr) {
+        sb.append((num.xor(150)).toChar())
+    }
+    return sb.toString()
+}
+
+fun disabled(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(102, 107, 113, 99, 96, 110, 103, 102)
+    for (num in arr) {
+        sb.append((num.xor(2)).toChar())
     }
     return sb.toString()
 }

@@ -31,7 +31,10 @@ data class ScriptDetails(
     val packageName: String,
     val author: String?,
 //    val version: Int = 0,
-    val description: String
+    val description: String,
+    val addedIn: String,
+    val enabled: Boolean,
+    val size: Int
 )
 
 object RemoteFiles {
@@ -231,14 +234,18 @@ object ScriptStore {
         }
     }
 
-    fun details(context: Context, packageName: String): ScriptDetails {
+    fun details(context: Context, service: XposedService?, packageName: String): ScriptDetails {
         val bundled = bundledScripts(context)[packageName]!!
+        val disabledBundleScripts = if (service != null) disabledApps(service, bundled()) else emptySet()
 
         return ScriptDetails(
             packageName = packageName,
             author = headerOf(bundled, author()),
 //            version = headerOf(bundled, "version")?.toIntOrNull() ?: 1,
-            description = headerOf(bundled, description()) ?: ""
+            description = headerOf(bundled, description()) ?: "",
+            addedIn = headerOf(bundled, added_in()) ?: "1.0.0",
+            enabled = !disabledBundleScripts.contains(packageName),
+            size = bundled.toByteArray(Charsets.UTF_8).size,
         )
     }
 
@@ -294,7 +301,7 @@ object ScriptStore {
 
     fun appLabel(context: Context, packageName: String, name: String? = null): String {
         if (packageName == global()) return globalJs()
-        if(packageName == user_script()) return userScriptJs()
+        if (packageName == user_script()) return userScriptJs()
 
         return try {
             context.packageManager.getApplicationLabel(

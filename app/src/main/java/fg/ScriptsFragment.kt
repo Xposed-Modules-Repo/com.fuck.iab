@@ -59,6 +59,8 @@ import com.fuck.iab.com_android_vending
 import com.fuck.iab.com_farsitel_bazaar
 import com.fuck.iab.customScript
 import com.fuck.iab.customScriptRunningOnEveryApp
+import com.fuck.iab.disabled
+import com.fuck.iab.enabled
 import com.fuck.iab.fDroidOrg
 import com.fuck.iab.galaxyStore
 import com.fuck.iab.githubCom
@@ -85,6 +87,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.TextInputEditText
+import io.github.libxposed.service.XposedService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -116,9 +119,11 @@ class ScriptsFragment : Fragment() {
         val newScript = v.findViewById<ExtendedFloatingActionButton>(R.id.newScriptButton)
         val search = v.findViewById<TextInputEditText>(R.id.searchInput)
 
+        val service = MainApplication.getService()
+
         adapter = ScriptAdapter(requireContext()) { script ->
             if (script.type == ScriptType.BUNDLED) {
-                showDetails(script)
+                showDetails(service, script)
             } else {
                 openEditor(script.packageName)
             }
@@ -214,7 +219,7 @@ class ScriptsFragment : Fragment() {
         startActivity(ScriptEditorActivity.intent(requireContext(), packageName))
     }
 
-    private fun showDetails(script: ScriptInfo) {
+    private fun showDetails(service: XposedService?, script: ScriptInfo) {
         val view = layoutInflater.inflate(R.layout.sheet_script_details, null)
         val context = requireContext()
 
@@ -249,7 +254,7 @@ class ScriptsFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             val details = withContext(Dispatchers.IO) {
-                ScriptStore.details(context, script.packageName)
+                ScriptStore.details(context, service, script.packageName)
             }
 
             bindDetails(view, details)
@@ -312,9 +317,19 @@ class ScriptsFragment : Fragment() {
     }
 
     private fun bindDetails(view: View, details: ScriptDetails) {
-        view.findViewById<TextView>(R.id.author).text = details.author ?: ""
 
-        view.findViewById<TextView>(R.id.author).isVisible = details.author != null
+        val meta = mutableListOf(bundled(), sizeLabel(details.size))
+        if (details.author != null) {
+            meta += details.author
+        }
+
+        view.findViewById<TextView>(R.id.meta).text = meta.joinToString(s4a9f2e())
+
+//        view.findViewById<TextView>(R.id.author).isVisible = details.author != null
+
+        view.findViewById<TextView>(R.id.detailStatus).text = if (details.enabled) enabled() else disabled()
+
+        view.findViewById<TextView>(R.id.detailAddedIn).text = details.addedIn
 
         view.findViewById<TextView>(R.id.detailDescription).text = details.description
 
