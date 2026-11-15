@@ -1,5 +1,5 @@
 // name: test.js
-// version: 4
+// version: 3
 // summary: just a test script
 
 console.log("test.js loaded")
