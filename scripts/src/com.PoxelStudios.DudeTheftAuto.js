@@ -3,6 +3,7 @@
 // author: staleroot
 // description: Gives you 999,999 money in Dude Theft Auto.
 // added-in: 1.4.8
+// version: 1
 
 const observer = Process.attachModuleObserver({
     onAdded(module) {

@@ -3,6 +3,7 @@
 // author: Fexture69
 // description: Unlocks all premium features in Life360 including GPS tracking, location history, and circle-based features without a premium subscription.
 // added-in: 1.6.1
+// version: 1
 
 Java.perform(function() {
     // --- CircleFeatures ---

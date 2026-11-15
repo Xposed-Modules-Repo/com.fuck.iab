@@ -3,6 +3,7 @@
 // author: you1mak
 // description: Unlocks Pro features in Parallel Space without needing a paid license.
 // added-in: 1.6.1
+// version: 1
 
 /*
  * Parallel Space Pro v4.0.9162 — Force Pro (Frida)

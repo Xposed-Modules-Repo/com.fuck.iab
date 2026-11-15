@@ -3,6 +3,7 @@
 // author: staleroot
 // description: Unlocks all paid features in Bike Race: Free World by bypassing receipt verification, making purchases appear valid.
 // added-in: 1.5.5
+// version: 1
 
 setTimeout(() => {
     Java.perform(() => {

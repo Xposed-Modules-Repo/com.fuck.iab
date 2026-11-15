@@ -9,6 +9,8 @@ export const Java = JavaBridge
 
 globalThis.FRIDA_JAVA_BRIDGE_DISABLE_JVMTI = true;
 
+REMOTE_SCRIPT_GLOBAL
+
 try { BUNDLE_SCRIPT_PACKAGE } catch(e) { console.log(e) }
 
 try { USER_SCRIPT_GLOBAL } catch(e) { console.log(e) }

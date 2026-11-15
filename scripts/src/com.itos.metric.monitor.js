@@ -3,6 +3,7 @@
 // author: staleroot
 // description: Unlocks premium membership in Metric Monitor by forcing the membership state to active.
 // added-in: 1.6.6
+// version: 1
 
 Java.perform(() => {
 

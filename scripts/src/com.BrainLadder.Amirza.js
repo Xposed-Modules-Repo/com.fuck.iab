@@ -3,6 +3,7 @@
 // author: staleroot
 // description: Gives you 999,999 coins in Amirza.
 // added-in: 1.4.5
+// version: 1
 
 const observer = Process.attachModuleObserver({
     onAdded(module) {
