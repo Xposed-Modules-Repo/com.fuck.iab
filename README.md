@@ -10,31 +10,10 @@ An Xposed module for hooking and customizing in-app billing functionality.
 
 https://github.com/user-attachments/assets/baa25c2c-baaf-4e84-86e8-51e9f4545a4a
 
-## Compatibility
-- [x] Google Play Store
-- [x] Bazaar (Iranian App Market)
-- [x] Myket (Iranian App Market)
-- [ ] Samsung
-- [ ] Amazon
-- [ ] Huawei
-
 ## Features
 
 - Support for restoring previously purchased items.
 - Custom Frida Scripts.
-
-## Custom Frida Scripts
-
-Some apps aren't supported by the module because they either verify purchase signatures locally or validate them through their own servers. These apps require custom scripts to bypass their specific verification methods.
-
-```
-scripts/src/
-├── global.js
-├── com.kiloo.subwaysurf.js
-└── com.PoxelStudios.DudeTheftAuto.js
-```
-
-`global.js` is loaded for every app, before anything else. If a matching `<package_name>.js` file also exists, it runs right after the global script.
 
 ### Custom Script Examples
 
@@ -42,24 +21,18 @@ scripts/src/
 
 <img width="270" height="362" alt="ss0" src="https://github.com/user-attachments/assets/8b527efd-b4d9-47e8-a213-e09ef9f937c1" />
 
-- Ultimate USB `com.mixapplications.ultimateusb`
-
-- Bike Race `com.topfreegames.bikeracefreeworld`
-
 ### Contributing Custom Scripts
 
-Want to add support for another game or app? Feel free to open a pull request with a custom script.
+When contributing a script, please include the following metadata at the top of your script:
 
-Scripts should only focus on bypassing purchase checks.
-
-Please include:
-- The package name of the app/game
-- The custom script
-- A brief description of what it does
-- A `// version:` header (start at `1`, bump it whenever you change the script)
-
-`// version:` is mirrored into `scripts/manifest.json` by the build, which is how the app picks up
-a new script without waiting for a new release.
+```
+// name: App or game name.
+// url: Google Play Store link.
+// author: Your GitHub username.
+// description: A brief description of what the script does.
+// added-in: 1.0.0
+// version: 1
+```
 
 ## Telegram Channel
 
@@ -68,7 +41,3 @@ Join the FKIAB Telegram channel to get notified as soon as a new release is avai
 ## Disclaimer
 
 This project is provided for educational and research purposes only. Use it responsibly and only on applications and environments you own or have permission to test. The authors and contributors are not responsible for any misuse, damage, or violations caused by using this project. Please respect developers, software licenses, and platform rules.
-
----
-
-**Feel free to open an issue if you have any problems or suggestions.**
