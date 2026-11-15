@@ -1,11 +1,10 @@
 {
-	"global": {
-		"a_test_script": 5
-	},
+	"global": {},
 	"app.simple.inure.play": 1,
 	"com.BrainLadder.Amirza": 1,
 	"com.PoxelStudios.DudeTheftAuto": 1,
 	"com.adguard.android": 1,
+	"com.android.calculator2": 1,
 	"com.cloudflare.onedotonedotonedotone": 1,
 	"com.itos.metric.monitor": 1,
 	"com.kiloo.subwaysurf": 1,
