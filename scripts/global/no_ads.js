@@ -1,6 +1,5 @@
 // name: No More Ads
-// url: https://play.google.com/store/apps/details?id=com.cloudflare.onedotonedotonedotone
-// version: 1
+// version: 2
 // summary: yo yo yo
 // description: Removes the ads for you bros. bros should not see ads.
 
