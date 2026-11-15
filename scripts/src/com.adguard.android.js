@@ -3,7 +3,7 @@
 // author: Fexture69
 // description: Removes premium restrictions in AdGuard, unlocking all premium features without a paid license.
 // added-in: 1.6.1
-// version: 1
+// version: 2
 
 Java.perform(function () {
     const FKIAB = findFactoryByClassName("com.fuck.iab.NativeBridge");

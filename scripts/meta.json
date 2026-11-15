@@ -1,12 +1,11 @@
 {
 	"global": {
-		"test": 3,
-		"test2": 1
+		"test": 4
 	},
 	"app.simple.inure.play": 1,
 	"com.BrainLadder.Amirza": 1,
 	"com.PoxelStudios.DudeTheftAuto": 1,
-	"com.adguard.android": 1,
+	"com.adguard.android": 2,
 	"com.cloudflare.onedotonedotonedotone": 1,
 	"com.itos.metric.monitor": 1,
 	"com.kiloo.subwaysurf": 1,
