@@ -103,6 +103,24 @@
                     android:gravity="end"
                     android:textAppearance="?attr/textAppearanceBodyMedium" />
             </TableRow>
+
+            <TableRow android:id="@+id/detailVersionRow">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="6dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="6dp"
+                    android:text="Version"
+                    android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+                <TextView
+                    android:id="@+id/detailVersion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:textAppearance="?attr/textAppearanceBodyMedium" />
+            </TableRow>
         </TableLayout>
 
         <TextView

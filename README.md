@@ -56,6 +56,10 @@ Please include:
 - The package name of the app/game
 - The custom script
 - A brief description of what it does
+- A `// version:` header (start at `1`, bump it whenever you change the script)
+
+`// version:` is mirrored into `scripts/manifest.json` by the build, which is how the app picks up
+a new script without waiting for a new release.
 
 ## Telegram Channel
 

@@ -8,11 +8,11 @@ const SRC_DIR = path.join(__dirname, "src");
 // scripts that are never bundled: the app downloads them from the repository on demand
 const GLOBAL_DIR = path.join(__dirname, "global");
 const OUT_DIR = path.join(__dirname, "..", "app", "src", "main", "assets", "scripts");
-const META_FILE = path.join(__dirname, "meta.json");
+const MANIFEST_FILE = path.join(__dirname, "manifest.json");
 
-// top level of meta.json holds package scripts; the "global" key holds the table of
+// top level of manifest.json holds package scripts; the "global" key holds the table of
 // scripts from scripts/global, so `src/global.js` must never be written there
-const META_GLOBAL = "global";
+const MANIFEST_GLOBAL = "global";
 
 function cleanOutputDir() {
     if (!existsSync(OUT_DIR)) return;
@@ -61,12 +61,13 @@ function compile(packageName) {
     const findLine = (key) => srcLines.find(l => l.startsWith(`// ${key}: `));
     const nameLine = findLine("name");
     const urlLine = findLine("url");
-    const authorLine = findLine("author") ?? "// author: ";
-    const descriptionLine = findLine("description") ?? "// description: ";
+    const authorLine = findLine("author")
+    const descriptionLine = findLine("description")
     const addedInLine = findLine("added-in");
     const versionLine = findLine("version");
+    const summaryLine = findLine("summary");
 
-    if (packageName == META_GLOBAL) {
+    if (packageName == "global") {
         execSync(`npx frida-compile "${input}" -o "${output}" -S -B iife -T none`, { stdio: "inherit" });
     } else {
         requireVersion(input, packageName);
@@ -74,47 +75,47 @@ function compile(packageName) {
     }
 
     const compiled = readFileSync(output, "utf8");
-    const headerLines = [nameLine, urlLine, authorLine, descriptionLine, addedInLine, versionLine].filter(Boolean);
+    const headerLines = [nameLine, urlLine, authorLine, descriptionLine, addedInLine, versionLine, summaryLine].filter(Boolean);
     writeFileSync(output, `${headerLines.join("\n")}\n${compiled}`);
 
     console.log(`Built: assets/scripts/${packageName}.js`);
 }
 
-function readMeta() {
-    if (!existsSync(META_FILE)) return {};
+function readManifest() {
+    if (!existsSync(MANIFEST_FILE)) return {};
 
     try {
-        return JSON.parse(readFileSync(META_FILE, "utf8"));
+        return JSON.parse(readFileSync(MANIFEST_FILE, "utf8"));
     } catch (e) {
-        console.error(`Could not parse meta.json: ${e.message}`);
+        console.error(`Could not parse manifest.json: ${e.message}`);
         process.exitCode = 1;
         return {};
     }
 }
 
-/** meta.json is generated, so keep it stable: `global` first, then the packages, both sorted. */
-function writeMeta(meta) {
+/** manifest.json is generated, so keep it stable: `global` first, then the packages, both sorted. */
+function writeManifest(manifest) {
     const ordered = {};
 
-    const globalTable = meta[META_GLOBAL];
+    const globalTable = manifest[MANIFEST_GLOBAL];
     if (globalTable !== undefined && globalTable !== null && typeof globalTable === "object") {
-        ordered[META_GLOBAL] = {};
+        ordered[MANIFEST_GLOBAL] = {};
         Object.keys(globalTable).sort().forEach(name => {
-            ordered[META_GLOBAL][name] = globalTable[name];
+            ordered[MANIFEST_GLOBAL][name] = globalTable[name];
         });
     }
 
-    Object.keys(meta)
-        .filter(key => key !== META_GLOBAL)
+    Object.keys(manifest)
+        .filter(key => key !== MANIFEST_GLOBAL)
         .sort()
-        .forEach(key => { ordered[key] = meta[key]; });
+        .forEach(key => { ordered[key] = manifest[key]; });
 
-    writeFileSync(META_FILE, JSON.stringify(ordered, null, "\t") + "\n");
+    writeFileSync(MANIFEST_FILE, JSON.stringify(ordered, null, "\t") + "\n");
 }
 
-/** Rewrites meta.json from every script on disk, dropping entries whose script is gone. */
-function rebuildMeta() {
-    const meta = {};
+/** Rewrites manifest.json from every script on disk, dropping entries whose script is gone. */
+function rebuildManifest() {
+    const manifest = {};
 
     if (existsSync(GLOBAL_DIR)) {
         const table = {};
@@ -122,7 +123,7 @@ function rebuildMeta() {
             .filter(f => f.endsWith(".js"))
             .sort()
             .forEach(f => { table[f.replace(/\.js$/, "")] = readVersion(path.join(GLOBAL_DIR, f)); });
-        meta[META_GLOBAL] = table;
+        manifest[MANIFEST_GLOBAL] = table;
     }
 
     readdirSync(SRC_DIR)
@@ -130,38 +131,38 @@ function rebuildMeta() {
         .sort()
         .forEach(f => {
             const name = f.replace(/\.js$/, "");
-            if (name === META_GLOBAL) return;
-            meta[name] = readVersion(path.join(SRC_DIR, f));
+            if (name === MANIFEST_GLOBAL) return;
+            manifest[name] = readVersion(path.join(SRC_DIR, f));
         });
 
-    writeMeta(meta);
-    console.log(`Updated: scripts/meta.json`);
+    writeManifest(manifest);
+    console.log(`Updated: scripts/manifest.json`);
 }
 
 /** Updates only the compiled package, leaving every other entry alone. */
-function syncMetaPackage(packageName) {
+function syncManifestPackage(packageName) {
     // top level "global" is the table of global scripts, not the bundled global.js
-    if (packageName === META_GLOBAL) {
-        console.log("meta.json: global.js is bundled, it has no remote entry");
+    if (packageName === MANIFEST_GLOBAL) {
+        console.log("manifest.json: global.js is bundled, it has no remote entry");
         return;
     }
 
-    const meta = readMeta();
-    meta[packageName] = readVersion(path.join(SRC_DIR, `${packageName}.js`));
-    writeMeta(meta);
-    console.log(`meta.json: ${packageName} = ${meta[packageName]}`);
+    const manifest = readManifest();
+    manifest[packageName] = readVersion(path.join(SRC_DIR, `${packageName}.js`));
+    writeManifest(manifest);
+    console.log(`manifest.json: ${packageName} = ${manifest[packageName]}`);
 }
 
-/** Updates one entry of the meta.json "global" table. */
-function syncMetaGlobal(name) {
-    const meta = readMeta();
-    const table = meta[META_GLOBAL] !== null && typeof meta[META_GLOBAL] === "object" ? meta[META_GLOBAL] : {};
+/** Updates one entry of the manifest.json "global" table. */
+function syncManifestGlobal(name) {
+    const manifest = readManifest();
+    const table = manifest[MANIFEST_GLOBAL] !== null && typeof manifest[MANIFEST_GLOBAL] === "object" ? manifest[MANIFEST_GLOBAL] : {};
 
     table[name] = readVersion(path.join(GLOBAL_DIR, `${name}.js`));
-    meta[META_GLOBAL] = table;
+    manifest[MANIFEST_GLOBAL] = table;
 
-    writeMeta(meta);
-    console.log(`meta.json: global.${name} = ${table[name]}`);
+    writeManifest(manifest);
+    console.log(`manifest.json: global.${name} = ${table[name]}`);
 }
 
 /** A name resolves to scripts/src first and to scripts/global second. */
@@ -186,7 +187,7 @@ if (args.includes("--all") || args.length === 0) {
     }
     files.forEach(f => compile(f.replace(/\.js$/, "")));
 
-    rebuildMeta();
+    rebuildManifest();
 } else {
     args.forEach(name => {
         const found = locate(name);
@@ -199,10 +200,10 @@ if (args.includes("--all") || args.length === 0) {
 
         if (found.dir === "src") {
             compile(name);
-            syncMetaPackage(name);
+            syncManifestPackage(name);
         } else {
             // global scripts are downloaded as plain source, they are never bundled
-            syncMetaGlobal(name);
+            syncManifestGlobal(name);
         }
     });
 }

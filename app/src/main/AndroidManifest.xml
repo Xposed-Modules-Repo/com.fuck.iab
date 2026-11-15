@@ -7,6 +7,12 @@
         android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
 
+    <!-- Pull to refresh downloads manifest.json and the scripts it points at. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Without it the system keeps the module itself off the network entirely. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:name="fg.MainApplication"
         android:allowBackup="true"

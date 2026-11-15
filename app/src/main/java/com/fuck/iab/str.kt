@@ -1326,9 +1326,9 @@ fun NotConnectedToYourXposedFrameworkTryForceStoppingFkiabAndReLaf289e(): String
 }
 fun NewScript(): String {
     val sb = StringBuilder()
-    val arr = intArrayOf(189, 150, 132, 211, 128, 144, 129, 154, 131, 135)
+    val arr = intArrayOf(4, 47, 61, 106, 57, 41, 56, 35, 58, 62)
     for (num in arr) {
-        sb.append((num.xor(243)).toChar())
+        sb.append((num.xor(74)).toChar())
     }
     return sb.toString()
 }
@@ -1812,6 +1812,14 @@ fun BundleScriptPackage(): String {
     }
     return sb.toString()
 }
+fun RemoteScriptGlobal(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(220, 203, 195, 193, 218, 203, 209, 221, 205, 220, 199, 222, 218, 209, 201, 194, 193, 204, 207, 194)
+    for (num in arr) {
+        sb.append((num.xor(142)).toChar())
+    }
+    return sb.toString()
+}
 fun UserScriptGlobal(): String {
     val sb = StringBuilder()
     val arr = intArrayOf(91, 93, 75, 92, 81, 93, 77, 92, 71, 94, 90, 81, 73, 66, 65, 76, 79, 66)
@@ -2006,6 +2014,142 @@ fun disabled(): String {
     val arr = intArrayOf(102, 107, 113, 99, 96, 110, 103, 102)
     for (num in arr) {
         sb.append((num.xor(2)).toChar())
+    }
+    return sb.toString()
+}
+
+fun remote(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(175, 184, 176, 178, 169, 184)
+    for (num in arr) {
+        sb.append((num.xor(221)).toChar())
+    }
+    return sb.toString()
+}
+
+fun version(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(94, 77, 90, 91, 65, 71, 70)
+    for (num in arr) {
+        sb.append((num.xor(40)).toChar())
+    }
+    return sb.toString()
+}
+
+fun summary(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(234, 236, 244, 244, 248, 235, 224)
+    for (num in arr) {
+        sb.append((num.xor(153)).toChar())
+    }
+    return sb.toString()
+}
+
+fun version_(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(186, 186, 181, 227, 240, 231, 230, 252, 250, 251, 175)
+    for (num in arr) {
+        sb.append((num.xor(149)).toChar())
+    }
+    return sb.toString()
+}
+
+fun summary_(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(255, 255, 240, 163, 165, 189, 189, 177, 162, 169, 234)
+    for (num in arr) {
+        sb.append((num.xor(208)).toChar())
+    }
+    return sb.toString()
+}
+
+fun disabled_scripts(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(19, 30, 4, 22, 21, 27, 18, 19, 40, 4, 20, 5, 30, 7, 3, 4)
+    for (num in arr) {
+        sb.append((num.xor(119)).toChar())
+    }
+    return sb.toString()
+}
+
+fun rs_(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(52, 53, 25)
+    for (num in arr) {
+        sb.append((num.xor(70)).toChar())
+    }
+    return sb.toString()
+}
+
+fun manifestJson(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(6, 10, 5, 2, 13, 14, 24, 31, 69, 1, 24, 4, 5)
+    for (num in arr) {
+        sb.append((num.xor(107)).toChar())
+    }
+    return sb.toString()
+}
+
+fun scriptsRawUrl(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(15, 19, 19, 23, 20, 93, 72, 72, 21, 6, 16, 73, 0, 14, 19, 15, 18, 5, 18, 20, 2, 21, 4, 8, 9, 19, 2, 9, 19, 73, 4, 8, 10, 72, 63, 23, 8, 20, 2, 3, 74, 42, 8, 3, 18, 11, 2, 20, 74, 53, 2, 23, 8, 72, 4, 8, 10, 73, 1, 18, 4, 12, 73, 14, 6, 5, 72, 10, 6, 20, 19, 2, 21, 72, 20, 4, 21, 14, 23, 19, 20, 72)
+    for (num in arr) {
+        sb.append((num.xor(103)).toChar())
+    }
+    return sb.toString()
+//    return "https://raw.githubusercontent.com/staleroot/fkiab-remote-scripts-test/master/scripts/"
+}
+
+fun CouldNotFetchRemoteScripts(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(44, 0, 26, 3, 11, 79, 1, 0, 27, 79, 9, 10, 27, 12, 7, 79, 29, 10, 2, 0, 27, 10, 79, 28, 12, 29, 6, 31, 27, 28)
+    for (num in arr) {
+        sb.append((num.xor(111)).toChar())
+    }
+    return sb.toString()
+}
+
+fun Scripts_synced_successfully(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(239, 223, 206, 213, 204, 200, 207, 156, 207, 197, 210, 223, 217, 216, 156, 207, 201, 223, 223, 217, 207, 207, 218, 201, 208, 208, 197)
+    for (num in arr) {
+        sb.append((num.xor(188)).toChar())
+    }
+    return sb.toString()
+}
+
+fun sendReady(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(35, 112, 102, 109, 103, 43, 33, 113, 102, 98, 103, 122, 33, 42)
+    for (num in arr) {
+        sb.append((num.xor(3)).toChar())
+    }
+    return sb.toString()
+}
+
+fun src(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(34, 35, 50, 126)
+    for (num in arr) {
+        sb.append((num.xor(81)).toChar())
+    }
+    return sb.toString()
+}
+
+fun rand__(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(199, 138, 153, 150, 156, 197)
+    for (num in arr) {
+        sb.append((num.xor(248)).toChar())
+    }
+    return sb.toString()
+}
+
+fun oneZeroZero(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(220, 195, 221, 195, 221)
+    for (num in arr) {
+        sb.append((num.xor(237)).toChar())
     }
     return sb.toString()
 }

@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -21,21 +22,28 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.fuck.iab.Cancel
+import com.fuck.iab.CouldNotFetchRemoteScripts
 import com.fuck.iab.NewScript
+import com.fuck.iab.NotConnectedToTheXposedService
 import com.fuck.iab.NotConnectedToYourXposedFrameworkTryForceStoppingFkiabAndReLaf289e
 import com.fuck.iab.NothingMatchesThatSearch
 import com.fuck.iab.R
+import com.fuck.iab.RefreshOutcome
+import com.fuck.iab.RemoteScripts
 import com.fuck.iab.ScriptDetails
 import com.fuck.iab.ScriptInfo
-import com.fuck.iab.ScriptType
 import com.fuck.iab.ScriptStore
 import com.fuck.iab.ScriptStore.sizeLabel
+import com.fuck.iab.ScriptType
+import com.fuck.iab.ScriptType.GLOBAL_REMOTE
+import com.fuck.iab.Scripts_synced_successfully
 import com.fuck.iab.ViewAppPage
 import com.fuck.iab.ViewOnAmazonAppstore
+import com.fuck.iab.ViewOnApkpure
 import com.fuck.iab.ViewOnAppgallery
 import com.fuck.iab.ViewOnAppleAppStore
-import com.fuck.iab.ViewOnApkpure
 import com.fuck.iab.ViewOnAptoide
 import com.fuck.iab.ViewOnCafeBazaar
 import com.fuck.iab.ViewOnFDroid
@@ -48,9 +56,9 @@ import com.fuck.iab.ViewOnMyket
 import com.fuck.iab.ViewOnTelegram
 import com.fuck.iab.amazonCom
 import com.fuck.iab.apkpureCom
-import com.fuck.iab.aptoideCom
-import com.fuck.iab.appsAppleCom
 import com.fuck.iab.appgalleryHuaweiCom
+import com.fuck.iab.appsAppleCom
+import com.fuck.iab.aptoideCom
 import com.fuck.iab.bundled
 import com.fuck.iab.cafebazaarIr
 import com.fuck.iab.cmAptoidePt
@@ -66,15 +74,14 @@ import com.fuck.iab.galaxyStore
 import com.fuck.iab.githubCom
 import com.fuck.iab.gitlabCom
 import com.fuck.iab.global
-import com.fuck.iab.globalJs
 import com.fuck.iab.ir_mservices_market
 import com.fuck.iab.itunesAppleCom
 import com.fuck.iab.microsoftCom
 import com.fuck.iab.myketIr
 import com.fuck.iab.orgFdroidFdroid
 import com.fuck.iab.playGoogleCom
+import com.fuck.iab.remote
 import com.fuck.iab.s4a9f2e
-import com.fuck.iab.sharedHelpersAndEnvironmentSetup
 import com.fuck.iab.tMe
 import com.fuck.iab.user
 import com.fuck.iab.userScriptJs
@@ -87,7 +94,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.TextInputEditText
-import io.github.libxposed.service.XposedService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -118,20 +124,22 @@ class ScriptsFragment : Fragment() {
         val empty = v.findViewById<TextView>(R.id.scriptsEmpty)
         val newScript = v.findViewById<ExtendedFloatingActionButton>(R.id.newScriptButton)
         val search = v.findViewById<TextInputEditText>(R.id.searchInput)
-
-        val service = MainApplication.getService()
+        val swipe = v.findViewById<SwipeRefreshLayout>(R.id.swipeRefresh)
 
         adapter = ScriptAdapter(requireContext()) { script ->
-            if (script.type == ScriptType.BUNDLED) {
-                showDetails(service, script)
-            } else {
+            // only the scripts the user owns can be edited, the rest are read-only
+            if (script.type == ScriptType.USER) {
                 openEditor(script.packageName)
+            } else {
+                showDetails(script)
             }
         }
         adapter.onEnabledChanged = { packageName, type, enabled -> viewModel.setEnabled(packageName, type, enabled) }
 
         list.layoutManager = LinearLayoutManager(requireContext())
         list.adapter = adapter
+
+        swipe.setOnRefreshListener { updateRemoteScripts(swipe) }
 
         newScript.setOnClickListener { pickPackage() }
 
@@ -144,6 +152,7 @@ class ScriptsFragment : Fragment() {
             .setOnCheckedStateChangeListener { _, checkedIds ->
                 filter = when (checkedIds.firstOrNull()) {
                     R.id.filterStore -> ScriptType.BUNDLED
+                    R.id.filterRemote -> ScriptType.REMOTE
                     R.id.filterUser -> ScriptType.USER
                     else -> null
                 }
@@ -181,12 +190,18 @@ class ScriptsFragment : Fragment() {
         val needle = query.trim()
 
         val visible = all.filter { script ->
-            val matchesFilter = filter == null || script.type == filter
-            val label = ScriptStore.appLabel(requireContext(), script.packageName, script.name)
+            val matchesFilter = when (filter) {
+                null -> true
+                // both kinds of downloaded scripts sit behind the same chip
+                ScriptType.REMOTE -> script.type == ScriptType.REMOTE || script.type == GLOBAL_REMOTE
+                else -> script.type == filter
+            }
+            val label = ScriptStore.scriptLabel(requireContext(), script)
             val matchesQuery = needle.isEmpty() ||
                     script.packageName.contains(needle, true) ||
                     label.contains(needle, true) ||
-                    script.name?.contains(needle, true) == true
+                    script.name?.contains(needle, true) == true ||
+                    script.summary?.contains(needle, true) == true
 
             matchesFilter && matchesQuery
         }
@@ -219,17 +234,48 @@ class ScriptsFragment : Fragment() {
         startActivity(ScriptEditorActivity.intent(requireContext(), packageName))
     }
 
-    private fun showDetails(service: XposedService?, script: ScriptInfo) {
+    /**
+     * Pull to refresh: re-reads `manifest.json` from the repository, downloads what is newer than
+     * what we already have, drops what is no longer published and then rebuilds the list.
+     */
+    private fun updateRemoteScripts(swipe: SwipeRefreshLayout) {
+        val context = requireContext().applicationContext
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val outcome = withContext(Dispatchers.IO) {
+                RemoteScripts.refresh(context, MainApplication.getService())
+            }
+
+            swipe.isRefreshing = false
+
+            when (outcome) {
+                RefreshOutcome.NO_SERVICE -> Toast.makeText(
+                    context, NotConnectedToTheXposedService(), Toast.LENGTH_SHORT
+                ).show()
+
+                RefreshOutcome.FAILED -> Toast.makeText(
+                    context, CouldNotFetchRemoteScripts(), Toast.LENGTH_SHORT
+                ).show()
+
+                RefreshOutcome.DONE -> Toast.makeText(
+                    context, Scripts_synced_successfully(), Toast.LENGTH_SHORT
+                ).show()
+            }
+
+            viewModel.refresh()
+        }
+    }
+
+    private fun showDetails(script: ScriptInfo) {
         val view = layoutInflater.inflate(R.layout.sheet_script_details, null)
         val context = requireContext()
 
         view.findViewById<ImageView>(R.id.detailIcon).setImageDrawable(
-            ScriptStore.appIcon(context, script.packageName) ?: context.getDrawable(R.drawable.ic_description)
+            ScriptStore.scriptIcon(context, script) ?: context.getDrawable(R.drawable.ic_description)
         )
-        view.findViewById<TextView>(R.id.detailLabel).text =
-            ScriptStore.appLabel(context, script.packageName, script.name)
-        view.findViewById<TextView>(R.id.detailPackage).text = when (script.packageName) {
-            global() -> sharedHelpersAndEnvironmentSetup()
+        view.findViewById<TextView>(R.id.detailLabel).text = ScriptStore.scriptLabel(context, script)
+        view.findViewById<TextView>(R.id.detailPackage).text = when {
+            script.type == GLOBAL_REMOTE || script.packageName == global() -> script.summary ?: script.packageName
             else -> script.packageName
         }
 
@@ -252,13 +298,7 @@ class ScriptsFragment : Fragment() {
 
         sheetDialog.show()
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            val details = withContext(Dispatchers.IO) {
-                ScriptStore.details(context, service, script.packageName)
-            }
-
-            bindDetails(view, details)
-        }
+        bindDetails(view, ScriptStore.details(script))
     }
 
     /** Button text derived from the `// url:` header: market links name the market, plain sites say "View app page". */
@@ -318,7 +358,13 @@ class ScriptsFragment : Fragment() {
 
     private fun bindDetails(view: View, details: ScriptDetails) {
 
-        val meta = mutableListOf(bundled(), sizeLabel(details.size))
+        val kind = when (details.type) {
+            ScriptType.USER -> user()
+            ScriptType.BUNDLED -> bundled()
+            else -> remote()
+        }
+
+        val meta = mutableListOf(kind, sizeLabel(details.size))
         if (details.author != null) {
             meta += details.author
         }
@@ -329,7 +375,12 @@ class ScriptsFragment : Fragment() {
 
         view.findViewById<TextView>(R.id.detailStatus).text = if (details.enabled) enabled() else disabled()
 
+        // global scripts are not tied to an app release, so they carry no `// added-in:`
+        val addedInRow = view.findViewById<View>(R.id.detailAddedInRow)
+        addedInRow.isVisible = details.addedIn.isNotEmpty()
         view.findViewById<TextView>(R.id.detailAddedIn).text = details.addedIn
+
+        view.findViewById<TextView>(R.id.detailVersion).text = details.version.toString()
 
         view.findViewById<TextView>(R.id.detailDescription).text = details.description
 
@@ -394,7 +445,10 @@ class ScriptsFragment : Fragment() {
         val state = viewModel.state.value
         val packages = LinkedHashSet<String>()
 
-        state.scripts.forEach { packages += it.packageName }
+        state.scripts.forEach {
+            // a global script has no package to write a user script for
+            if (it.type != GLOBAL_REMOTE) packages += it.packageName
+        }
         packages += ScriptStore.installedApps(context)
         packages -= global()
 
@@ -483,33 +537,34 @@ private class ScriptAdapter(
     override fun onBindViewHolder(holder: Holder, position: Int) {
         val item = getItem(position)
 
-        holder.label.text = if (item.packageName == global()) {
-            globalJs()
-        } else {
-            ScriptStore.appLabel(context, item.packageName, item.name)
-        }
+        holder.label.text = ScriptStore.scriptLabel(context, item)
 
-        holder.packageName.text = when (item.packageName) {
-            global() -> sharedHelpersAndEnvironmentSetup()
-            user_script() -> customScriptRunningOnEveryApp()
+        holder.packageName.text = when {
+            item.type == GLOBAL_REMOTE -> item.summary
+            item.packageName == global() -> item.summary
+            item.packageName == user_script() -> customScriptRunningOnEveryApp()
             else -> item.packageName
         }
 
         val scriptTypeLabel = when (item.type) {
             ScriptType.USER -> user()
             ScriptType.BUNDLED -> bundled()
+            else -> remote()
         }
 
         val parts = mutableListOf(scriptTypeLabel)
 
         parts += sizeLabel(item.size)
 
-        item.author?.let { parts += it }
+        // a global script runs on its own, it has no author to credit
+        if (item.type != GLOBAL_REMOTE) {
+            item.author?.let { parts += it }
+        }
 
         holder.meta.text = parts.joinToString(s4a9f2e())
 
         holder.icon.setImageDrawable(
-            ScriptStore.appIcon(context, item.packageName) ?: context.getDrawable(R.drawable.ic_description)
+            ScriptStore.scriptIcon(context, item) ?: context.getDrawable(R.drawable.ic_description)
         )
 
         holder.switch.tag = item

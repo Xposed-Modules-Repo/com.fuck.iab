@@ -166,7 +166,7 @@ class MainModule : XposedModule() {
                     val global = readBundledScript(global())
 
                     val script = if (global != null) {
-                        val bs = readBundledScript(packageName)
+                        val bs = packageScript(packageName)
                         val (author, bundleScript) = if (bs == null || bs == "") {
                             null to ""
                         } else {
@@ -179,7 +179,8 @@ class MainModule : XposedModule() {
 
                         val globalUserScript = readUserScript(user_script())
 
-                        var combined = global.replace(BundleScriptPackage(), bundleScript)
+                        var combined = global.replace(RemoteScriptGlobal(), globalRemoteScript())
+                        combined = combined.replace(BundleScriptPackage(), bundleScript)
                         combined = combined.replace(UserScriptGlobal(), globalUserScript ?: "")
                         combined = combined.replace(UserScriptPackage(), userScriptForPackage ?: "")
                         combined.ifEmpty { null }
@@ -190,7 +191,7 @@ class MainModule : XposedModule() {
                         if (globalUserScript.isEmpty() && userScriptForPackage.isEmpty()) {
                             null
                         } else {
-                            try_() + globalUserScript + catchEConsoleLogETry() + userScriptForPackage + catchEConsoleLogE()
+                            try_() + globalUserScript + catchEConsoleLogETry() + userScriptForPackage + catchEConsoleLogE() + sendReady()
                         }
                     }
 
@@ -508,7 +509,7 @@ class MainModule : XposedModule() {
 
         return try {
             val disabled = getRemotePreferences(fuck_iab())
-                .getStringSet(disabled_() + (if (type == BUNDLED) bundled() else user()) + _scripts(), emptySet()) ?: return false
+                .getStringSet(ScriptStore.disabledKey(type), emptySet()) ?: return false
 
             disabled.contains(packageName)
         } catch (e: Exception) {
@@ -518,7 +519,10 @@ class MainModule : XposedModule() {
 
     private fun readBundledScript(packageName: String): String? {
         if (isScriptDisabled(packageName, BUNDLED)) return null
+        return readBundledScriptFile(packageName)
+    }
 
+    private fun readBundledScriptFile(packageName: String): String? {
         return try {
             ZipFile(this.moduleApplicationInfo.sourceDir).use { zip ->
                 val entry = zip.getEntry(assets_scripts_() + packageName + _js()) ?: return null
@@ -526,6 +530,57 @@ class MainModule : XposedModule() {
             }
         } catch (e: Exception) {
             null
+        }
+    }
+
+    /** A downloaded copy lives next to the user scripts, behind the `rs_` prefix. */
+    private fun readRemoteScript(name: String): String? =
+        RemoteFiles.read({ openRemoteFile(it) }, ScriptStore.remoteFile(name))
+
+    /**
+     * The copy of `packageName` that runs: the downloaded one only while it is newer than the
+     * bundled one, a tie goes to the bundle. Disabling the package turns off both, because they
+     * share a single entry in `disabled_scripts`.
+     */
+    private fun packageScript(packageName: String): String? {
+        if (isScriptDisabled(packageName, BUNDLED)) return null
+
+        return ScriptStore.pickScript(readBundledScriptFile(packageName), readRemoteScript(packageName))?.second
+    }
+
+    /**
+     * The downloaded scripts from `scripts/global`, each in its own `try`/`catch` and ordered
+     * the same way as the list in the app. They are pasted into `global.js`, so they only ever
+     * run while the bundled global script is enabled and available.
+     */
+    private fun globalRemoteScript(): String {
+        val open = { name: String -> openRemoteFile(name) }
+
+        val scripts = arrayListOf<Pair<String, String>>()
+
+        RemoteFiles.list { listRemoteFiles() }.forEach { file ->
+            if (!file.startsWith(rs_()) || !file.endsWith(_js())) return@forEach
+
+            val name = file.removePrefix(rs_()).removeSuffix(_js())
+            if (name.isEmpty() || !ScriptStore.isGlobalRemoteName(name)) return@forEach
+            if (name == global() || name == user_script()) return@forEach
+            if (isScriptDisabled(name, ScriptType.GLOBAL_REMOTE)) return@forEach
+
+            val source = RemoteFiles.read(open, file) ?: return@forEach
+            scripts.add(name to source)
+        }
+
+        if (scripts.isEmpty()) return ""
+
+        // the newest download runs first, so the order matches what the scripts screen shows
+        val ordered = scripts.sortedWith(
+            compareByDescending<Pair<String, String>> { RemoteFiles.lastModifiedAt(open, ScriptStore.remoteFile(it.first)) }
+                .thenBy { it.first }
+        )
+
+        // every entry stands alone: one broken global script must not stop the others
+        return ordered.joinToString("") { (_, source) ->
+            try_() + newline() + extractAuthor(source).second + newline() + catchEConsoleLogE()
         }
     }
 
@@ -544,8 +599,9 @@ class MainModule : XposedModule() {
     fun extractAuthor(content: String): Pair<String, String> {
         val authorTag = ___author__().trimEnd()
         // drop every tagged header line (`// name:`, `// url:`, `// author:`, `// description:`,
-        // `// added-in:`) from the top comment block so the injected script carries no metadata
-        val tags = listOf(authorTag, name_(), url_(), description_(), added_in_())
+        // `// added-in:`, `// version:`, `// summary:`) from the top comment block so the injected
+        // script carries no metadata
+        val tags = listOf(authorTag, name_(), url_(), description_(), added_in_(), version_(), summary_())
         val rest = StringBuilder()
         var author = ""
         var start = 0

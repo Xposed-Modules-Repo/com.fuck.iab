@@ -591,7 +591,7 @@ class StrFunctionsTest {
     }
     @Test
     fun fn_NewScript() {
-        assertEquals("New script", NewScript())
+        assertEquals("New Script", NewScript())
     }
     @Test
     fun fn_Cancel() {
@@ -834,6 +834,10 @@ class StrFunctionsTest {
         assertEquals("BUNDLE_SCRIPT_PACKAGE", BundleScriptPackage())
     }
     @Test
+    fun fn_RemoteScriptGlobal() {
+        assertEquals("REMOTE_SCRIPT_GLOBAL", RemoteScriptGlobal())
+    }
+    @Test
     fun fn_UserScriptGlobal() {
         assertEquals("USER_SCRIPT_GLOBAL", UserScriptGlobal())
     }
@@ -920,5 +924,48 @@ class StrFunctionsTest {
     @Test
     fun fn_tMe() {
         assertEquals("t.me", tMe())
+    }
+    @Test
+    fun fn_remote() {
+        assertEquals("remote", remote())
+    }
+    @Test
+    fun fn_version() {
+        assertEquals("version", version())
+    }
+    @Test
+    fun fn_summary() {
+        assertEquals("summary", summary())
+    }
+    @Test
+    fun fn_version_() {
+        assertEquals("// version:", version_())
+    }
+    @Test
+    fun fn_summary_() {
+        assertEquals("// summary:", summary_())
+    }
+    @Test
+    fun fn_disabled_scripts() {
+        assertEquals("disabled_scripts", disabled_scripts())
+    }
+    @Test
+    fun fn_rs_() {
+        assertEquals("rs_", rs_())
+    }
+    @Test
+    fun fn_metaJson() {
+        assertEquals("manifest.json", manifestJson())
+    }
+    @Test
+    fun fn_scriptsRawUrl() {
+        assertEquals(
+            "https://raw.githubusercontent.com/Xposed-Modules-Repo/com.fuck.iab/master/scripts/",
+            scriptsRawUrl()
+        )
+    }
+    @Test
+    fun fn_CouldNotFetchRemoteScripts() {
+        assertEquals("Could not fetch remote scripts", CouldNotFetchRemoteScripts())
     }
 }

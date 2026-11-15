@@ -1,4 +1,4 @@
-// author:
+// summary: shared helpers and environment setup
 // description: Sets up the Frida Java/IL2CPP bridge and provides shared helpers for finding classes, methods, and app context. Disabling this stops all bundled scripts from running.
 
 import "frida-il2cpp-bridge";

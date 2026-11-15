@@ -11,20 +11,20 @@ npm run build -- test
 ```
 
 `build.js` compiles everything in `src/` into `../app/src/main/assets/scripts/` and then
-rewrites `meta.json` from the `// version:` headers.
+rewrites `manifest.json` from the `// version:` headers.
 
-- building one script updates only that entry of `meta.json`
+- building one script updates only that entry of `manifest.json`
 - `--all` rewrites the whole file and drops entries whose script no longer exists
 
 A name resolves to `src/` first and to `global/` second. Scripts in `global/` are never
-compiled: the app downloads them as plain source, so only their `meta.json` entry is synced.
+compiled: the app downloads them as plain source, so only their `manifest.json` entry is synced.
 
 ## Layout
 
 ```
 src/       bundled package scripts, compiled into the apk
 global/    downloaded on demand, run on every app
-meta.json  published versions, pulled by the app on pull to refresh
+manifest.json  published versions, pulled by the app on pull to refresh
 ```
 
 Every script in `src/` carries a `// version:` header, except `global.js`, which is the
@@ -39,7 +39,7 @@ bundled runtime and is never served over the network:
 // version: 1
 ```
 
-`meta.json` mirrors those numbers so the app can tell a newer download from the copy it
+`manifest.json` mirrors those numbers so the app can tell a newer download from the copy it
 already ships:
 
 ```json
@@ -52,7 +52,7 @@ already ships:
 }
 ```
 
-The app fetches `meta.json` from the `master` branch of this repository. A download replaces
+The app fetches `manifest.json` from the `master` branch of this repository. A download replaces
 the bundled copy only while its version is strictly higher; a tie always uses the bundle.
 Bump `// version:` and run the build to ship an update that reaches users before the next
 apk release.
