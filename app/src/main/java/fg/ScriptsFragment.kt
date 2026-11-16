@@ -632,10 +632,8 @@ private class ScriptAdapter(
 
         parts += sizeLabel(item.size)
 
-        // global and opt-in scripts run on their own, they have no author to credit
-        if (item.type != GLOBAL_REMOTE && item.type != ScriptType.OPT_IN) {
-            item.author?.let { parts += it }
-        }
+        // any script that carries an `// author:` tag credits it, global and opt-in included
+        item.author?.let { parts += it }
 
         holder.meta.text = parts.joinToString(s4a9f2e())
 
