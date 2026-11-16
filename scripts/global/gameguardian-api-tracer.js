@@ -1,9 +1,10 @@
+// name: gameguardian-api-tracer.js
 // summary: Traces GameGuardian Lua API calls.
 // author: AbdolAziz
 // description: Hooks selected GameGuardian API methods using Frida and logs memory operations, search parameters, value modifications, UI interactions, and Lua table contents.
 // modified-at: 16/11/2026 9:15
 // opt-in: true
-// version: 2
+// version: 3
 
 'use strict';
 
