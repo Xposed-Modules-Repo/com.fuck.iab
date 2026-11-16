@@ -28,9 +28,9 @@ When contributing a script, please include the following metadata at the top of 
 ```
 // name: App or game name.
 // url: Google Play Store link.
-// author: Your GitHub username.
+// author: Your name.
 // description: A brief description of what the script does.
-// added-in: 1.0.0
+// modified-at: 26/10/2026 1:10
 // version: 1
 ```
 
