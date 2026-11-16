@@ -6,11 +6,14 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -109,6 +112,7 @@ class ScriptsFragment : Fragment() {
     private val viewModel: MainViewModel by activityViewModels()
     private lateinit var adapter: ScriptAdapter
     private lateinit var list: RecyclerView
+    private lateinit var search: TextInputEditText
     private var pickerDialog: Dialog? = null
     private var sheet: BottomSheetDialog? = null
     /** Set by a successful sync, which can add scripts above whatever the user is looking at. */
@@ -128,7 +132,7 @@ class ScriptsFragment : Fragment() {
         list = v.findViewById(R.id.scriptsList)
         val empty = v.findViewById<TextView>(R.id.scriptsEmpty)
         val newScript = v.findViewById<ExtendedFloatingActionButton>(R.id.newScriptButton)
-        val search = v.findViewById<TextInputEditText>(R.id.searchInput)
+        search = v.findViewById(R.id.searchInput)
         val swipe = v.findViewById<SwipeRefreshLayout>(R.id.swipeRefresh)
 
         adapter = ScriptAdapter(requireContext()) { script ->
@@ -153,6 +157,21 @@ class ScriptsFragment : Fragment() {
             applyFilters(empty)
         }
 
+        // A focused search is a mode of its own, so back leaves it instead of leaving the app.
+        val backToSearch = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() = dismissSearch()
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backToSearch)
+        search.setOnFocusChangeListener { _, hasFocus -> backToSearch.isEnabled = hasFocus }
+
+        // Touching the list is "somewhere else", so the keyboard does not linger over it.
+        list.addOnItemTouchListener(object : RecyclerView.SimpleOnItemTouchListener() {
+            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                if (e.actionMasked == MotionEvent.ACTION_DOWN) dismissSearch()
+                return false
+            }
+        })
+
         v.findViewById<ChipGroup>(R.id.filterGroup)
             .setOnCheckedStateChangeListener { _, checkedIds ->
                 filter = when (checkedIds.firstOrNull()) {
@@ -163,6 +182,7 @@ class ScriptsFragment : Fragment() {
                     else -> null
                 }
 
+                dismissSearch()
                 applyFilters(empty)
             }
 
@@ -310,6 +330,9 @@ class ScriptsFragment : Fragment() {
 
         val sheetDialog = BottomSheetDialog(context)
         sheetDialog.setContentView(view)
+        // This sheet is short, so its collapsed size is its expanded size: without skipping that
+        // state a swipe down parks there and looks ignored. Skipping it makes one swipe dismiss.
+        sheetDialog.behavior.skipCollapsed = true
         sheet = sheetDialog
 
         val linkButton = view.findViewById<MaterialButton>(R.id.detailViewSource)
@@ -427,6 +450,15 @@ class ScriptsFragment : Fragment() {
 
         view.findViewById<TextView>(R.id.detailDescription).text = details.description
 
+    }
+
+    /** Drops the search field's focus and keyboard, keeping whatever was typed. */
+    private fun dismissSearch() {
+        if (!search.hasFocus()) return
+
+        requireContext().getSystemService(InputMethodManager::class.java)
+            ?.hideSoftInputFromWindow(search.windowToken, 0)
+        search.clearFocus()
     }
 
     // ---- new script picker -----------------------------------------------------
