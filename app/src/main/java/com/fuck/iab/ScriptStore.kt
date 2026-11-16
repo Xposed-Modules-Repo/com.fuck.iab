@@ -172,8 +172,8 @@ object ScriptStore {
     /** A modification time rendered the way the tag is written, always in UTC. */
     fun formatUtc(epochMillis: Long): String {
         if (epochMillis <= 0L) return ""
-        val format = SimpleDateFormat("d/M/yyyy H:mm", Locale.US).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
+        val format = SimpleDateFormat("d/M/yyyy", Locale.US).apply {
+//            timeZone = TimeZone.getTimeZone("UTC")
         }
         return format.format(Date(epochMillis))
     }
