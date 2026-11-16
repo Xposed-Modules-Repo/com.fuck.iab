@@ -108,8 +108,11 @@ class ScriptsFragment : Fragment() {
 
     private val viewModel: MainViewModel by activityViewModels()
     private lateinit var adapter: ScriptAdapter
+    private lateinit var list: RecyclerView
     private var pickerDialog: Dialog? = null
     private var sheet: BottomSheetDialog? = null
+    /** Set by a successful sync, which can add scripts above whatever the user is looking at. */
+    private var scrollToTopOnNextUpdate = false
 
     private var query: String = ""
     private var filter: ScriptType? = null
@@ -122,7 +125,7 @@ class ScriptsFragment : Fragment() {
     ): View {
         val v = inflater.inflate(R.layout.page_scripts, container, false)
 
-        val list = v.findViewById<RecyclerView>(R.id.scriptsList)
+        list = v.findViewById(R.id.scriptsList)
         val empty = v.findViewById<TextView>(R.id.scriptsEmpty)
         val newScript = v.findViewById<ExtendedFloatingActionButton>(R.id.newScriptButton)
         val search = v.findViewById<TextInputEditText>(R.id.searchInput)
@@ -211,7 +214,13 @@ class ScriptsFragment : Fragment() {
             matchesFilter && matchesQuery
         }
 
-        adapter.submitList(visible)
+        adapter.submitList(visible) {
+            // the list is rebuilt in place, so scroll once the new rows are actually in
+            if (scrollToTopOnNextUpdate) {
+                scrollToTopOnNextUpdate = false
+                list.scrollToPosition(0)
+            }
+        }
 
         if (viewModel.state.value.connectionStatus == 0) { // connecting...
             empty.isVisible = false
@@ -272,9 +281,13 @@ class ScriptsFragment : Fragment() {
                     context, CouldNotFetchRemoteScripts(), Toast.LENGTH_SHORT
                 ).show()
 
-                RefreshOutcome.DONE -> Toast.makeText(
-                    context, Scripts_synced_successfully(), Toast.LENGTH_SHORT
-                ).show()
+                RefreshOutcome.DONE -> {
+                    // a new script can land at the top, where the user would miss it
+                    scrollToTopOnNextUpdate = true
+                    Toast.makeText(
+                        context, Scripts_synced_successfully(), Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
 
             viewModel.refresh()

@@ -1,6 +1,7 @@
 {
 	"global": {
-		"file": 1
+		"file": 1,
+		"file2": 1
 	},
 	"app.simple.inure.play": 1,
 	"com.BrainLadder.Amirza": 1,
