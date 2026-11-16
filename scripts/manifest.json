@@ -1,8 +1,5 @@
 {
-	"global": {
-		"file": 1,
-		"file2": 1
-	},
+	"global": {},
 	"app.simple.inure.play": 1,
 	"com.BrainLadder.Amirza": 1,
 	"com.PoxelStudios.DudeTheftAuto": 1,
