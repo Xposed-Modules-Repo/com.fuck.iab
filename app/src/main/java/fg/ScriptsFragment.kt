@@ -136,7 +136,7 @@ class ScriptsFragment : Fragment() {
                 showDetails(script)
             }
         }
-        adapter.onEnabledChanged = { packageName, type, enabled -> viewModel.setEnabled(packageName, type, enabled) }
+        adapter.onEnabledChanged = { item, enabled -> viewModel.setEnabled(item, enabled) }
 
         list.layoutManager = LinearLayoutManager(requireContext())
         list.adapter = adapter
@@ -543,7 +543,7 @@ private class ScriptAdapter(
     private val onClick: (ScriptInfo) -> Unit
 ) : ListAdapter<ScriptInfo, ScriptAdapter.Holder>(DIFF) {
 
-    var onEnabledChanged: ((String, ScriptType, Boolean) -> Unit)? = null
+    var onEnabledChanged: ((ScriptInfo, Boolean) -> Unit)? = null
 
     class Holder(view: View) : RecyclerView.ViewHolder(view) {
         val icon: ImageView = view.findViewById(R.id.scriptIcon)
@@ -559,7 +559,7 @@ private class ScriptAdapter(
         holder.switch.setOnCheckedChangeListener { button, isChecked ->
             if (holder.isBinding) return@setOnCheckedChangeListener
             val item = button.tag as? ScriptInfo ?: return@setOnCheckedChangeListener
-            onEnabledChanged?.invoke(item.packageName, item.type, isChecked)
+            onEnabledChanged?.invoke(item, isChecked)
         }
         return holder
     }

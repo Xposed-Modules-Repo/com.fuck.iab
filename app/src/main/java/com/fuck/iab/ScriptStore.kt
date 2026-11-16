@@ -26,14 +26,15 @@ enum class ScriptType { BUNDLED, USER, REMOTE, GLOBAL_REMOTE, OPT_IN }
 data class ScriptInfo(
     val packageName: String,
     val type: ScriptType,
-    val source: String,
     val author: String? = null,
     val size: Int = 0,
-    val enabled: Boolean,
+    var enabled: Boolean,
     val name: String? = null,
     val url: String? = null,
     val version: Int = 1,
     val summary: String? = null,
+    /** The `// description:` tag, `null` when the script carries none. */
+    val description: String? = null,
     /** Last modification as an epoch millis in UTC, `0` when the script carries no `// modified-at:`. */
     val modified: Long = 0L
 )
@@ -115,6 +116,9 @@ object RemoteFiles {
 
 object ScriptStore {
 
+    /** The `sync` row remembering which install the bundled rows were read from. */
+    private const val APK_KEY = "bundled_apk"
+
     /** Accepted `// modified-at:` shapes, all of them read as UTC. */
     private val UTC_PATTERNS = arrayOf(
         "d/M/yyyy H:mm",
@@ -175,8 +179,10 @@ object ScriptStore {
     }
 
     fun inventory(context: Context, service: XposedService?): List<ScriptInfo> {
-        val bundledScripts = bundledScripts(context)
-        val remoteScripts = remoteScripts(service)
+        // only the file names are listed here; a script is opened once, the first time the cache
+        // meets it, and every listing after that is answered by the cache alone
+        val bundled = bundledMeta(context)
+        val store = storeMeta(context, service)
 
         val off = if (service != null) disabledScripts(service) else emptySet()
         val offUser = if (service != null) disabledUserScripts(service) else emptySet()
@@ -184,90 +190,39 @@ object ScriptStore {
 
         val ret = arrayListOf<ScriptInfo>()
 
-        userScripts(service).forEach { (packageName, script) ->
-            if (script == null) return@forEach
-            ret.add(
-                ScriptInfo(
-                    packageName = packageName,
-                    type = USER,
-                    source = script,
-                    author = authorOf(script),
-                    size = script.toByteArray(Charsets.UTF_8).size,
-                    enabled = !offUser.contains(packageName),
-                    name = headerOf(script, name()),
-                    url = headerOf(script, url()),
-                    // an absolute instant, so it already means the same thing in every timezone
-                    modified = if (service != null) RemoteFiles.lastModifiedAt(service, packageName + _js()) else 0L
-                )
-            )
+        store.user.forEach { (packageName, meta) ->
+            ret.add(meta.info(packageName, USER, enabled = !offUser.contains(packageName)))
         }
 
         // a package is listed once: as its remote copy when that one is newer, bundled otherwise
-        val winningRemote = hashMapOf<String, String>()
-        remoteScripts.forEach { (name, script) ->
+        val winningRemote = hashMapOf<String, ScriptMeta>()
+        store.remote.forEach { (name, meta) ->
             if (isGlobalRemoteName(name)) return@forEach
             if (name == global() || name == user_script()) return@forEach
 
-            val picked = pickScript(bundledScripts[name], script)
-            if (picked != null && picked.first == REMOTE) winningRemote[name] = picked.second
+            val bundledVersion = bundled[name]?.let { it.version ?: 1 }
+            if (pickType(bundledVersion, meta.version) == REMOTE) winningRemote[name] = meta
         }
 
-        bundledScripts.forEach { (packageName, script) ->
+        bundled.forEach { (packageName, meta) ->
             if (winningRemote.containsKey(packageName)) return@forEach
 
-            ret.add(
-                ScriptInfo(
-                    packageName = packageName,
-                    type = BUNDLED,
-                    source = script,
-                    author = authorOf(script),
-                    size = script.toByteArray(Charsets.UTF_8).size,
-                    enabled = !off.contains(packageName),
-                    name = headerOf(script, name()),
-                    url = headerOf(script, url()),
-                    version = versionOf(script),
-                    summary = headerOf(script, summary()),
-                    modified = modifiedOf(script)
-                )
-            )
+            ret.add(meta.info(packageName, BUNDLED, enabled = !off.contains(packageName)))
         }
 
-        winningRemote.forEach { (packageName, script) ->
-            ret.add(
-                ScriptInfo(
-                    packageName = packageName,
-                    type = REMOTE,
-                    source = script,
-                    author = authorOf(script),
-                    size = script.toByteArray(Charsets.UTF_8).size,
-                    enabled = !off.contains(packageName),
-                    name = headerOf(script, name()),
-                    url = headerOf(script, url()),
-                    version = versionOf(script),
-                    summary = headerOf(script, summary()),
-                    modified = modifiedOf(script)
-                )
-            )
+        winningRemote.forEach { (packageName, meta) ->
+            ret.add(meta.info(packageName, REMOTE, enabled = !off.contains(packageName)))
         }
 
-        remoteScripts.forEach { (name, script) ->
+        store.remote.forEach { (name, meta) ->
             if (!isGlobalRemoteName(name)) return@forEach
             if (name == global() || name == user_script()) return@forEach
 
-            val optIn = isOptIn(script)
             ret.add(
-                ScriptInfo(
-                    packageName = name,
-                    type = if (optIn) OPT_IN else GLOBAL_REMOTE,
-                    source = script,
-                    author = authorOf(script),
-                    size = script.toByteArray(Charsets.UTF_8).size,
-                    enabled = if (optIn) onOptIn.contains(name) else !off.contains(name),
-                    name = headerOf(script, name()),
-                    url = headerOf(script, url()),
-                    version = versionOf(script),
-                    summary = headerOf(script, summary()),
-                    modified = modifiedOf(script)
+                meta.info(
+                    name,
+                    if (meta.optIn) OPT_IN else GLOBAL_REMOTE,
+                    enabled = if (meta.optIn) onOptIn.contains(name) else !off.contains(name)
                 )
             )
         }
@@ -277,22 +232,38 @@ object ScriptStore {
         return ret
     }
 
+    private fun ScriptMeta.info(packageName: String, type: ScriptType, enabled: Boolean) =
+        ScriptInfo(
+            packageName = packageName,
+            type = type,
+            author = author,
+            size = size,
+            enabled = enabled,
+            name = name,
+            url = url,
+            version = version ?: 1,
+            summary = summary,
+            description = description,
+            modified = modified
+        )
+
     /**
      * The copy that actually runs for a package: the downloaded one only while it is strictly
      * newer than the bundled one, a tie always goes to the bundle. `null` when there is nothing
-     * usable, which is also the case for a half written download, so it gets fetched again.
+     * usable, which is also the case for a download without a version.
      */
+    internal fun pickType(bundledVersion: Int?, remoteVersion: Int?): ScriptType? {
+        if (bundledVersion == null) return if (remoteVersion == null) null else REMOTE
+
+        return if (remoteVersion != null && remoteVersion > bundledVersion) REMOTE else BUNDLED
+    }
+
+    /** [pickType] over the script texts, kept for the tests of the rule itself. */
     internal fun pickScript(bundled: String?, remote: String?): Pair<ScriptType, String>? {
-        val remoteVersion = remote?.let { rawVersionOf(it) }
-
-        if (bundled == null) {
-            return if (remoteVersion == null) null else REMOTE to remote!!
-        }
-
-        return if (remoteVersion != null && remoteVersion > versionOf(bundled)) {
-            REMOTE to remote!!
-        } else {
-            BUNDLED to bundled
+        return when (pickType(bundled?.let { versionOf(it) }, remote?.let { rawVersionOf(it) })) {
+            REMOTE -> REMOTE to remote!!
+            BUNDLED -> BUNDLED to bundled!!
+            else -> null
         }
     }
 
@@ -312,50 +283,134 @@ object ScriptStore {
         return info.packageName.compareTo(other.packageName)
     }
 
-    private fun userScripts(service: XposedService?): Map<String, String?> {
-        return if (service == null) emptyMap()
-        else try {
-            RemoteFiles.list(service)
-                // the downloaded copies live in the same file store and are not user scripts
-                .filter { it.endsWith(_js()) && !it.startsWith(rs_()) }
-                .associate {
-                    it.removeSuffix(_js()) to RemoteFiles.read(service, it)
-                }
-        } catch (e: Exception) {
-            emptyMap()
-        }
-    }
+    /**
+     * Held while the cache is filled. A listing and a pull to refresh can start together, and
+     * without this both would find the cache empty and open every file before either wrote a row.
+     */
+    private val cacheLock = Any()
 
-    /** Downloaded copies, keyed by the name between `rs_` and `.js`. */
-    internal fun remoteScripts(service: XposedService?): Map<String, String> {
-        if (service == null) return emptyMap()
+    /**
+     * Metadata of the scripts bundled in the APK, keyed by package name. Only the entry names are
+     * listed; an entry is opened the first time the cache meets it and never again.
+     */
+    internal fun bundledMeta(context: Context): Map<String, ScriptMeta> =
+        synchronized(cacheLock) { buildBundledMeta(context) }
 
-        val scripts = hashMapOf<String, String>()
-        RemoteFiles.list(service).forEach { file ->
-            if (!file.startsWith(rs_()) || !file.endsWith(_js())) return@forEach
+    private fun buildBundledMeta(context: Context): Map<String, ScriptMeta> {
+        // an update can change every bundled file, so its rows are dropped once per install
+        dropBundledRowsIfUpdated(context)
 
-            val name = file.removePrefix(rs_()).removeSuffix(_js())
-            if (name.isEmpty()) return@forEach
+        val cached = ScriptDatabase.readAll(context, ScriptOrigin.BUNDLED)
+        val found = linkedMapOf<String, ScriptMeta>()
 
-            RemoteFiles.read(service, file)?.let { scripts[name] = it }
-        }
-        return scripts
-    }
-
-    internal fun bundledScripts(context: Context): Map<String, String> {
-        return try {
+        try {
             ZipFile(context.applicationInfo.sourceDir).use { zip ->
-                zip.entries().asSequence()
+                val files = zip.entries().asSequence()
                     .filter { !it.isDirectory && it.name.startsWith(assets_scripts_()) && it.name.endsWith(_js()) }
-                    .associate { entry ->
-                        val packageName = entry.name.removePrefix(assets_scripts_()).removeSuffix(_js())
-                        val text = zip.getInputStream(entry).bufferedReader(Charsets.UTF_8).use { it.readText() }
-                        packageName to text
-                    }
+                    .map { it.name.removePrefix(assets_scripts_()) }
+                    .toList()
+
+                val added = arrayListOf<ScriptMeta>()
+                files.forEach { file ->
+                    val meta = cached[file] ?: readBundled(zip, file)?.also { added += it }
+                        ?: return@forEach
+                    found[file.removeSuffix(_js())] = meta
+                }
+
+                ScriptDatabase.save(context, added)
+                // nothing the APK no longer ships stays behind in the cache
+                ScriptDatabase.retain(context, ScriptOrigin.BUNDLED, files.toSet())
             }
         } catch (e: Exception) {
-            emptyMap()
+            // an unreadable APK is answered from the cache alone
+            cached.forEach { (file, meta) -> found[file.removeSuffix(_js())] = meta }
         }
+
+        return found
+    }
+
+    private fun readBundled(zip: ZipFile, file: String): ScriptMeta? {
+        return try {
+            val entry = zip.getEntry(assets_scripts_() + file) ?: return null
+            val text = zip.getInputStream(entry).bufferedReader(Charsets.UTF_8).use { it.readText() }
+            metaOf(file, ScriptOrigin.BUNDLED, text, modifiedOf(text))
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /** What the Xposed store holds, split the way `inventory` lists it. */
+    internal class StoreMeta(
+        /** User scripts, keyed by package name. */
+        val user: Map<String, ScriptMeta>,
+        /** Downloaded copies, keyed by the name between `rs_` and `.js`. */
+        val remote: Map<String, ScriptMeta>
+    )
+
+    internal fun storeMeta(context: Context, service: XposedService?): StoreMeta =
+        synchronized(cacheLock) { buildStoreMeta(context, service) }
+
+    private fun buildStoreMeta(context: Context, service: XposedService?): StoreMeta {
+        if (service == null) return StoreMeta(emptyMap(), emptyMap())
+
+        val files = RemoteFiles.list(service)
+        val cached = ScriptDatabase.readAll(context, ScriptOrigin.STORE)
+        val user = linkedMapOf<String, ScriptMeta>()
+        val remote = linkedMapOf<String, ScriptMeta>()
+        val added = arrayListOf<ScriptMeta>()
+
+        files.forEach { file ->
+            if (!file.endsWith(_js())) return@forEach
+
+            // downloaded copies live in the same file store and are not user scripts
+            val isRemote = file.startsWith(rs_())
+            val name = if (isRemote) file.removePrefix(rs_()).removeSuffix(_js()) else file.removeSuffix(_js())
+            if (name.isEmpty()) return@forEach
+
+            val meta = cached[file] ?: run {
+                val text = RemoteFiles.read(service, file) ?: return@forEach
+                // a user script is dated by the file itself, a published one by its header tag
+                val modified = if (isRemote) modifiedOf(text) else RemoteFiles.lastModifiedAt(service, file)
+                metaOf(file, ScriptOrigin.STORE, text, modified).also { added += it }
+            }
+
+            if (isRemote) remote[name] = meta else user[name] = meta
+        }
+
+        ScriptDatabase.save(context, added)
+        // a deleted or unpublished script drops out of the cache with its file
+        ScriptDatabase.retain(context, ScriptOrigin.STORE, files)
+
+        return StoreMeta(user, remote)
+    }
+
+    /** The cache row of one script file, read out of the header block of its text. */
+    internal fun metaOf(file: String, origin: ScriptOrigin, text: String, modified: Long) = ScriptMeta(
+        file = file,
+        origin = origin,
+        author = authorOf(text),
+        name = headerOf(text, name()),
+        url = headerOf(text, url()),
+        summary = headerOf(text, summary()),
+        description = headerOf(text, description()),
+        version = rawVersionOf(text),
+        optIn = isOptIn(text),
+        size = text.toByteArray(Charsets.UTF_8).size,
+        modified = modified
+    )
+
+    /** Rows written for an older APK no longer describe the files it ships now. */
+    private fun dropBundledRowsIfUpdated(context: Context) {
+        val stamp = try {
+            context.packageManager.getPackageInfo(context.packageName, 0).lastUpdateTime.toString()
+        } catch (e: Exception) {
+            return
+        }
+
+        if (ScriptDatabase.sync(context, APK_KEY) == stamp) return
+
+        ScriptDatabase.deleteAll(context, ScriptOrigin.BUNDLED)
+        ScriptDatabase.setSync(context, APK_KEY, stamp)
     }
 
     fun authorOf(script: String): String? = headerOf(script, author())
@@ -380,7 +435,7 @@ object ScriptStore {
         author = info.author,
         version = info.version,
         // global scripts carry no description of their own, the summary stands in for it
-        description = headerOf(info.source, description()) ?: info.summary.orEmpty(),
+        description = info.description ?: info.summary.orEmpty(),
         modifiedAt = formatUtc(info.modified),
         enabled = info.enabled,
         size = info.size
@@ -396,12 +451,21 @@ object ScriptStore {
         return RemoteFiles.read(service, file)
     }
 
-    fun saveUserScript(service: XposedService, packageName: String, text: String): Boolean {
-        return RemoteFiles.write(service, userFile(packageName), text)
+    fun saveUserScript(context: Context, service: XposedService, packageName: String, text: String): Boolean {
+        val file = userFile(packageName)
+        if (!RemoteFiles.write(service, file, text)) return false
+
+        // the row has to describe the text that was just written, not the one it replaced
+        val modified = RemoteFiles.lastModifiedAt(service, file)
+        ScriptDatabase.save(context, metaOf(file, ScriptOrigin.STORE, text, modified))
+        return true
     }
 
-    fun removeUserScript(service: XposedService, packageName: String) {
-        RemoteFiles.delete(service, userFile(packageName))
+    fun removeUserScript(context: Context, service: XposedService, packageName: String) {
+        val file = userFile(packageName)
+        if (RemoteFiles.delete(service, file)) {
+            ScriptDatabase.delete(context, ScriptOrigin.STORE, file)
+        }
     }
 
     fun disabledScripts(service: XposedService): Set<String> =

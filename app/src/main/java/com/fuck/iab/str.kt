@@ -2096,9 +2096,7 @@ fun scriptsRawUrl(): String {
     for (num in arr) {
         sb.append((num.xor(103)).toChar())
     }
-//    return sb.toString()
-//    return "https://raw.githubusercontent.com/Xposed-Modules-Repo/com.fuck.iab/master/scripts/"
-    return "https://raw.githubusercontent.com/staleroot/fkiab-remote-scripts-test/master/scripts/"
+    return sb.toString()
 }
 
 fun CouldNotFetchRemoteScripts(): String {

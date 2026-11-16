@@ -29,22 +29,26 @@ object RemoteScripts {
 
         val manifest = fetchManifest() ?: return RefreshOutcome.FAILED
 
-        val bundled = ScriptStore.bundledScripts(context)
+        // the versions come from the cache, so a refresh never opens the bundled scripts
+        val bundled = ScriptStore.bundledMeta(context)
         var failed = false
 
         manifest.packages.forEach { (name, version) ->
             // `global` is the table of global scripts, the bundled global.js is never downloaded
             if (name == global()) return@forEach
 
-            val bundledVersion = bundled[name]?.let { ScriptStore.versionOf(it) }
+            val bundledVersion = bundled[name]?.let { it.version ?: 1 }
             if (bundledVersion != null && bundledVersion >= version) return@forEach
 
             val local = RemoteFiles.read(service, ScriptStore.remoteFile(name))
             val localVersion = local?.let { ScriptStore.rawVersionOf(it) }
-            if (localVersion != null && localVersion >= version) return@forEach
+            if (local != null && localVersion != null && localVersion >= version) {
+                remember(context, name, local)
+                return@forEach
+            }
 
             val source = fetch(scriptsRawUrl() + src() + name + _js() + "${rand__()}${System.currentTimeMillis()}")
-            if (source == null || !store(service, ScriptStore.remoteFile(name), source)) {
+            if (source == null || !store(context, service, name, source)) {
                 failed = true
             }
         }
@@ -52,40 +56,60 @@ object RemoteScripts {
         manifest.globals.forEach { (name, version) ->
             val local = RemoteFiles.read(service, ScriptStore.remoteFile(name))
             val localVersion = local?.let { ScriptStore.rawVersionOf(it) }
-            if (localVersion != null && localVersion >= version) return@forEach
+            if (local != null && localVersion != null && localVersion >= version) {
+                remember(context, name, local)
+                return@forEach
+            }
 
             val source = fetch(scriptsRawUrl() + global() + '/' + name + _js() + "${rand__()}${System.currentTimeMillis()}")
-            if (source == null || !store(service, ScriptStore.remoteFile(name), source)) {
+            if (source == null || !store(context, service, name, source)) {
                 failed = true
             }
         }
 
-        forgetStale(service, isKnown = { name ->
+        forgetStale(context, service, isKnown = { name ->
             name in manifest.packages || name in manifest.globals
         })
 
         return if (failed) RefreshOutcome.FAILED else RefreshOutcome.DONE
     }
 
-    /** Drops every downloaded copy that is no longer listed in manifest.json. */
-    private fun forgetStale(service: XposedService, isKnown: (String) -> Boolean) {
+    /** Drops every downloaded copy that is no longer listed in manifest.json, cache row included. */
+    private fun forgetStale(context: Context, service: XposedService, isKnown: (String) -> Boolean) {
         RemoteFiles.list(service).forEach { file ->
             if (!file.startsWith(rs_()) || !file.endsWith(_js())) return@forEach
 
             val name = file.removePrefix(rs_()).removeSuffix(_js())
             if (name.isEmpty() || !isKnown(name)) {
-                RemoteFiles.delete(service, file)
+                // the row only goes once the file is really gone, `delete` reports that
+                if (RemoteFiles.delete(service, file)) {
+                    ScriptDatabase.delete(context, ScriptOrigin.STORE, file)
+                }
             }
         }
     }
 
-    private fun store(service: XposedService, file: String, text: String): Boolean {
+    private fun store(context: Context, service: XposedService, name: String, text: String): Boolean {
+        val file = ScriptStore.remoteFile(name)
+
         RemoteFiles.write(service, file, text)
         if (RemoteFiles.read(service, file) != text) {
             RemoteFiles.delete(service, file)
+            ScriptDatabase.delete(context, ScriptOrigin.STORE, file)
             return false
         }
+
+        remember(context, name, text)
         return true
+    }
+
+    /** Keeps the cache row of a published script in step with the copy that is on disk. */
+    private fun remember(context: Context, name: String, text: String) {
+        val file = ScriptStore.remoteFile(name)
+        ScriptDatabase.save(
+            context,
+            ScriptStore.metaOf(file, ScriptOrigin.STORE, text, ScriptStore.modifiedOf(text))
+        )
     }
 
     private fun fetchManifest(): Manifest? {

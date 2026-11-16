@@ -119,7 +119,6 @@ class ScriptStoreSortTest {
         ScriptInfo(
             packageName = packageName,
             type = type,
-            source = "",
             author = null,
             enabled = true,
             modified = modified

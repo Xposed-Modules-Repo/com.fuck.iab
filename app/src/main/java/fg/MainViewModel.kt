@@ -249,11 +249,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    fun setEnabled(packageName: String, type: ScriptType, enabled: Boolean) {
+    fun setEnabled(item: ScriptInfo, enabled: Boolean) {
         val service = currentService ?: return
 
         viewModelScope.launch {
-            withContext(Dispatchers.IO) { ScriptStore.setEnabled(service, packageName, type, enabled) }
+            withContext(Dispatchers.IO) {
+                ScriptStore.setEnabled(service, item.packageName, item.type, enabled)
+                item.enabled = !item.enabled
+            }
 //            refresh()
         }
     }

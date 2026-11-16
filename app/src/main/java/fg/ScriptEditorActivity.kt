@@ -203,7 +203,7 @@ class ScriptEditorActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             val saved = withContext(Dispatchers.IO) {
-                ScriptStore.saveUserScript(current, packageName, text)
+                ScriptStore.saveUserScript(this@ScriptEditorActivity, current, packageName, text)
             }
 
             if (!saved) {
@@ -231,7 +231,7 @@ class ScriptEditorActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
-                ScriptStore.removeUserScript(current, packageName)
+                ScriptStore.removeUserScript(this@ScriptEditorActivity, current, packageName)
             }
 
             Toast.makeText(this@ScriptEditorActivity, UserScriptRemoved(), Toast.LENGTH_SHORT).show()
