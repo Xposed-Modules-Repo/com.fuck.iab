@@ -1326,9 +1326,9 @@ fun NotConnectedToYourXposedFrameworkTryForceStoppingFkiabAndReLaf289e(): String
 }
 fun NewScript(): String {
     val sb = StringBuilder()
-    val arr = intArrayOf(4, 47, 61, 106, 25, 41, 56, 35, 58, 62)
+    val arr = intArrayOf(165, 142, 156, 203, 152, 136, 153, 130, 155, 159)
     for (num in arr) {
-        sb.append((num.xor(74)).toChar())
+        sb.append((num.xor(235)).toChar())
     }
     return sb.toString()
 }

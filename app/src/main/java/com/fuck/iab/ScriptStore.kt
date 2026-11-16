@@ -170,7 +170,7 @@ object ScriptStore {
     }
 
     /** A modification time rendered the way the tag is written, always in UTC. */
-    fun formatUtc(epochMillis: Long): String {
+    fun formatModified(epochMillis: Long): String {
         if (epochMillis <= 0L) return ""
         val format = SimpleDateFormat("d/M/yyyy", Locale.US).apply {
 //            timeZone = TimeZone.getTimeZone("UTC")
@@ -436,7 +436,7 @@ object ScriptStore {
         version = info.version,
         // global scripts carry no description of their own, the summary stands in for it
         description = info.description ?: info.summary.orEmpty(),
-        modifiedAt = formatUtc(info.modified),
+        modifiedAt = formatModified(info.modified),
         enabled = info.enabled,
         size = info.size
     )

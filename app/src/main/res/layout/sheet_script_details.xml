@@ -93,7 +93,7 @@
                     android:paddingTop="6dp"
                     android:paddingEnd="12dp"
                     android:paddingBottom="6dp"
-                    android:text="Modified"
+                    android:text="Updated"
                     android:textAppearance="?attr/textAppearanceBodyMedium" />
 
                 <TextView

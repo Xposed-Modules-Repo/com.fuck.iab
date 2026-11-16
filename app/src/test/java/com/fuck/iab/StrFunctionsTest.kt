@@ -591,7 +591,7 @@ class StrFunctionsTest {
     }
     @Test
     fun fn_NewScript() {
-        assertEquals("New Script", NewScript())
+        assertEquals("New script", NewScript())
     }
     @Test
     fun fn_Cancel() {
