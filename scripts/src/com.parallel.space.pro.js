@@ -2,7 +2,7 @@
 // url: https://play.google.com/store/apps/details?id=com.parallel.space.pro
 // author: you1mak
 // description: Unlocks Pro features in Parallel Space without needing a paid license.
-// added-in: 1.6.1
+// modified-at: 26/10/2026 1:10
 // version: 1
 
 /*

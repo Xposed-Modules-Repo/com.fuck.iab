@@ -9,15 +9,19 @@ import android.system.OsConstants
 import androidx.core.content.edit
 import com.fuck.iab.ScriptType.BUNDLED
 import com.fuck.iab.ScriptType.GLOBAL_REMOTE
+import com.fuck.iab.ScriptType.OPT_IN
 import com.fuck.iab.ScriptType.REMOTE
 import com.fuck.iab.ScriptType.USER
 import io.github.libxposed.service.XposedService
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 import java.util.zip.ZipFile
 
-enum class ScriptType { BUNDLED, USER, REMOTE, GLOBAL_REMOTE }
+enum class ScriptType { BUNDLED, USER, REMOTE, GLOBAL_REMOTE, OPT_IN }
 
 data class ScriptInfo(
     val packageName: String,
@@ -29,7 +33,9 @@ data class ScriptInfo(
     val name: String? = null,
     val url: String? = null,
     val version: Int = 1,
-    val summary: String? = null
+    val summary: String? = null,
+    /** Last modification as an epoch millis in UTC, `0` when the script carries no `// modified-at:`. */
+    val modified: Long = 0L
 )
 
 data class ScriptDetails(
@@ -38,7 +44,7 @@ data class ScriptDetails(
     val author: String?,
     val version: Int,
     val description: String,
-    val addedIn: String,
+    val modifiedAt: String,
     val enabled: Boolean,
     val size: Int
 )
@@ -109,6 +115,15 @@ object RemoteFiles {
 
 object ScriptStore {
 
+    /** Accepted `// modified-at:` shapes, all of them read as UTC. */
+    private val UTC_PATTERNS = arrayOf(
+        "d/M/yyyy H:mm",
+        "d/M/yyyy H:mm:ss",
+        "d/M/yyyy H:m",
+        "yyyy-MM-dd HH:mm",
+        "yyyy-MM-dd'T'HH:mm:ss'Z'"
+    )
+
     /** Where a downloaded copy of `name` is stored in the Xposed file store. */
     fun remoteFile(name: String): String = rs_() + name + _js()
 
@@ -122,21 +137,55 @@ object ScriptStore {
     fun disabledKey(type: ScriptType): String =
         if (type == USER) disabled_() + user() + _scripts() else disabled_scripts()
 
+    /** Opt-in scripts are off unless listed here, so they use their own allow-list key. */
+    fun optInKey(): String = enabled_optin_scripts()
+
+    /** `// opt-in: true` marks a script from `scripts/global` that only runs when enabled. */
+    fun isOptIn(script: String): Boolean =
+        headerOf(script, opt_in())?.toBoolean()?.equals(true) == true
+
+    /**
+     * Epoch millis of `// modified-at:`, read as UTC so the device timezone never takes part.
+     * `0` when the tag is missing or unreadable, which sorts the script to the bottom.
+     */
+    fun modifiedOf(script: String): Long {
+        val raw = headerOf(script, modified_at()) ?: return 0L
+
+        for (pattern in UTC_PATTERNS) {
+            try {
+                val format = SimpleDateFormat(pattern, Locale.US).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                    isLenient = false
+                }
+                format.parse(raw)?.let { return it.time }
+            } catch (e: Exception) {
+                // try the next pattern
+            }
+        }
+        return 0L
+    }
+
+    /** A modification time rendered the way the tag is written, always in UTC. */
+    fun formatUtc(epochMillis: Long): String {
+        if (epochMillis <= 0L) return ""
+        val format = SimpleDateFormat("d/M/yyyy H:mm", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+        return format.format(Date(epochMillis))
+    }
+
     fun inventory(context: Context, service: XposedService?): List<ScriptInfo> {
         val bundledScripts = bundledScripts(context)
         val remoteScripts = remoteScripts(service)
 
         val off = if (service != null) disabledScripts(service) else emptySet()
         val offUser = if (service != null) disabledUserScripts(service) else emptySet()
+        val onOptIn = if (service != null) enabledOptInScripts(service) else emptySet()
 
         val ret = arrayListOf<ScriptInfo>()
-        val modifiedAt = hashMapOf<String, Long>()
-        val addedIn = hashMapOf<String, String>()
 
         userScripts(service).forEach { (packageName, script) ->
             if (script == null) return@forEach
-            modifiedAt[packageName] =
-                if (service != null) RemoteFiles.lastModifiedAt(service, packageName + _js()) else 0L
             ret.add(
                 ScriptInfo(
                     packageName = packageName,
@@ -146,7 +195,9 @@ object ScriptStore {
                     size = script.toByteArray(Charsets.UTF_8).size,
                     enabled = !offUser.contains(packageName),
                     name = headerOf(script, name()),
-                    url = headerOf(script, url())
+                    url = headerOf(script, url()),
+                    // an absolute instant, so it already means the same thing in every timezone
+                    modified = if (service != null) RemoteFiles.lastModifiedAt(service, packageName + _js()) else 0L
                 )
             )
         }
@@ -164,7 +215,6 @@ object ScriptStore {
         bundledScripts.forEach { (packageName, script) ->
             if (winningRemote.containsKey(packageName)) return@forEach
 
-            headerOf(script, added_in())?.let { addedIn[packageName] = it }
             ret.add(
                 ScriptInfo(
                     packageName = packageName,
@@ -176,13 +226,13 @@ object ScriptStore {
                     name = headerOf(script, name()),
                     url = headerOf(script, url()),
                     version = versionOf(script),
-                    summary = headerOf(script, summary())
+                    summary = headerOf(script, summary()),
+                    modified = modifiedOf(script)
                 )
             )
         }
 
         winningRemote.forEach { (packageName, script) ->
-            headerOf(script, added_in())?.let { addedIn[packageName] = it }
             ret.add(
                 ScriptInfo(
                     packageName = packageName,
@@ -193,7 +243,9 @@ object ScriptStore {
                     enabled = !off.contains(packageName),
                     name = headerOf(script, name()),
                     url = headerOf(script, url()),
-                    version = versionOf(script)
+                    version = versionOf(script),
+                    summary = headerOf(script, summary()),
+                    modified = modifiedOf(script)
                 )
             )
         }
@@ -202,25 +254,25 @@ object ScriptStore {
             if (!isGlobalRemoteName(name)) return@forEach
             if (name == global() || name == user_script()) return@forEach
 
-            modifiedAt[name] =
-                if (service != null) RemoteFiles.lastModifiedAt(service, remoteFile(name)) else 0L
+            val optIn = isOptIn(script)
             ret.add(
                 ScriptInfo(
                     packageName = name,
-                    type = GLOBAL_REMOTE,
+                    type = if (optIn) OPT_IN else GLOBAL_REMOTE,
                     source = script,
                     author = authorOf(script),
                     size = script.toByteArray(Charsets.UTF_8).size,
-                    enabled = !off.contains(name),
+                    enabled = if (optIn) onOptIn.contains(name) else !off.contains(name),
                     name = headerOf(script, name()),
                     url = headerOf(script, url()),
                     version = versionOf(script),
-                    summary = headerOf(script, summary())
+                    summary = headerOf(script, summary()),
+                    modified = modifiedOf(script)
                 )
             )
         }
 
-        ret.sortWith { info, info1 -> compareScripts(info, info1, addedIn, modifiedAt) }
+        ret.sortWith { info, info1 -> compareScripts(info, info1) }
 
         return ret
     }
@@ -245,58 +297,20 @@ object ScriptStore {
     }
 
     /**
-     * Priority, highest first: `user_script` is always on top, global remote scripts come next,
-     * bundled and remote scripts share one list ordered by `added-in` (highest first) and user
-     * ones by the modified date of their file (latest first). `global` is always at the bottom.
+     * One rule for every script: newest `// modified-at:` (UTC) first, a tie broken by name.
+     * The two exceptions are `global.js`, which the runtime needs first and therefore pins to
+     * the bottom of the list, and scripts without a modification time, which sort last.
      */
-    internal fun compareScripts(
-        info: ScriptInfo,
-        other: ScriptInfo,
-        addedIn: Map<String, String>,
-        modifiedAt: Map<String, Long>
-    ): Int {
-        if (info.packageName == user_script()) return if (other.packageName == user_script()) 0 else -1
-        if (other.packageName == user_script()) return 1
-        if (info.packageName == global()) return if (other.packageName == global()) 0 else 1
-        if (other.packageName == global()) return -1
+    internal fun compareScripts(info: ScriptInfo, other: ScriptInfo): Int {
+        val thisIsGlobal = info.type == BUNDLED && info.packageName == global()
+        val otherIsGlobal = other.type == BUNDLED && other.packageName == global()
+        if (thisIsGlobal != otherIsGlobal) return if (thisIsGlobal) 1 else -1
 
-        val byRank = scriptRank(info).compareTo(scriptRank(other))
-        if (byRank != 0) return byRank
+        val byModified = other.modified.compareTo(info.modified)
+        if (byModified != 0) return byModified
 
-        val byName = info.packageName.compareTo(other.packageName)
-
-        if (info.type == BUNDLED || info.type == REMOTE) {
-            val byAddedIn = compareVersions(addedIn[info.packageName], addedIn[other.packageName])
-            return if (byAddedIn != 0) byAddedIn else byName
-        }
-
-        val byModified =
-            (modifiedAt[other.packageName] ?: 0L).compareTo(modifiedAt[info.packageName] ?: 0L)
-        return if (byModified != 0) byModified else byName
+        return info.packageName.compareTo(other.packageName)
     }
-
-    private fun scriptRank(info: ScriptInfo): Int = when (info.type) {
-        GLOBAL_REMOTE -> 0
-        BUNDLED, REMOTE -> 1
-        USER -> 2
-    }
-
-    /** Numeric `x.y.z` compare where the highest version wins, e.g. `1.7.1` beats `1.6.12`. */
-    private fun compareVersions(first: String?, second: String?): Int {
-        val a = versionParts(first)
-        val b = versionParts(second)
-
-        for (i in 0 until maxOf(a.size, b.size)) {
-            val left = a.getOrElse(i) { 0 }
-            val right = b.getOrElse(i) { 0 }
-            if (left != right) return right.compareTo(left)
-        }
-
-        return 0
-    }
-
-    private fun versionParts(version: String?): List<Int> =
-        version?.split('.')?.map { it.trim().toIntOrNull() ?: 0 } ?: emptyList()
 
     private fun userScripts(service: XposedService?): Map<String, String?> {
         return if (service == null) emptyMap()
@@ -367,7 +381,7 @@ object ScriptStore {
         version = info.version,
         // global scripts carry no description of their own, the summary stands in for it
         description = headerOf(info.source, description()) ?: info.summary.orEmpty(),
-        addedIn = if (info.type == GLOBAL_REMOTE) "" else headerOf(info.source, added_in()) ?: oneZeroZero(),
+        modifiedAt = formatUtc(info.modified),
         enabled = info.enabled,
         size = info.size
     )
@@ -396,6 +410,10 @@ object ScriptStore {
     fun disabledUserScripts(service: XposedService): Set<String> =
         readStringSet(service, disabled_() + user() + _scripts())
 
+    /** Opt-in scripts are off unless their name is listed here. */
+    fun enabledOptInScripts(service: XposedService): Set<String> =
+        readStringSet(service, enabled_optin_scripts())
+
     private fun readStringSet(service: XposedService, key: String): Set<String> {
         return try {
             service.getRemotePreferences(fuck_iab()).getStringSet(key, emptySet())?.toSet() ?: emptySet()
@@ -406,12 +424,14 @@ object ScriptStore {
 
     fun setEnabled(service: XposedService, packageName: String, type: ScriptType, enabled: Boolean) {
         val prefs = service.getRemotePreferences(fuck_iab())
-        val key = disabledKey(type)
-        val disabled = prefs.getStringSet(key, emptySet())?.toMutableSet() ?: mutableSetOf()
+        // opt-ins keep an allow-list, everything else a block-list
+        val key = if (type == OPT_IN) optInKey() else disabledKey(type)
+        val names = prefs.getStringSet(key, emptySet())?.toMutableSet() ?: mutableSetOf()
 
-        if (enabled) disabled.remove(packageName) else disabled.add(packageName)
+        val listed = enabled == (type == OPT_IN)
+        if (listed) names.add(packageName) else names.remove(packageName)
 
-        prefs.edit(commit = true) { putStringSet(key, disabled) }
+        prefs.edit(commit = true) { putStringSet(key, names) }
     }
 
     fun installedApps(context: Context): List<String> {
@@ -441,9 +461,9 @@ object ScriptStore {
         }
     }
 
-    /** Row label: the `// name:` tag for global scripts, the app name for everything else. */
+    /** Row label: the `// name:` tag for global and opt-in scripts, the app name for the rest. */
     fun scriptLabel(context: Context, info: ScriptInfo): String =
-        if (info.type == GLOBAL_REMOTE) info.name ?: info.packageName
+        if (info.type == GLOBAL_REMOTE || info.type == OPT_IN) info.name ?: info.packageName
         else appLabel(context, info.packageName, info.name)
 
     fun appIcon(context: Context, packageName: String): Drawable? {
@@ -458,9 +478,9 @@ object ScriptStore {
         }
     }
 
-    /** Global scripts are not apps, so they always keep the caller's script icon. */
+    /** Global and opt-in scripts are not apps, so they keep the caller's script icon. */
     fun scriptIcon(context: Context, info: ScriptInfo): Drawable? =
-        if (info.type == GLOBAL_REMOTE) null else appIcon(context, info.packageName)
+        if (info.type == GLOBAL_REMOTE || info.type == OPT_IN) null else appIcon(context, info.packageName)
 
     fun sizeLabel(bytes: Int): String {
         return if (bytes >= 1024) {

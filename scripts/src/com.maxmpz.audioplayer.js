@@ -2,7 +2,7 @@
 // url: https://play.google.com/store/apps/details?id=com.maxmpz.audioplayer
 // author: staleroot
 // description: Unlocks Poweramp Pro features. Keeps your license level at Pro, blocks trial expiry dialogs, and prevents playback from being cut off during license re-checks.
-// added-in: 1.6.7
+// modified-at: 8/11/2026 4:24
 // version: 1
 
 setTimeout(() => {

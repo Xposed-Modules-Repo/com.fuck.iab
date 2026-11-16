@@ -86,18 +86,18 @@
                     android:textAppearance="?attr/textAppearanceBodyMedium" />
             </TableRow>
 
-            <TableRow android:id="@+id/detailAddedInRow">
+            <TableRow android:id="@+id/detailModifiedRow">
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:paddingTop="6dp"
                     android:paddingEnd="12dp"
                     android:paddingBottom="6dp"
-                    android:text="Added in"
+                    android:text="Modified at"
                     android:textAppearance="?attr/textAppearanceBodyMedium" />
 
                 <TextView
-                    android:id="@+id/detailAddedIn"
+                    android:id="@+id/detailModified"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:gravity="end"

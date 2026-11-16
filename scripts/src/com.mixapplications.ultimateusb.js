@@ -2,7 +2,7 @@
 // url: https://play.google.com/store/apps/details?id=com.mixapplications.ultimateusb
 // author: staleroot
 // description: Unlocks premium features in Ultimate USB by marking purchases as successfully completed.
-// added-in: 1.5.6
+// modified-at: 23/9/2026 16:11
 // version: 1
 
 setTimeout(() => {

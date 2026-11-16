@@ -2,7 +2,7 @@
 // url: https://play.google.com/store/apps/details?id=com.cloudflare.onedotonedotonedotone
 // author: Fexture69
 // description: Make a vpn profile first (turn on the switch in app) before using the script.
-// added-in: 1.6.5
+// modified-at: 28/10/2026 10:34
 // version: 1
 
 /*

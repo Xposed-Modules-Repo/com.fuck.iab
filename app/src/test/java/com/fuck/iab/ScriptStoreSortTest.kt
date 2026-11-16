@@ -4,76 +4,16 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** Ordering rules of `ScriptStore.inventory`, highest priority first. */
+/** Ordering rules of `ScriptStore.inventory`: newest `// modified-at:` first, `global.js` last. */
 class ScriptStoreSortTest {
 
     @Test
-    fun userScriptGoesFirstAndGlobalGoesLast() {
+    fun newestModificationComesFirst() {
         val sorted = sort(
             listOf(
-                script("com.b", ScriptType.USER),
-                script("global", ScriptType.BUNDLED),
-                script("com.a", ScriptType.BUNDLED),
-                script("user_script", ScriptType.USER),
-                script("com.c", ScriptType.USER)
-            )
-        )
-
-        assertEquals(
-            listOf("user_script", "com.a", "com.b", "com.c", "global"),
-            sorted.map { it.packageName }
-        )
-    }
-
-    @Test
-    fun bundledScriptsGoAboveUserScripts() {
-        val sorted = sort(
-            listOf(
-                script("com.a", ScriptType.USER),
-                script("com.b", ScriptType.BUNDLED),
-                script("com.c", ScriptType.USER)
-            )
-        )
-
-        assertEquals(listOf("com.b", "com.a", "com.c"), sorted.map { it.packageName })
-    }
-
-    @Test
-    fun bundledScriptsAreSortedByAddedIn() {
-        val sorted = sort(
-            listOf(
-                script("com.a", ScriptType.BUNDLED),
-                script("com.b", ScriptType.BUNDLED),
-                script("com.c", ScriptType.BUNDLED),
-                script("com.d", ScriptType.BUNDLED),
-                script("global", ScriptType.BUNDLED)
-            ),
-            addedIn = mapOf(
-                "com.a" to "1.6.12",
-                "com.b" to "1.7.1",
-                "com.c" to "1.6.2",
-                "com.d" to "1.7"
-            )
-        )
-
-        assertEquals(
-            listOf("com.b", "com.d", "com.a", "com.c", "global"),
-            sorted.map { it.packageName }
-        )
-    }
-
-    @Test
-    fun userScriptsAreSortedByModifiedAt() {
-        val sorted = sort(
-            listOf(
-                script("com.a", ScriptType.USER),
-                script("com.b", ScriptType.USER),
-                script("com.c", ScriptType.USER)
-            ),
-            modifiedAt = mapOf(
-                "com.a" to 100L,
-                "com.b" to 300L,
-                "com.c" to 200L
+                script("com.a", ScriptType.BUNDLED, modified = 100L),
+                script("com.b", ScriptType.REMOTE, modified = 300L),
+                script("com.c", ScriptType.USER, modified = 200L)
             )
         )
 
@@ -81,12 +21,40 @@ class ScriptStoreSortTest {
     }
 
     @Test
+    fun globalJsIsPinnedToTheVeryBottom() {
+        // `global.js` the runtime needs first is listed last, even with the newest modification
+        val sorted = sort(
+            listOf(
+                script("global", ScriptType.BUNDLED, modified = 999L),
+                script("com.a", ScriptType.BUNDLED, modified = 1L),
+                script("com.b", ScriptType.USER, modified = 0L)
+            )
+        )
+
+        assertEquals(listOf("com.a", "com.b", "global"), sorted.map { it.packageName })
+    }
+
+    @Test
+    fun scriptsWithoutAModificationTimeSortLastButAboveGlobal() {
+        val sorted = sort(
+            listOf(
+                script("com.a", ScriptType.BUNDLED, modified = 0L),
+                script("com.b", ScriptType.GLOBAL_REMOTE, modified = 50L),
+                script("global", ScriptType.BUNDLED, modified = 0L),
+                script("com.c", ScriptType.OPT_IN, modified = 0L)
+            )
+        )
+
+        assertEquals(listOf("com.b", "com.a", "com.c", "global"), sorted.map { it.packageName })
+    }
+
+    @Test
     fun tiesFallBackToPackageName() {
         val sorted = sort(
             listOf(
-                script("com.c", ScriptType.USER),
-                script("com.a", ScriptType.USER),
-                script("com.b", ScriptType.USER)
+                script("com.c", ScriptType.USER, modified = 100L),
+                script("com.a", ScriptType.USER, modified = 100L),
+                script("com.b", ScriptType.USER, modified = 100L)
             )
         )
 
@@ -94,45 +62,21 @@ class ScriptStoreSortTest {
     }
 
     @Test
-    fun globalRemoteScriptsGoAboveBundledAndRemoteOnes() {
+    fun everyKindSharesOneModificationOrder() {
+        // user, bundled, remote, global-remote and opt-in scripts all sort together
         val sorted = sort(
             listOf(
-                script("com.a", ScriptType.USER),
-                script("com.b", ScriptType.REMOTE),
-                script("test", ScriptType.GLOBAL_REMOTE),
-                script("com.c", ScriptType.BUNDLED),
-                script("test2", ScriptType.GLOBAL_REMOTE),
-                script("user_script", ScriptType.USER)
-            ),
-            addedIn = mapOf("com.b" to "1.7.0", "com.c" to "1.6.0"),
-            modifiedAt = mapOf("test" to 100L, "test2" to 300L)
-        )
-
-        assertEquals(
-            listOf("user_script", "test2", "test", "com.b", "com.c", "com.a"),
-            sorted.map { it.packageName }
-        )
-    }
-
-    @Test
-    fun bundledAndRemoteScriptsShareOneAddedInOrder() {
-        val sorted = sort(
-            listOf(
-                script("com.a", ScriptType.BUNDLED),
-                script("com.b", ScriptType.REMOTE),
-                script("com.c", ScriptType.BUNDLED),
-                script("com.d", ScriptType.REMOTE)
-            ),
-            addedIn = mapOf(
-                "com.a" to "1.7.1",
-                "com.b" to "1.7.9",
-                "com.c" to "1.6.2",
-                "com.d" to "1.7"
+                script("com.a", ScriptType.USER, modified = 100L),
+                script("com.b", ScriptType.REMOTE, modified = 400L),
+                script("global_remote_one", ScriptType.GLOBAL_REMOTE, modified = 250L),
+                script("optin_one", ScriptType.OPT_IN, modified = 350L),
+                script("com.c", ScriptType.BUNDLED, modified = 50L),
+                script("global", ScriptType.BUNDLED, modified = 1000L)
             )
         )
 
         assertEquals(
-            listOf("com.b", "com.a", "com.d", "com.c"),
+            listOf("com.b", "optin_one", "global_remote_one", "com.a", "com.c", "global"),
             sorted.map { it.packageName }
         )
     }
@@ -171,18 +115,16 @@ class ScriptStoreSortTest {
 
     private fun pick(bundled: String?, remote: String?) = ScriptStore.pickScript(bundled, remote)
 
-    private fun script(packageName: String, type: ScriptType) =
+    private fun script(packageName: String, type: ScriptType, modified: Long) =
         ScriptInfo(
             packageName = packageName,
             type = type,
             source = "",
             author = null,
-            enabled = true
+            enabled = true,
+            modified = modified
         )
 
-    private fun sort(
-        scripts: List<ScriptInfo>,
-        addedIn: Map<String, String> = emptyMap(),
-        modifiedAt: Map<String, Long> = emptyMap()
-    ) = scripts.sortedWith { a, b -> ScriptStore.compareScripts(a, b, addedIn, modifiedAt) }
+    private fun sort(scripts: List<ScriptInfo>) =
+        scripts.sortedWith { a, b -> ScriptStore.compareScripts(a, b) }
 }

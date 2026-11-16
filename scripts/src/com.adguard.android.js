@@ -2,7 +2,7 @@
 // url: https://adguard.com/en/welcome.html
 // author: Fexture69
 // description: Removes premium restrictions in AdGuard, unlocking all premium features without a paid license.
-// added-in: 1.6.1
+// modified-at: 26/10/2026 1:10
 // version: 1
 
 Java.perform(function () {

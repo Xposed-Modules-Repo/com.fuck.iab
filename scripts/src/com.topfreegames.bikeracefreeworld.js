@@ -2,7 +2,7 @@
 // url: https://play.google.com/store/apps/details?id=com.topfreegames.bikeracefreeworld
 // author: staleroot
 // description: Unlocks all paid features in Bike Race: Free World by bypassing receipt verification, making purchases appear valid.
-// added-in: 1.5.5
+// modified-at: 22/9/2026 13:25
 // version: 1
 
 setTimeout(() => {

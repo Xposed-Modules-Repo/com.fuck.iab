@@ -64,6 +64,7 @@ function compile(packageName) {
     const authorLine = findLine("author")
     const descriptionLine = findLine("description")
     const addedInLine = findLine("added-in");
+    const modifiedAtLine = findLine("modified-at");
     const versionLine = findLine("version");
     const summaryLine = findLine("summary");
 
@@ -75,7 +76,7 @@ function compile(packageName) {
     }
 
     const compiled = readFileSync(output, "utf8");
-    const headerLines = [nameLine, urlLine, authorLine, descriptionLine, addedInLine, versionLine, summaryLine].filter(Boolean);
+    const headerLines = [nameLine, urlLine, authorLine, descriptionLine, addedInLine, modifiedAtLine, versionLine, summaryLine].filter(Boolean);
     writeFileSync(output, `${headerLines.join("\n")}\n${compiled}`);
 
     console.log(`Built: assets/scripts/${packageName}.js`);

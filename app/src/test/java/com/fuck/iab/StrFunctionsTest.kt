@@ -968,4 +968,32 @@ class StrFunctionsTest {
     fun fn_CouldNotFetchRemoteScripts() {
         assertEquals("Could not fetch remote scripts", CouldNotFetchRemoteScripts())
     }
+    @Test
+    fun fn_enabled_optin_scripts() {
+        assertEquals("enabled_optin_scripts", enabled_optin_scripts())
+    }
+    @Test
+    fun fn_opt_in() {
+        assertEquals("opt-in", opt_in())
+    }
+    @Test
+    fun fn_opt_in_() {
+        assertEquals("// opt-in:", opt_in_())
+    }
+    @Test
+    fun fn_modified_at() {
+        assertEquals("modified-at", modified_at())
+    }
+    @Test
+    fun fn_modified_at_() {
+        assertEquals("// modified-at:", modified_at_())
+    }
+    @Test
+    fun fn_ViewSource() {
+        assertEquals("View Source", ViewSource())
+    }
+    @Test
+    fun fn_readonly_file() {
+        assertEquals("readonly_file", readonly_file())
+    }
 }

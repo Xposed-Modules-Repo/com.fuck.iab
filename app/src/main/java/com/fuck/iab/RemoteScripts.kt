@@ -1,7 +1,6 @@
 package com.fuck.iab
 
 import android.content.Context
-import android.util.Log
 import io.github.libxposed.service.XposedService
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -25,15 +24,11 @@ object RemoteScripts {
 
     fun refresh(context: Context, service: XposedService?): RefreshOutcome {
         if (service == null) {
-//            Log.d("RemoteScripts", "refresh: no service")
             return RefreshOutcome.NO_SERVICE
         }
 
-        val manifest = fetchManifest() ?: run {
-//            Log.d("RemoteScripts", "refresh: manifest fetch failed")
-            return RefreshOutcome.FAILED
-        }
-//        Log.d("RemoteScripts", "refresh: packages=${manifest.packages.size} globals=${manifest.globals.size}")
+        val manifest = fetchManifest() ?: return RefreshOutcome.FAILED
+
         val bundled = ScriptStore.bundledScripts(context)
         var failed = false
 
@@ -49,9 +44,7 @@ object RemoteScripts {
             if (localVersion != null && localVersion >= version) return@forEach
 
             val source = fetch(scriptsRawUrl() + src() + name + _js() + "${rand__()}${System.currentTimeMillis()}")
-            val stored = source != null && store(service, ScriptStore.remoteFile(name), source)
-//            Log.d("RemoteScripts", "pkg $name v$version: fetched=${source != null} stored=$stored")
-            if (!stored) {
+            if (source == null || !store(service, ScriptStore.remoteFile(name), source)) {
                 failed = true
             }
         }
@@ -62,9 +55,7 @@ object RemoteScripts {
             if (localVersion != null && localVersion >= version) return@forEach
 
             val source = fetch(scriptsRawUrl() + global() + '/' + name + _js() + "${rand__()}${System.currentTimeMillis()}")
-            val stored = source != null && store(service, ScriptStore.remoteFile(name), source)
-//            Log.d("RemoteScripts", "global $name v$version: fetched=${source != null} stored=$stored")
-            if (!stored) {
+            if (source == null || !store(service, ScriptStore.remoteFile(name), source)) {
                 failed = true
             }
         }
@@ -73,7 +64,6 @@ object RemoteScripts {
             name in manifest.packages || name in manifest.globals
         })
 
-//        Log.d("RemoteScripts", "refresh: done failed=$failed")
         return if (failed) RefreshOutcome.FAILED else RefreshOutcome.DONE
     }
 
@@ -92,7 +82,6 @@ object RemoteScripts {
     private fun store(service: XposedService, file: String, text: String): Boolean {
         RemoteFiles.write(service, file, text)
         if (RemoteFiles.read(service, file) != text) {
-//            Log.d("RemoteScripts", "store $file: promote read-back failed")
             RemoteFiles.delete(service, file)
             return false
         }
@@ -120,7 +109,6 @@ object RemoteScripts {
 
             Manifest(packages, globals)
         } catch (e: Exception) {
-//            Log.d("RemoteScripts", "manifest parse failed: $e")
             null
         }
     }
@@ -135,7 +123,6 @@ object RemoteScripts {
 
             try {
                 if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-//                    Log.d("RemoteScripts", "fetch $url -> ${connection.responseCode}")
                     null
                 } else {
                     connection.inputStream.use { it.readBytes().toString(Charsets.UTF_8) }
@@ -144,7 +131,6 @@ object RemoteScripts {
                 connection.disconnect()
             }
         } catch (e: Exception) {
-//            Log.d("RemoteScripts", "fetch $url threw $e")
             null
         }
     }

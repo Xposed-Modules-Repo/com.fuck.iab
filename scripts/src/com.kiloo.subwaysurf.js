@@ -2,7 +2,7 @@
 // url: https://play.google.com/store/apps/details?id=com.kiloo.subwaysurf
 // author: staleroot
 // description: Makes all purchases in Subway Surfers appear valid so paid coins and items are unlocked.
-// added-in: 1.4.9
+// modified-at: 20/9/2026 10:52
 // version: 1
 
 const observer = Process.attachModuleObserver({

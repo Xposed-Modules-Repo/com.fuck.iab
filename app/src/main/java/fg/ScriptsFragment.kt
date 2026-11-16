@@ -40,6 +40,7 @@ import com.fuck.iab.ScriptType
 import com.fuck.iab.ScriptType.GLOBAL_REMOTE
 import com.fuck.iab.Scripts_synced_successfully
 import com.fuck.iab.ViewAppPage
+import com.fuck.iab.ViewSource
 import com.fuck.iab.ViewOnAmazonAppstore
 import com.fuck.iab.ViewOnApkpure
 import com.fuck.iab.ViewOnAppgallery
@@ -79,6 +80,7 @@ import com.fuck.iab.itunesAppleCom
 import com.fuck.iab.microsoftCom
 import com.fuck.iab.myketIr
 import com.fuck.iab.orgFdroidFdroid
+import com.fuck.iab.opt_in
 import com.fuck.iab.playGoogleCom
 import com.fuck.iab.remote
 import com.fuck.iab.s4a9f2e
@@ -152,6 +154,7 @@ class ScriptsFragment : Fragment() {
             .setOnCheckedStateChangeListener { _, checkedIds ->
                 filter = when (checkedIds.firstOrNull()) {
                     R.id.filterStore -> ScriptType.BUNDLED
+                    // every kind of downloaded script sits behind the same chip
                     R.id.filterRemote -> ScriptType.REMOTE
                     R.id.filterUser -> ScriptType.USER
                     else -> null
@@ -192,8 +195,10 @@ class ScriptsFragment : Fragment() {
         val visible = all.filter { script ->
             val matchesFilter = when (filter) {
                 null -> true
-                // both kinds of downloaded scripts sit behind the same chip
-                ScriptType.REMOTE -> script.type == ScriptType.REMOTE || script.type == GLOBAL_REMOTE
+                // all kinds of downloaded scripts sit behind the same chip
+                ScriptType.REMOTE -> script.type == ScriptType.REMOTE ||
+                        script.type == GLOBAL_REMOTE ||
+                        script.type == ScriptType.OPT_IN
                 else -> script.type == filter
             }
             val label = ScriptStore.scriptLabel(requireContext(), script)
@@ -232,6 +237,16 @@ class ScriptsFragment : Fragment() {
 
     private fun openEditor(packageName: String) {
         startActivity(ScriptEditorActivity.intent(requireContext(), packageName))
+    }
+
+    /** Global and opt-in scripts open read-only: just their source, no editing. */
+    private fun openSource(script: ScriptInfo) {
+        startActivity(
+            ScriptEditorActivity.viewIntent(
+                requireContext(),
+                ScriptStore.remoteFile(script.packageName)
+            )
+        )
     }
 
     /**
@@ -275,7 +290,8 @@ class ScriptsFragment : Fragment() {
         )
         view.findViewById<TextView>(R.id.detailLabel).text = ScriptStore.scriptLabel(context, script)
         view.findViewById<TextView>(R.id.detailPackage).text = when {
-            script.type == GLOBAL_REMOTE || script.packageName == global() -> script.summary ?: script.packageName
+            script.type == GLOBAL_REMOTE || script.type == ScriptType.OPT_IN ||
+                    script.packageName == global() -> script.summary ?: script.packageName
             else -> script.packageName
         }
 
@@ -285,14 +301,27 @@ class ScriptsFragment : Fragment() {
 
         val linkButton = view.findViewById<MaterialButton>(R.id.detailViewSource)
         val url = script.url
-        if (url.isNullOrBlank()) {
-            linkButton.isVisible = false
-        } else {
-            linkButton.isVisible = true
-            linkButton.text = linkLabel(url)
-            linkButton.setOnClickListener {
-                openLink(url)
-                sheetDialog.dismiss()
+        val showsSource = script.type == GLOBAL_REMOTE || script.type == ScriptType.OPT_IN
+        when {
+            // global and opt-in scripts are read-only: the button opens their source
+            showsSource -> {
+                linkButton.isVisible = true
+                linkButton.text = ViewSource()
+                linkButton.setOnClickListener {
+                    openSource(script)
+                    sheetDialog.dismiss()
+                }
+            }
+
+            url.isNullOrBlank() -> linkButton.isVisible = false
+
+            else -> {
+                linkButton.isVisible = true
+                linkButton.text = linkLabel(url)
+                linkButton.setOnClickListener {
+                    openLink(url)
+                    sheetDialog.dismiss()
+                }
             }
         }
 
@@ -361,6 +390,7 @@ class ScriptsFragment : Fragment() {
         val kind = when (details.type) {
             ScriptType.USER -> user()
             ScriptType.BUNDLED -> bundled()
+//            ScriptType.OPT_IN -> opt_in()
             else -> remote()
         }
 
@@ -375,10 +405,10 @@ class ScriptsFragment : Fragment() {
 
         view.findViewById<TextView>(R.id.detailStatus).text = if (details.enabled) enabled() else disabled()
 
-        // global scripts are not tied to an app release, so they carry no `// added-in:`
-        val addedInRow = view.findViewById<View>(R.id.detailAddedInRow)
-        addedInRow.isVisible = details.addedIn.isNotEmpty()
-        view.findViewById<TextView>(R.id.detailAddedIn).text = details.addedIn
+        // scripts without a `// modified-at:` carry no date to show
+        val modifiedRow = view.findViewById<View>(R.id.detailModifiedRow)
+        modifiedRow.isVisible = details.modifiedAt.isNotEmpty()
+        view.findViewById<TextView>(R.id.detailModified).text = details.modifiedAt
 
         view.findViewById<TextView>(R.id.detailVersion).text = details.version.toString()
 
@@ -446,8 +476,8 @@ class ScriptsFragment : Fragment() {
         val packages = LinkedHashSet<String>()
 
         state.scripts.forEach {
-            // a global script has no package to write a user script for
-            if (it.type != GLOBAL_REMOTE) packages += it.packageName
+            // global and opt-in scripts have no package to write a user script for
+            if (it.type != GLOBAL_REMOTE && it.type != ScriptType.OPT_IN) packages += it.packageName
         }
         packages += ScriptStore.installedApps(context)
         packages -= global()
@@ -540,7 +570,7 @@ private class ScriptAdapter(
         holder.label.text = ScriptStore.scriptLabel(context, item)
 
         holder.packageName.text = when {
-            item.type == GLOBAL_REMOTE -> item.summary
+            item.type == GLOBAL_REMOTE || item.type == ScriptType.OPT_IN -> item.summary
             item.packageName == global() -> item.summary
             item.packageName == user_script() -> customScriptRunningOnEveryApp()
             else -> item.packageName
@@ -549,6 +579,7 @@ private class ScriptAdapter(
         val scriptTypeLabel = when (item.type) {
             ScriptType.USER -> user()
             ScriptType.BUNDLED -> bundled()
+//            ScriptType.OPT_IN -> opt_in()
             else -> remote()
         }
 
@@ -556,8 +587,8 @@ private class ScriptAdapter(
 
         parts += sizeLabel(item.size)
 
-        // a global script runs on its own, it has no author to credit
-        if (item.type != GLOBAL_REMOTE) {
+        // global and opt-in scripts run on their own, they have no author to credit
+        if (item.type != GLOBAL_REMOTE && item.type != ScriptType.OPT_IN) {
             item.author?.let { parts += it }
         }
 

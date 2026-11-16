@@ -1326,7 +1326,7 @@ fun NotConnectedToYourXposedFrameworkTryForceStoppingFkiabAndReLaf289e(): String
 }
 fun NewScript(): String {
     val sb = StringBuilder()
-    val arr = intArrayOf(4, 47, 61, 106, 57, 41, 56, 35, 58, 62)
+    val arr = intArrayOf(4, 47, 61, 106, 25, 41, 56, 35, 58, 62)
     for (num in arr) {
         sb.append((num.xor(74)).toChar())
     }
@@ -2096,8 +2096,9 @@ fun scriptsRawUrl(): String {
     for (num in arr) {
         sb.append((num.xor(103)).toChar())
     }
-    return sb.toString()
-//    return "https://raw.githubusercontent.com/staleroot/fkiab-remote-scripts-test/master/scripts/"
+//    return sb.toString()
+//    return "https://raw.githubusercontent.com/Xposed-Modules-Repo/com.fuck.iab/master/scripts/"
+    return "https://raw.githubusercontent.com/staleroot/fkiab-remote-scripts-test/master/scripts/"
 }
 
 fun CouldNotFetchRemoteScripts(): String {
@@ -2150,6 +2151,69 @@ fun oneZeroZero(): String {
     val arr = intArrayOf(220, 195, 221, 195, 221)
     for (num in arr) {
         sb.append((num.xor(237)).toChar())
+    }
+    return sb.toString()
+}
+
+fun enabled_optin_scripts(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(250, 241, 254, 253, 243, 250, 251, 192, 240, 239, 235, 246, 241, 192, 236, 252, 237, 246, 239, 235, 236)
+    for (num in arr) {
+        sb.append((num.xor(159)).toChar())
+    }
+    return sb.toString()
+}
+
+fun opt_in(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(131, 156, 152, 193, 133, 130)
+    for (num in arr) {
+        sb.append((num.xor(236)).toChar())
+    }
+    return sb.toString()
+}
+
+fun opt_in_(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(144, 144, 159, 208, 207, 203, 146, 214, 209, 133)
+    for (num in arr) {
+        sb.append((num.xor(191)).toChar())
+    }
+    return sb.toString()
+}
+
+fun modified_at(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(90, 88, 83, 94, 81, 94, 82, 83, 26, 86, 67)
+    for (num in arr) {
+        sb.append((num.xor(55)).toChar())
+    }
+    return sb.toString()
+}
+
+fun modified_at_(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(16, 16, 31, 82, 80, 91, 86, 89, 86, 90, 91, 18, 94, 75, 5)
+    for (num in arr) {
+        sb.append((num.xor(63)).toChar())
+    }
+    return sb.toString()
+}
+
+fun ViewSource(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(159, 160, 172, 190, 233, 154, 166, 188, 187, 170, 172)
+    for (num in arr) {
+        sb.append((num.xor(201)).toChar())
+    }
+    return sb.toString()
+}
+
+fun readonly_file(): String {
+    val sb = StringBuilder()
+    val arr = intArrayOf(5, 18, 22, 19, 24, 25, 27, 14, 40, 17, 30, 27, 18)
+    for (num in arr) {
+        sb.append((num.xor(119)).toChar())
     }
     return sb.toString()
 }

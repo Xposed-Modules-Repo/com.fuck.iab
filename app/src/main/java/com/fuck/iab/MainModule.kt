@@ -550,8 +550,9 @@ class MainModule : XposedModule() {
 
     /**
      * The downloaded scripts from `scripts/global`, each in its own `try`/`catch` and ordered
-     * the same way as the list in the app. They are pasted into `global.js`, so they only ever
-     * run while the bundled global script is enabled and available.
+     * the same way as the list in the app: newest `// modified-at:` (UTC) first. Global ones
+     * always run, opt-in ones only after the user switched them on. They are pasted into
+     * `global.js`, so they only ever run while the bundled global script is enabled and available.
      */
     private fun globalRemoteScript(): String {
         val open = { name: String -> openRemoteFile(name) }
@@ -564,23 +565,43 @@ class MainModule : XposedModule() {
             val name = file.removePrefix(rs_()).removeSuffix(_js())
             if (name.isEmpty() || !ScriptStore.isGlobalRemoteName(name)) return@forEach
             if (name == global() || name == user_script()) return@forEach
-            if (isScriptDisabled(name, ScriptType.GLOBAL_REMOTE)) return@forEach
 
             val source = RemoteFiles.read(open, file) ?: return@forEach
+
+            if (ScriptStore.isOptIn(source)) {
+                if (!isScriptEnabled(name)) return@forEach
+            } else if (isScriptDisabled(name, ScriptType.GLOBAL_REMOTE)) {
+                return@forEach
+            }
+
             scripts.add(name to source)
         }
 
         if (scripts.isEmpty()) return ""
 
-        // the newest download runs first, so the order matches what the scripts screen shows
+        // the newest modified script runs first, so the order matches what the scripts screen shows
         val ordered = scripts.sortedWith(
-            compareByDescending<Pair<String, String>> { RemoteFiles.lastModifiedAt(open, ScriptStore.remoteFile(it.first)) }
+            compareByDescending<Pair<String, String>> { ScriptStore.modifiedOf(it.second) }
                 .thenBy { it.first }
         )
 
         // every entry stands alone: one broken global script must not stop the others
         return ordered.joinToString("") { (_, source) ->
             try_() + newline() + extractAuthor(source).second + newline() + catchEConsoleLogE()
+        }
+    }
+
+    /** Opt-in scripts live in an allow-list, so enabled means the name is listed there. */
+    private fun isScriptEnabled(name: String): Boolean {
+        if (frameworkProperties.and(PROP_CAP_REMOTE) == 0L) return false
+
+        return try {
+            val enabled = getRemotePreferences(fuck_iab())
+                .getStringSet(ScriptStore.optInKey(), emptySet()) ?: return false
+
+            enabled.contains(name)
+        } catch (e: Exception) {
+            false
         }
     }
 
@@ -599,9 +620,9 @@ class MainModule : XposedModule() {
     fun extractAuthor(content: String): Pair<String, String> {
         val authorTag = ___author__().trimEnd()
         // drop every tagged header line (`// name:`, `// url:`, `// author:`, `// description:`,
-        // `// added-in:`, `// version:`, `// summary:`) from the top comment block so the injected
-        // script carries no metadata
-        val tags = listOf(authorTag, name_(), url_(), description_(), added_in_(), version_(), summary_())
+        // `// modified-at:`, `// opt-in:`, `// version:`, `// summary:`) from the top comment
+        // block so the injected script carries no metadata
+        val tags = listOf(authorTag, name_(), url_(), description_(), added_in_(), modified_at_(), opt_in_(), version_(), summary_())
         val rest = StringBuilder()
         var author = ""
         var start = 0
